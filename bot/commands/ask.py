@@ -20,29 +20,39 @@ from src.config import get_config
 
 logger = logging.getLogger(__name__)
 
-# Strategy name to id mapping (CN name -> strategy id)
+# Strategy name to id mapping (KR name -> strategy id)
 STRATEGY_NAME_MAP = {
-    "缠论": "chan_theory",
-    "缠论分析": "chan_theory",
-    "波浪": "wave_theory",
-    "波浪理论": "wave_theory",
-    "艾略特": "wave_theory",
-    "箱体": "box_oscillation",
-    "箱体震荡": "box_oscillation",
-    "情绪": "emotion_cycle",
-    "情绪周期": "emotion_cycle",
-    "趋势": "bull_trend",
-    "多头趋势": "bull_trend",
-    "均线金叉": "ma_golden_cross",
-    "金叉": "ma_golden_cross",
-    "缩量回踩": "shrink_pullback",
-    "回踩": "shrink_pullback",
-    "放量突破": "volume_breakout",
-    "突破": "volume_breakout",
-    "地量见底": "bottom_volume",
-    "龙头": "dragon_head",
-    "龙头战法": "dragon_head",
-    "一阳穿三阴": "one_yang_three_yin",
+    # 한국어 전략명 매핑
+    "찬이론": "chan_theory",
+    "찬이론분석": "chan_theory",
+    "파동": "wave_theory",
+    "파동이론": "wave_theory",
+    "엘리엇": "wave_theory",
+    "박스권": "box_oscillation",
+    "박스권횡보": "box_oscillation",
+    "심리": "emotion_cycle",
+    "심리사이클": "emotion_cycle",
+    "추세": "bull_trend",
+    "상승추세": "bull_trend",
+    "이평선골든크로스": "ma_golden_cross",
+    "골든크로스": "ma_golden_cross",
+    "거래량감소리테스트": "shrink_pullback",
+    "리테스트": "shrink_pullback",
+    "거래량증가돌파": "volume_breakout",
+    "돌파": "volume_breakout",
+    "바닥거래량": "bottom_volume",
+    "대장주": "dragon_head",
+    "대장주전략": "dragon_head",
+    "양봉관통": "one_yang_three_yin",
+    # English aliases
+    "chan": "chan_theory",
+    "wave": "wave_theory",
+    "box": "box_oscillation",
+    "trend": "bull_trend",
+    "golden cross": "ma_golden_cross",
+    "breakout": "volume_breakout",
+    "bottom": "bottom_volume",
+    "leader": "dragon_head",
 }
 
 
@@ -63,20 +73,20 @@ class AskCommand(BotCommand):
 
     @property
     def aliases(self) -> List[str]:
-        return ["问股"]
+        return ["종목분석"]
 
     @property
     def description(self) -> str:
-        return "使用 Agent 策略分析股票"
+        return "Agent 전략으로 종목을 분석합니다"
 
     @property
     def usage(self) -> str:
-        return "/ask <股票代码> [策略名称]"
+        return "/ask <종목코드> [전략명]"
 
     def validate_args(self, args: List[str]) -> Optional[str]:
         """Validate arguments."""
         if not args:
-            return "请输入股票代码。用法: /ask <股票代码> [策略名称]\n示例: /ask 600519 用缠论分析"
+            return "종목코드를 입력하세요. 사용법: /ask <종목코드> [전략명]\n예시: /ask 005930 추세분석"
 
         code = args[0].upper()
         is_a_stock = re.match(r"^\d{6}$", code)

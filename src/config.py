@@ -253,7 +253,7 @@ class Config:
     run_immediately: bool = True              # 启动时是否立即执行一次（非定时模式）
     market_review_enabled: bool = True        # 是否启用大盘复盘
     # 大盘复盘市场区域：cn(A股)、us(美股)、both(两者)，us 适合仅关注美股的用户
-    market_review_region: str = "cn"
+    market_review_region: str = "kr"
     # 交易日检查：默认启用，非交易日跳过执行；设为 false 或 --force-run 可强制执行（Issue #373）
     trading_day_check_enabled: bool = True
 
@@ -662,7 +662,7 @@ class Config:
             run_immediately=os.getenv('RUN_IMMEDIATELY', 'true').lower() == 'true',
             market_review_enabled=os.getenv('MARKET_REVIEW_ENABLED', 'true').lower() == 'true',
             market_review_region=cls._parse_market_review_region(
-                os.getenv('MARKET_REVIEW_REGION', 'cn')
+                os.getenv('MARKET_REVIEW_REGION', 'kr')
             ),
             trading_day_check_enabled=os.getenv('TRADING_DAY_CHECK_ENABLED', 'true').lower() != 'false',
             webui_enabled=os.getenv('WEBUI_ENABLED', 'false').lower() == 'true',
@@ -936,15 +936,15 @@ class Config:
 
     @classmethod
     def _parse_market_review_region(cls, value: str) -> str:
-        """解析大盘复盘市场区域，非法值记录警告后回退为 cn"""
+        """대시보드 복기 시장 영역을 파싱합니다. 유효하지 않은 값은 경고 후 kr로 복구합니다."""
         import logging
-        v = (value or 'cn').strip().lower()
-        if v in ('cn', 'us', 'both'):
+        v = (value or 'kr').strip().lower()
+        if v in ('kr', 'us', 'both'):
             return v
         logging.getLogger(__name__).warning(
-            f"MARKET_REVIEW_REGION 配置值 '{value}' 无效，已回退为默认值 'cn'（合法值：cn / us / both）"
+            f"MARKET_REVIEW_REGION 설정값 '{value}'이(가) 유효하지 않습니다. 기본값 'kr'로 복구합니다. (유효값: kr / us / both)"
         )
-        return 'cn'
+        return 'kr'
 
     @classmethod
     def _parse_md2img_engine(cls, value: str) -> str:

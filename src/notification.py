@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 通知层
+주식 분석 시스템 - 알림 레이어
 ===================================
 
-职责：
-1. 汇总分析结果生成日报
-2. 支持 Markdown 格式输出
-3. 多渠道推送（自动识别）：
-   - 企业微信 Webhook
-   - 飞书 Webhook
+기능:
+1. 분석 결과를 일일 리포트로 종합
+2. Markdown 형식 출력 지원
+3. 다채널 푸시 (자동 감지):
    - Telegram Bot
-   - 邮件 SMTP
-   - Pushover（手机/桌面推送）
+   - 이메일 SMTP
+   - Discord Bot
+   - Pushover (모바일/데스크톱 푸시)
+   - 사용자 정의 Webhook
 """
 import logging
 from datetime import datetime
@@ -41,18 +41,18 @@ logger = logging.getLogger(__name__)
 
 
 class NotificationChannel(Enum):
-    """通知渠道类型"""
-    WECHAT = "wechat"      # 企业微信
-    FEISHU = "feishu"      # 飞书
+    """알림 채널 유형"""
+    WECHAT = "wechat"      # WeChat
+    FEISHU = "feishu"      # Feishu
     TELEGRAM = "telegram"  # Telegram
-    EMAIL = "email"        # 邮件
-    PUSHOVER = "pushover"  # Pushover（手机/桌面推送）
-    PUSHPLUS = "pushplus"  # PushPlus（国内推送服务）
-    SERVERCHAN3 = "serverchan3"  # Server酱3（手机APP推送服务）
-    CUSTOM = "custom"      # 自定义 Webhook
-    DISCORD = "discord"    # Discord 机器人 (Bot)
+    EMAIL = "email"        # 이메일
+    PUSHOVER = "pushover"  # Pushover
+    PUSHPLUS = "pushplus"  # PushPlus
+    SERVERCHAN3 = "serverchan3"  # Server酱3
+    CUSTOM = "custom"      # 사용자 정의 Webhook
+    DISCORD = "discord"    # Discord 봇
     ASTRBOT = "astrbot"
-    UNKNOWN = "unknown"    # 未知
+    UNKNOWN = "unknown"    # 알 수 없음
 
 
 class ChannelDetector:
