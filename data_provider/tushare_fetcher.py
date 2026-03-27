@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+⚠️ DEPRECATED: This fetcher is for Chinese A-share market only.
+It is no longer registered in the default data source pipeline.
+Kept for reference; will be removed in a future version.
+
 ===================================
 TushareFetcher - 备用数据源 1 (Priority 2)
 ===================================

@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-数据源基类与管理器
+데이터 소스 기본 클래스 및 관리자
 ===================================
 
-设计模式：策略模式 (Strategy Pattern)
-- BaseFetcher: 抽象基类，定义统一接口
-- DataFetcherManager: 策略管理器，实现自动切换
+디자인 패턴: 전략 패턴 (Strategy Pattern)
+- BaseFetcher: 추상 기본 클래스, 통합 인터페이스 정의
+- DataFetcherManager: 전략 관리자, 자동 전환 구현
 
-防封禁策略：
-1. 每个 Fetcher 内置流控逻辑
-2. 失败自动切换到下一个数据源
-3. 指数退避重试机制
+차단 방지 전략:
+1. 각 Fetcher 내장 흐름 제어 로직
+2. 실패 시 자동으로 다음 데이터 소스로 전환
+3. 지수 백오프 재시도 메커니즘
 """
 
 import logging
@@ -125,17 +125,17 @@ def is_bse_code(code: str) -> bool:
 
 
 class DataFetchError(Exception):
-    """数据获取异常基类"""
+    """데이터 조회 예외 기본 클래스"""
     pass
 
 
 class RateLimitError(DataFetchError):
-    """API 速率限制异常"""
+    """API 속도 제한 예외"""
     pass
 
 
 class DataSourceUnavailableError(DataFetchError):
-    """数据源不可用异常"""
+    """데이터 소스 불가용 예외"""
     pass
 
 
