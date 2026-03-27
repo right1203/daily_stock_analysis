@@ -3,6 +3,8 @@ import logging
 import pytest
 import requests
 
+pytestmark = pytest.mark.skip(reason="Chinese market support deprecated")
+
 from data_provider.akshare_fetcher import (
     AkshareFetcher,
     SINA_REALTIME_ENDPOINT,

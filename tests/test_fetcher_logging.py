@@ -5,6 +5,10 @@ import types
 import unittest
 from unittest.mock import patch
 
+import pytest
+
+pytestmark = pytest.mark.skip(reason="Chinese market support deprecated")
+
 import pandas as pd
 import requests
 

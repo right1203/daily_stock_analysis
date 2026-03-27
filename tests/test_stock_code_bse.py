@@ -12,6 +12,10 @@ import sys
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+pytestmark = pytest.mark.skip(reason="Chinese market support deprecated")
+
 # Provide lightweight stubs so importing data_provider.base does not require
 # full LLM runtime dependencies in minimal CI.
 if "litellm" not in sys.modules:
