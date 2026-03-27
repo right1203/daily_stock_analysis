@@ -1,9 +1,9 @@
-# Shrink Volume Pullback Strategy / 缩量回踩
+# Shrink Volume Pullback Strategy / 거래량 감소 리테스트
 # Volume shrinks during pullback to MA5/MA10, then price bounces.
 
 name: shrink_pullback
-display_name: 缩量回踩
-description: 检测缩量回踩均线支撑信号，趋势延续的理想入场点。
+display_name: 거래량 감소 리테스트
+description: 이동평균 지지선으로의 거래량 감소 리테스트 신호를 감지합니다. 추세 지속의 이상적인 진입 시점입니다.
 category: trend
 core_rules: [1, 2, 4]
 required_tools:
@@ -12,31 +12,31 @@ required_tools:
   - get_realtime_quote
 
 instructions: |
-  **缩量回踩（Shrink Volume Pullback Strategy）**
+  **거래량 감소 리테스트（Shrink Volume Pullback Strategy）**
 
-  入场判定标准：
+  진입 판단 기준：
 
-  1. **前提条件**（关联理念2：趋势交易）：
-     - 股票必须处于上升趋势（MA5 > MA10 > MA20）。
-     - 使用 `analyze_trend` 确认多头排列。
+  1. **전제 조건**（관련 원칙2：추세 매매）：
+     - 종목이 상승 추세에 있어야 합니다（MA5 > MA10 > MA20）.
+     - `analyze_trend`를 사용하여 상승 배열을 확인합니다.
 
-  2. **回踩检测**（关联理念4：买点偏好）：
-     - 使用 `get_daily_history` 和 `get_realtime_quote`。
-     - 价格回踩至 MA5 附近（误差 1% 以内）或 MA10 附近（误差 2% 以内）。
-     - 回调期间成交量 < 5 日均量的 70%（缩量特征）。
-     - `analyze_trend` → volume_status 应显示缩量。
+  2. **리테스트 감지**（관련 원칙4：매수 시점 선호）：
+     - `get_daily_history`와 `get_realtime_quote`를 사용합니다.
+     - 가격이 MA5 근처（오차 1% 이내）또는 MA10 근처（오차 2% 이내）로 리테스트합니다.
+     - 조정 기간 중 거래량 < 5일 평균 거래량의 70%（거래량 감소 특성）.
+     - `analyze_trend` → volume_status가 거래량 감소를 표시해야 합니다.
 
-  3. **反弹信号**（关联理念1：严进策略）：
-     - 当前价格守住均线支撑位。
-     - MA5 乖离率 < 2% — 最佳买入区间。
+  3. **반등 신호**（관련 원칙1：엄격한 진입 전략）：
+     - 현재 가격이 이동평균 지지선을 지키고 있습니다.
+     - MA5 괴리율 < 2% — 최적 매수 구간.
 
-  4. **确认条件**（关联理念5：风险排查）：
-     - `search_stock_news` 无利空消息。
-     - 筹码分布健康（获利比例 50-80%）。
+  4. **확인 조건**（관련 원칙5：리스크 점검）：
+     - `search_stock_news`에 악재 뉴스 없음.
+     - 수급 분포가 건전합니다（수익 비율 50~80%）.
 
-  评分调整：
-  - 缩量回踩 MA5：sentiment_score +10
-  - 缩量回踩 MA10 且量能 < 0.6 倍均量：sentiment_score +8
-  - 理想买点设在 MA5 水平，次优买点设在 MA10。
-  - 止损设在 MA20 水平。
-  - 在 `buy_reason` 中注明"缩量回踩"。
+  점수 조정：
+  - 거래량 감소 MA5 리테스트：sentiment_score +10
+  - 거래량 감소 MA10 리테스트 + 거래량 < 평균의 0.6배：sentiment_score +8
+  - 이상적인 매수 시점은 MA5 수준, 차선 매수 시점은 MA10.
+  - 손절은 MA20 수준으로 설정합니다.
+  - `buy_reason`에 "거래량 감소 리테스트" 표시.

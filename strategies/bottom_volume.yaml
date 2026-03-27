@@ -1,9 +1,9 @@
-# Bottom Volume Surge Strategy / 底部放量
+# Bottom Volume Surge Strategy / 바닥 거래량 증가
 # After extended decline, price stabilizes and volume spikes. Potential reversal.
 
 name: bottom_volume
-display_name: 底部放量
-description: 检测长期下跌后底部放量信号，潜在趋势反转信号。
+display_name: 바닥 거래량 증가
+description: 장기 하락 후 바닥 거래량 증가 신호를 감지합니다. 잠재적인 추세 반전 신호입니다.
 category: reversal
 core_rules: [2, 5]
 required_tools:
@@ -11,36 +11,36 @@ required_tools:
   - analyze_trend
 
 instructions: |
-  **底部放量（Bottom Volume Surge Strategy）**
+  **바닥 거래량 증가（Bottom Volume Surge Strategy）**
 
-  反转判定标准：
+  반전 판단 기준：
 
-  1. **持续下跌确认**：
-     - 使用 `get_daily_history`（30日）。
-     - 股价从 20 日高点到近期低点跌幅 > 15%。
-     - `analyze_trend` → trend_status 应为 BEAR 或 STRONG_BEAR。
+  1. **지속적 하락 확인**：
+     - `get_daily_history`（30일）를 사용합니다.
+     - 20일 고점에서 최근 저점까지 하락폭 > 15%.
+     - `analyze_trend` → trend_status가 BEAR 또는 STRONG_BEAR여야 합니다.
 
-  2. **量能异动**：
-     - 当日成交量 > 5 日均量的 3 倍。
-     - 使用 `get_realtime_quote` → volume_ratio > 3.0。
-     - 该异动应出现在前期极度缩量之后。
+  2. **거래량 이상 급증**：
+     - 당일 거래량 > 5일 평균 거래량의 3배.
+     - `get_realtime_quote` → volume_ratio > 3.0을 사용합니다.
+     - 이 이상 급증은 이전의 극도로 낮은 거래량 이후에 나타나야 합니다.
 
-  3. **价格企稳**：
-     - 当日K线收阳（收盘价 > 开盘价）。
-     - 价格守住近期低点。
-     - 最好出现长下影线，显示买方支撑。
+  3. **가격 안정**：
+     - 당일 캔들이 양봉（종가 > 시가）.
+     - 가격이 최근 저점을 지키고 있습니다.
+     - 긴 아래꼬리가 나타나면 매수 지지를 나타냅니다.
 
-  4. **确认因素**（关联理念5：风险排查）：
-     - 通过 `search_stock_news` 确认是否有基本面催化。
-     - 筹码分布：平均成本接近现价（成本收敛）。
+  4. **확인 요소**（관련 원칙5：리스크 점검）：
+     - `search_stock_news`를 통해 기본적 촉매가 있는지 확인합니다.
+     - 수급 분포：평균 매수 비용이 현재가에 근접（비용 수렴）.
 
-  5. **风险提示**（关联理念2：趋势交易）：
-     - 这是反转信号，风险高于趋势跟踪。
-     - 仓位建议较小（最多 2-3 成）。
-     - 止损必须严格（设在近期低点下方）。
+  5. **리스크 경고**（관련 원칙2：추세 매매）：
+     - 이는 반전 신호로, 추세 추종보다 리스크가 높습니다.
+     - 포지션은 작게 권장합니다（최대 20~30%）.
+     - 손절은 반드시 엄격하게 설정합니다（최근 저점 하방으로 설정）.
 
-  评分调整：
-  - 底部放量确认：sentiment_score +8
-  - 配合阳线 + 新闻催化：额外 +5
-  - 在 `buy_reason` 和 `pattern_analysis` 中注明"底部放量"。
-  - 止损设在近期低点。
+  점수 조정：
+  - 바닥 거래량 증가 확인：sentiment_score +8
+  - 양봉 + 뉴스 촉매와 함께：추가 +5
+  - `buy_reason` 및 `pattern_analysis`에 "바닥 거래량 증가" 표시.
+  - 손절은 최근 저점으로 설정합니다.

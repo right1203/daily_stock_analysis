@@ -1,9 +1,9 @@
-# Volume Breakout Strategy / 放量突破
+# Volume Breakout Strategy / 거래량 증가 돌파
 # Price breaks above resistance on heavy volume (>2x average).
 
 name: volume_breakout
-display_name: 放量突破
-description: 检测放量突破阻力位信号。适用于股价接近已知阻力位时。
+display_name: 거래량 증가 돌파
+description: 거래량 증가를 동반한 저항선 돌파 신호를 감지합니다. 주가가 알려진 저항선에 근접할 때 적용합니다.
 category: trend
 core_rules: [1, 2, 3]
 required_tools:
@@ -12,33 +12,33 @@ required_tools:
   - get_realtime_quote
 
 instructions: |
-  **放量突破（Volume Breakout Strategy）**
+  **거래량 증가 돌파（Volume Breakout Strategy）**
 
-  突破判定标准：
+  돌파 판단 기준：
 
-  1. **阻力位识别**：
-     - 使用 `analyze_trend` → resistance_levels 获取阻力位。
-     - 通常为 20 日高点或前期震荡平台顶部。
+  1. **저항선 식별**：
+     - `analyze_trend` → resistance_levels를 사용하여 저항선을 확인합니다.
+     - 일반적으로 20일 고점 또는 이전 횡보 구간 상단입니다.
 
-  2. **量能确认**（关联理念3：效率优先）：
-     - 当日成交量 > 5 日均量的 2 倍。
-     - 使用 `get_realtime_quote` → volume_ratio > 2.0 确认。
-     - 使用 `get_daily_history` 计算均量进行交叉验证。
+  2. **거래량 확인**（관련 원칙3：효율 우선）：
+     - 당일 거래량 > 5일 평균 거래량의 2배.
+     - `get_realtime_quote` → volume_ratio > 2.0으로 확인합니다.
+     - `get_daily_history`를 사용하여 평균 거래량을 계산하고 교차 검증합니다.
 
-  3. **价格确认**（关联理念1：严进策略）：
-     - 收盘价必须站上阻力位。
-     - 收盘应在当日振幅上方 30%（强势收盘）。
-     - 突破后乖离率检查：仍需 < 5%，避免追高。
+  3. **가격 확인**（관련 원칙1：엄격한 진입 전략）：
+     - 종가가 저항선 위에 위치해야 합니다.
+     - 종가는 당일 변동폭 상단 30% 이내여야 합니다（강세 마감）.
+     - 돌파 후 괴리율 확인：여전히 < 5%여야 하며, 고점 추격 방지.
 
-  4. **后续验证**（如有数据）：
-     - 次日开盘应在突破位之上，区分真突破与假突破。
+  4. **후속 검증**（데이터가 있는 경우）：
+     - 다음 날 개장은 돌파 수준 위에서 시작해야 합니다. 진짜 돌파와 가짜 돌파를 구별합니다.
 
-  5. **风险过滤**（关联理念5：风险排查）：
-     - 通过 `search_stock_news` 检查无重大利空。
-     - PE 不应过高（避免泡沫型突破）。
+  5. **리스크 필터링**（관련 원칙5：리스크 점검）：
+     - `search_stock_news`를 통해 중대한 악재가 없는지 확인합니다.
+     - PE가 과도하게 높지 않아야 합니다（버블성 돌파 방지）.
 
-  评分调整：
-  - 放量突破确认：sentiment_score +12
-  - 突破伴随板块共振（板块也走强）：额外 +5
-  - 理想买点设在突破位附近，止损设在突破位下方 3%。
-  - 在 `buy_reason` 和 `volume_analysis` 中注明"放量突破"。
+  점수 조정：
+  - 거래량 증가 돌파 확인：sentiment_score +12
+  - 돌파와 함께 섹터 공명（섹터도 강세）：추가 +5
+  - 이상적인 매수 시점은 돌파 수준 근처, 손절은 돌파 수준 하방 3%.
+  - `buy_reason` 및 `volume_analysis`에 "거래량 증가 돌파" 표시.

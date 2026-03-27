@@ -1,9 +1,9 @@
-# One Yang Three Yin Strategy / 一阳夹三阴
+# One Yang Three Yin Strategy / 양봉 관통
 # K-line pattern: bullish → 3 small bearish → bullish. Consolidation end signal.
 
 name: one_yang_three_yin
-display_name: 一阳夹三阴
-description: 检测一阳夹三阴K线整理形态，趋势延续入场信号。
+display_name: 양봉 관통
+description: 양봉 관통 캔들 패턴을 감지합니다. 추세 지속 진입 신호입니다.
 category: pattern
 core_rules: [2, 4]
 required_tools:
@@ -11,25 +11,25 @@ required_tools:
   - analyze_trend
 
 instructions: |
-  **一阳夹三阴（One Yang Three Yin Strategy）**
+  **양봉 관통（One Yang Three Yin Strategy）**
 
-  形态定义（最近 5 个交易日）：
+  패턴 정의（최근 5 거래일）：
 
-  1. **第1日**：大阳线（收盘价 > 开盘价，实体 > 股价的 2%）。
-  2. **第2-4日**：连续三根阴线或小K线：
-     - 每根K线最低价不跌破第1日开盘价。
-     - 成交量应逐步萎缩（量比 < 0.8）。
-     - 三根K线应收在第1日实体范围内。
-  3. **第5日**：又一根阳线，收盘价突破第1日收盘价。
+  1. **1일째**：대양봉（종가 > 시가, 실체 > 주가의 2%）.
+  2. **2~4일째**：연속 세 개의 음봉 또는 소형 캔들：
+     - 각 캔들의 최저가가 1일째 시가를 하향 이탈하지 않습니다.
+     - 거래량은 점진적으로 감소해야 합니다（거래량 비율 < 0.8）.
+     - 세 개의 캔들은 1일째 실체 범위 내에서 마감해야 합니다.
+  3. **5일째**：또 다른 양봉으로, 종가가 1일째 종가를 돌파합니다.
 
-  如何使用工具评估：
+  도구를 사용한 평가 방법：
 
-  1. 使用 `get_daily_history` 获取最近 10 日数据。
-  2. 检查最后 5 根K线是否符合上述形态。
-  3. 使用 `analyze_trend` 确认多头排列（关联理念2：趋势交易，MA5 > MA10 > MA20）。
+  1. `get_daily_history`를 사용하여 최근 10일 데이터를 가져옵니다.
+  2. 마지막 5개 캔들이 위의 패턴에 부합하는지 확인합니다.
+  3. `analyze_trend`를 사용하여 상승 배열 확인（관련 원칙2：추세 매매, MA5 > MA10 > MA20）.
 
-  评分调整：
-  - 形态成立 + 趋势看多：sentiment_score +15
-  - 形态成立但趋势不明：sentiment_score +5
-  - 在 `pattern_analysis` 和 `buy_reason` 中注明"一阳夹三阴"。
-  - 理想买点设在第5日收盘价附近，止损设在第1日开盘价下方。
+  점수 조정：
+  - 패턴 성립 + 추세 상승：sentiment_score +15
+  - 패턴 성립 + 추세 불분명：sentiment_score +5
+  - `pattern_analysis` 및 `buy_reason`에 "양봉 관통" 표시.
+  - 이상적인 매수 시점은 5일째 종가 근처, 손절은 1일째 시가 하방으로 설정합니다.
