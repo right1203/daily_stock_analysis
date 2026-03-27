@@ -1,114 +1,62 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-美股指数与股票代码工具
+미국 주식 지수 및 종목 코드 유틸리티
 ===================================
 
-提供：
-1. 美股指数代码映射（如 SPX -> ^GSPC）
-2. 美股股票代码识别（AAPL、TSLA 等）
+제공:
+1. 미국 지수 코드 매핑 (SPX -> ^GSPC)
+2. 미국 종목 코드 식별 (AAPL, TSLA 등)
 
-美股指数在 Yahoo Finance 中需使用 ^ 前缀，与股票代码不同。
+미국 지수는 Yahoo Finance에서 ^ 접두사를 사용합니다.
 """
 
 import re
 
-# 美股代码正则：1-5 个大写字母，可选 .X 后缀（如 BRK.B）
+# 미국 종목 코드 정규식: 1-5개 대문자, 선택적 .X 접미사 (예: BRK.B)
 _US_STOCK_PATTERN = re.compile(r'^[A-Z]{1,5}(\.[A-Z])?$')
 
 
-# 用户输入 -> (Yahoo Finance 符号, 中文名称)
+# 사용자 입력 -> (Yahoo Finance 심볼, 한국어 이름)
 US_INDEX_MAPPING = {
-    # 标普 500
-    'SPX': ('^GSPC', '标普500指数'),
-    '^GSPC': ('^GSPC', '标普500指数'),
-    'GSPC': ('^GSPC', '标普500指数'),
-    # 道琼斯工业平均指数
-    'DJI': ('^DJI', '道琼斯工业指数'),
-    '^DJI': ('^DJI', '道琼斯工业指数'),
-    'DJIA': ('^DJI', '道琼斯工业指数'),
-    # 纳斯达克综合指数
-    'IXIC': ('^IXIC', '纳斯达克综合指数'),
-    '^IXIC': ('^IXIC', '纳斯达克综合指数'),
-    'NASDAQ': ('^IXIC', '纳斯达克综合指数'),
-    # 纳斯达克 100
-    'NDX': ('^NDX', '纳斯达克100指数'),
-    '^NDX': ('^NDX', '纳斯达克100指数'),
-    # VIX 波动率指数
-    'VIX': ('^VIX', 'VIX恐慌指数'),
-    '^VIX': ('^VIX', 'VIX恐慌指数'),
-    # 罗素 2000
-    'RUT': ('^RUT', '罗素2000指数'),
-    '^RUT': ('^RUT', '罗素2000指数'),
+    # S&P 500
+    'SPX': ('^GSPC', 'S&P 500 지수'),
+    '^GSPC': ('^GSPC', 'S&P 500 지수'),
+    'GSPC': ('^GSPC', 'S&P 500 지수'),
+    # 다우존스 산업평균지수
+    'DJI': ('^DJI', '다우존스 산업지수'),
+    '^DJI': ('^DJI', '다우존스 산업지수'),
+    'DJIA': ('^DJI', '다우존스 산업지수'),
+    # 나스닥 종합지수
+    'IXIC': ('^IXIC', '나스닥 종합지수'),
+    '^IXIC': ('^IXIC', '나스닥 종합지수'),
+    'NASDAQ': ('^IXIC', '나스닥 종합지수'),
+    # 나스닥 100
+    'NDX': ('^NDX', '나스닥 100 지수'),
+    '^NDX': ('^NDX', '나스닥 100 지수'),
+    # VIX 변동성 지수
+    'VIX': ('^VIX', 'VIX 공포지수'),
+    '^VIX': ('^VIX', 'VIX 공포지수'),
+    # 러셀 2000
+    'RUT': ('^RUT', '러셀 2000 지수'),
+    '^RUT': ('^RUT', '러셀 2000 지수'),
 }
 
 
 def is_us_index_code(code: str) -> bool:
-    """
-    判断代码是否为美股指数符号。
-
-    Args:
-        code: 股票/指数代码，如 'SPX', 'DJI'
-
-    Returns:
-        True 表示是已知美股指数符号，否则 False
-
-    Examples:
-        >>> is_us_index_code('SPX')
-        True
-        >>> is_us_index_code('AAPL')
-        False
-    """
+    """코드가 미국 지수 심볼인지 판별합니다."""
     return (code or '').strip().upper() in US_INDEX_MAPPING
 
 
 def is_us_stock_code(code: str) -> bool:
-    """
-    判断代码是否为美股股票符号（排除美股指数）。
-
-    美股股票代码为 1-5 个大写字母，可选 .X 后缀如 BRK.B。
-    美股指数（SPX、DJI 等）明确排除。
-
-    Args:
-        code: 股票代码，如 'AAPL', 'TSLA', 'BRK.B'
-
-    Returns:
-        True 表示是美股股票符号，否则 False
-
-    Examples:
-        >>> is_us_stock_code('AAPL')
-        True
-        >>> is_us_stock_code('TSLA')
-        True
-        >>> is_us_stock_code('BRK.B')
-        True
-        >>> is_us_stock_code('SPX')
-        False
-        >>> is_us_stock_code('600519')
-        False
-    """
+    """코드가 미국 주식 종목 코드인지 판별합니다 (지수 제외)."""
     normalized = (code or '').strip().upper()
-    # 美股指数不是股票
     if normalized in US_INDEX_MAPPING:
         return False
     return bool(_US_STOCK_PATTERN.match(normalized))
 
 
 def get_us_index_yf_symbol(code: str) -> tuple:
-    """
-    获取美股指数的 Yahoo Finance 符号与中文名称。
-
-    Args:
-        code: 用户输入，如 'SPX', '^GSPC', 'DJI'
-
-    Returns:
-        (yf_symbol, chinese_name) 元组，未找到时返回 (None, None)。
-
-    Examples:
-        >>> get_us_index_yf_symbol('SPX')
-        ('^GSPC', '标普500指数')
-        >>> get_us_index_yf_symbol('AAPL')
-        (None, None)
-    """
+    """미국 지수의 Yahoo Finance 심볼과 한국어 이름을 반환합니다."""
     normalized = (code or '').strip().upper()
     return US_INDEX_MAPPING.get(normalized, (None, None))
