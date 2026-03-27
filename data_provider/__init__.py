@@ -1,55 +1,53 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-数据源策略层 - 包初始化
+데이터 소스 전략 레이어 - 패키지 초기화
 ===================================
 
-本包实现策略模式管理多个数据源，实现：
-1. 统一的数据获取接口
-2. 自动故障切换
-3. 防封禁流控策略
+전략 패턴으로 복수의 데이터 소스를 관리합니다:
+1. 통합된 데이터 조회 인터페이스
+2. 자동 장애 전환
+3. 차단 방지 흐름 제어
 
-数据源优先级（动态调整）：
-【配置了 TUSHARE_TOKEN 时】
-1. TushareFetcher (Priority 0) - 🔥 最高优先级（动态提升）
-2. EfinanceFetcher (Priority 0) - 同优先级
-3. AkshareFetcher (Priority 1) - 来自 akshare 库
-4. PytdxFetcher (Priority 2) - 来自 pytdx 库（通达信）
-5. BaostockFetcher (Priority 3) - 来自 baostock 库
-6. YfinanceFetcher (Priority 4) - 来自 yfinance 库
+데이터 소스 우선순위:
+1. PykrxFetcher (Priority 0) - 한국 시장 (KRX)
+2. YfinanceFetcher (Priority 1) - 글로벌 (미국 + 한국 폴백)
 
-【未配置 TUSHARE_TOKEN 时】
-1. EfinanceFetcher (Priority 0) - 最高优先级，来自 efinance 库
-2. AkshareFetcher (Priority 1) - 来自 akshare 库
-3. PytdxFetcher (Priority 2) - 来自 pytdx 库（通达信）
-4. TushareFetcher (Priority 2) - 来自 tushare 库（不可用）
-5. BaostockFetcher (Priority 3) - 来自 baostock 库
-6. YfinanceFetcher (Priority 4) - 来自 yfinance 库
-
-提示：优先级数字越小越优先，同优先级按初始化顺序排列
+레거시 데이터 소스 (중국 시장, deprecated):
+- EfinanceFetcher, AkshareFetcher, TushareFetcher, PytdxFetcher, BaostockFetcher
 """
 
 from .base import BaseFetcher, DataFetcherManager
+# Legacy China fetchers (kept for backwards compatibility, will be removed)
 from .efinance_fetcher import EfinanceFetcher
 from .akshare_fetcher import AkshareFetcher, is_hk_stock_code
 from .tushare_fetcher import TushareFetcher
 from .pytdx_fetcher import PytdxFetcher
 from .baostock_fetcher import BaostockFetcher
+# Active fetchers
 from .yfinance_fetcher import YfinanceFetcher
+from .pykrx_fetcher import PykrxFetcher
+# Market detection utilities
 from .us_index_mapping import is_us_index_code, is_us_stock_code, get_us_index_yf_symbol, US_INDEX_MAPPING
+from .kr_index_mapping import is_kr_index_code, is_kr_stock_code, get_kr_index_yf_symbol, KR_INDEX_MAPPING
 
 __all__ = [
     'BaseFetcher',
     'DataFetcherManager',
+    'PykrxFetcher',
+    'YfinanceFetcher',
     'EfinanceFetcher',
     'AkshareFetcher',
     'TushareFetcher',
     'PytdxFetcher',
     'BaostockFetcher',
-    'YfinanceFetcher',
     'is_us_index_code',
     'is_us_stock_code',
+    'is_kr_index_code',
+    'is_kr_stock_code',
     'is_hk_stock_code',
     'get_us_index_yf_symbol',
+    'get_kr_index_yf_symbol',
     'US_INDEX_MAPPING',
+    'KR_INDEX_MAPPING',
 ]
