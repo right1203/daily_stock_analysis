@@ -119,6 +119,11 @@ def canonical_stock_code(code: str) -> str:
     return (code or "").strip().upper()
 
 
+def is_bse_code(code: str) -> bool:
+    """Deprecated stub — always returns False. BSE (Beijing Stock Exchange) removed."""
+    return False
+
+
 class DataFetchError(Exception):
     """数据获取异常基类"""
     pass
