@@ -1,6 +1,6 @@
 name: Auto Tag
 
-# 触发条件：当代码 push 到 main 分支时
+# 실행 조건: 코드가 main 브랜치에 push될 때
 on:
   push:
     branches: [main]

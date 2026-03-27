@@ -1,13 +1,13 @@
-# 自动关闭过期的 Issues 和 PR
-# 每天检查一次，标记长时间无响应的 issues/PRs
+# 오래된 Issues 및 PR 자동 종료
+# 매일 한 번 확인하여 오랫동안 응답이 없는 issues/PR에 태그를 붙임
 
 name: Stale Issues & PRs
 
 on:
   schedule:
-    # 每天 UTC 0:00（北京时间 8:00）检查一次
+    # 매일 UTC 0:00（베이징 시간 8:00）에 한 번 확인
     - cron: '0 0 * * *'
-  # 支持手动触发
+  # 수동 실행 지원
   workflow_dispatch:
 
 permissions:
@@ -16,64 +16,64 @@ permissions:
 
 jobs:
   stale:
-    name: 🧹 清理过期 Issues/PRs
+    name: 🧹 오래된 Issues/PR 정리
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: 🏷️ 标记并关闭过期内容
+      - name: 🏷️ 오래된 항목 표시 및 종료
         uses: actions/stale@v9
         with:
-          # ===== Issue 配置 =====
+          # ===== Issue 설정 =====
           days-before-issue-stale: 7
           days-before-issue-close: 7
           stale-issue-label: 'stale'
           stale-issue-message: |
-            👋 这个 Issue 已经 **7 天** 没有活动了。
-            
-            如果问题仍然存在，请回复说明最新情况，我们会继续跟进。
-            如果问题已解决或不再需要，可以直接关闭此 Issue。
-            
-            **如果 7 天内没有回复，此 Issue 将自动关闭。**
+            👋 이 Issue는 **7일** 동안 활동이 없었습니다.
+
+            문제가 아직 존재한다면, 최신 상황을 설명하는 댓글을 남겨 주세요. 계속 추적하겠습니다.
+            문제가 해결되었거나 더 이상 필요하지 않다면, 이 Issue를 직접 닫아주세요.
+
+            **7일 내에 응답이 없으면 이 Issue는 자동으로 종료됩니다.**
           close-issue-message: |
-            🔒 由于长时间没有活动，此 Issue 已自动关闭。
-            
-            如果问题仍然存在，欢迎重新打开或创建新的 Issue。
-          
-          # ===== PR 配置 =====
+            🔒 오랫동안 활동이 없어 이 Issue가 자동으로 종료되었습니다.
+
+            문제가 아직 존재한다면, 다시 열거나 새로운 Issue를 생성해 주세요.
+
+          # ===== PR 설정 =====
           days-before-pr-stale: 21
           days-before-pr-close: 14
           stale-pr-label: 'stale'
           stale-pr-message: |
-            👋 这个 PR 已经 **21 天** 没有活动了。
-            
-            请检查是否需要：
-            - 解决合并冲突
-            - 回复 review 意见
-            - 更新代码
-            
-            **如果 14 天内没有更新，此 PR 将自动关闭。**
+            👋 이 PR은 **21일** 동안 활동이 없었습니다.
+
+            다음 사항을 확인해 주세요:
+            - 병합 충돌 해결
+            - 리뷰 의견에 답변
+            - 코드 업데이트
+
+            **14일 내에 업데이트가 없으면 이 PR은 자동으로 종료됩니다.**
           close-pr-message: |
-            🔒 由于长时间没有活动，此 PR 已自动关闭。
-            
-            如果您仍希望合入这些更改，请重新打开或创建新的 PR。
-          
-          # ===== 排除规则 =====
-          # 带有这些标签的不会被标记为 stale
+            🔒 오랫동안 활동이 없어 이 PR이 자동으로 종료되었습니다.
+
+            이 변경사항을 계속 병합하고 싶다면, 다시 열거나 새로운 PR을 생성해 주세요.
+
+          # ===== 제외 규칙 =====
+          # 이 라벨이 붙은 항목은 stale로 표시되지 않음
           exempt-issue-labels: 'pinned,security,enhancement,help wanted,good first issue'
           exempt-pr-labels: 'pinned,security,work-in-progress,wip'
-          
-          # 排除草稿 PR
+
+          # 초안 PR 제외
           exempt-draft-pr: true
-          
-          # ===== 其他配置 =====
-          # 每次运行最多处理的数量
+
+          # ===== 기타 설정 =====
+          # 한 번 실행 시 처리할 최대 수량
           operations-per-run: 50
-          
-          # 只处理这些状态的
+
+          # 이 상태의 항목만 처리
           only-labels: ''
-          
-          # 移除 stale 标签（当有新活动时）
+
+          # stale 라벨 제거（새 활동이 있을 때）
           remove-stale-when-updated: true
-          
-          # 调试模式（设为 true 时只打印不实际操作）
+
+          # 디버그 모드（true로 설정하면 실제 작업 없이 출력만 함）
           debug-only: false

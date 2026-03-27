@@ -76,52 +76,52 @@ def build_prompt(diff_content, files, truncated, pr_title, pr_body):
     """Build AI review prompt aligned with AGENTS.md requirements."""
     truncate_notice = ''
     if truncated:
-        truncate_notice = "\n\n> ⚠️ 注意：diff 过长已截断，请基于可见内容审查并标注不确定点。\n"
+        truncate_notice = "\n\n> ⚠️ 주의: diff가 너무 길어 잘렸습니다. 표시된 내용을 기반으로 검토하고 불확실한 부분을 표시해 주세요.\n"
 
     py_files, doc_files, ci_files, config_files = classify_files(files)
 
-    return f"""你是本仓库的 PR 审查助手。请根据变更内容和 PR 描述，执行“代码 + 文档 + CI”联合审查。
+    return f"""당신은 이 저장소의 PR 리뷰 어시스턴트입니다. 변경 내용과 PR 설명을 바탕으로 "코드 + 문서 + CI" 통합 리뷰를 수행하세요.
 
-## PR 信息
-- 标题: {pr_title or '(empty)'}
-- 描述:
+## PR 정보
+- 제목: {pr_title or '(empty)'}
+- 설명:
 {pr_body or '(empty)'}
 
-## 修改文件统计
+## 수정 파일 통계
 - Python: {len(py_files)}
 - Docs/Markdown: {len(doc_files)}
 - CI Workflow: {len(ci_files)}
 - Config/Template: {len(config_files)}
 
-修改文件列表:
+수정 파일 목록:
 {', '.join(files)}{truncate_notice}
 
-## 代码变更 (diff)
+## 코드 변경사항 (diff)
 ```diff
 {diff_content}
 ```
 
-## 必须对齐的审查规则（来自仓库 AGENTS.md）
-1. 必要性（Necessity）：是否有明确问题/业务价值，避免无效重构。
-2. 关联性（Traceability）：是否有关联 Issue（Fixes/Refs）；无 Issue 时是否给出动机与验收标准。
-3. 类型判定（Type）：fix/feat/refactor/docs/chore/test 是否匹配。
-4. 描述完整性（Description Completeness）：是否包含背景、范围、验证命令与结果、兼容性风险、回滚方案。
-5. 合入判定（Merge Readiness）：给出 Ready / Not Ready，并列出阻断项。
-6. 若涉及用户可见能力，检查 README.md 与 docs/CHANGELOG.md 是否同步。
+## 반드시 준수해야 할 리뷰 규칙（저장소 AGENTS.md 기반）
+1. 필요성（Necessity）: 명확한 문제/비즈니스 가치가 있는지, 불필요한 리팩토링을 피해야 함.
+2. 연관성（Traceability）: 관련 Issue（Fixes/Refs）가 있는지; Issue가 없을 때 동기와 수락 기준을 제시했는지.
+3. 유형 판별（Type）: fix/feat/refactor/docs/chore/test가 적절한지.
+4. 설명 완전성（Description Completeness）: 배경, 범위, 검증 명령 및 결과, 호환성 위험, 롤백 방안이 포함되어 있는지.
+5. 병합 판정（Merge Readiness）: Ready / Not Ready를 제시하고 차단 항목을 나열.
+6. 사용자에게 보이는 기능이 포함된 경우, README.md와 docs/CHANGELOG.md가 동기화되어 있는지 확인.
 
-## 审查输出要求
-- 使用中文。
-- 先给“结论”：`Ready to Merge` 或 `Not Ready`。
-- 再给结构化结果：
-  - 必要性：通过/不通过 + 理由
-  - 关联性：通过/不通过 + 证据
-  - 类型：建议类型
-  - 描述完整性：完整/不完整（缺失项）
-  - 风险级别：低/中/高 + 关键风险
-  - 必改项（最多 5 条，按优先级）
-  - 建议项（最多 5 条）
-- 对发现的问题，尽量定位到文件路径并说明影响。
-- 如果信息不足，明确写“基于当前 diff/PR 描述无法确认”。
+## 리뷰 출력 요구사항
+- 한국어를 사용하세요.
+- 먼저 "결론": `Ready to Merge` 또는 `Not Ready`.
+- 그런 다음 구조화된 결과:
+  - 필요성: 통과/미통과 + 이유
+  - 연관성: 통과/미통과 + 근거
+  - 유형: 권장 유형
+  - 설명 완전성: 완전/불완전（누락 항목）
+  - 위험 수준: 낮음/중간/높음 + 핵심 위험
+  - 필수 수정 항목（최대 5개, 우선순위 순）
+  - 권장 항목（최대 5개）
+- 발견된 문제는 가능한 한 파일 경로를 지정하고 영향을 설명하세요.
+- 정보가 부족한 경우, "현재 diff/PR 설명으로는 확인할 수 없음"이라고 명확히 작성하세요.
 """
 
 
@@ -131,10 +131,10 @@ def review_with_gemini(prompt):
     model = os.environ.get('GEMINI_MODEL') or os.environ.get('GEMINI_MODEL_FALLBACK') or 'gemini-2.5-flash'
 
     if not api_key:
-        print("❌ Gemini API Key 未配置（检查 GitHub Secrets: GEMINI_API_KEY）")
+        print("❌ Gemini API Key가 설정되지 않았습니다（GitHub Secrets 확인: GEMINI_API_KEY）")
         return None
 
-    print(f"🤖 使用模型: {model}")
+    print(f"🤖 사용 모델: {model}")
 
     try:
         from google import genai
@@ -143,14 +143,14 @@ def review_with_gemini(prompt):
             model=model,
             contents=prompt
         )
-        print(f"✅ Gemini ({model}) 审查成功")
+        print(f"✅ Gemini ({model}) 리뷰 성공")
         return response.text
     except ImportError as e:
-        print(f"❌ Gemini 依赖未安装: {e}")
-        print("   请确保安装了 google-genai: pip install google-genai")
+        print(f"❌ Gemini 의존성이 설치되지 않았습니다: {e}")
+        print("   google-genai가 설치되어 있는지 확인하세요: pip install google-genai")
         return None
     except Exception as e:
-        print(f"❌ Gemini 审查失败: {e}")
+        print(f"❌ Gemini 리뷰 실패: {e}")
         traceback.print_exc()
         return None
 
@@ -162,11 +162,11 @@ def review_with_openai(prompt):
     model = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 
     if not api_key:
-        print("❌ OpenAI API Key 未配置（检查 GitHub Secrets: OPENAI_API_KEY）")
+        print("❌ OpenAI API Key가 설정되지 않았습니다（GitHub Secrets 확인: OPENAI_API_KEY）")
         return None
 
     print(f"🌐 Base URL: {base_url}")
-    print(f"🤖 使用模型: {model}")
+    print(f"🤖 사용 모델: {model}")
 
     try:
         from openai import OpenAI
@@ -177,14 +177,14 @@ def review_with_openai(prompt):
             max_tokens=2000,
             temperature=0.3
         )
-        print(f"✅ OpenAI 兼容接口 ({model}) 审查成功")
+        print(f"✅ OpenAI 호환 인터페이스 ({model}) 리뷰 성공")
         return response.choices[0].message.content
     except ImportError as e:
-        print(f"❌ OpenAI 依赖未安装: {e}")
-        print("   请确保安装了 openai: pip install openai")
+        print(f"❌ OpenAI 의존성이 설치되지 않았습니다: {e}")
+        print("   openai가 설치되어 있는지 확인하세요: pip install openai")
         return None
     except Exception as e:
-        print(f"❌ OpenAI 兼容接口审查失败: {e}")
+        print(f"❌ OpenAI 호환 인터페이스 리뷰 실패: {e}")
         traceback.print_exc()
         return None
 
@@ -198,7 +198,7 @@ def ai_review(diff_content, files, truncated):
     if result:
         return result
 
-    print("尝试使用 OpenAI 兼容接口...")
+    print("OpenAI 호환 인터페이스 시도 중...")
     result = review_with_openai(prompt)
     if result:
         return result
@@ -211,16 +211,16 @@ def main():
     files = get_changed_files()
 
     if not diff or not files:
-        print("没有可审查的代码/文档/配置变更，跳过 AI 审查")
+        print("검토할 코드/문서/설정 변경사항이 없습니다. AI 리뷰를 건너뜁니다")
         summary_file = os.environ.get('GITHUB_STEP_SUMMARY')
         if summary_file:
             with open(summary_file, 'a', encoding='utf-8') as f:
-                f.write("## 🤖 AI 代码审查\n\n✅ 没有可审查变更\n")
+                f.write("## 🤖 AI 코드 리뷰\n\n✅ 검토할 변경사항이 없습니다\n")
         return
 
-    print(f"审查文件: {files}")
+    print(f"리뷰 파일: {files}")
     if truncated:
-        print(f"⚠️ Diff 内容已截断至 {MAX_DIFF_LENGTH} 字符")
+        print(f"⚠️ Diff 내용이 {MAX_DIFF_LENGTH}자로 잘렸습니다")
 
     review = ai_review(diff, files, truncated)
 
@@ -231,17 +231,17 @@ def main():
     if review:
         if summary_file:
             with open(summary_file, 'a', encoding='utf-8') as f:
-                f.write(f"## 🤖 AI 代码审查\n\n{review}\n")
+                f.write(f"## 🤖 AI 코드 리뷰\n\n{review}\n")
 
         with open('ai_review_result.txt', 'w', encoding='utf-8') as f:
             f.write(review)
 
-        print("AI 审查完成")
+        print("AI 리뷰 완료")
     else:
-        print("⚠️ 所有 AI 接口都不可用")
+        print("⚠️ 모든 AI 인터페이스를 사용할 수 없습니다")
         if summary_file:
             with open(summary_file, 'a', encoding='utf-8') as f:
-                f.write("## 🤖 AI 代码审查\n\n⚠️ AI 接口不可用，请检查配置\n")
+                f.write("## 🤖 AI 코드 리뷰\n\n⚠️ AI 인터페이스를 사용할 수 없습니다. 설정을 확인해 주세요\n")
         if strict_mode:
             raise SystemExit("AI_REVIEW_STRICT=true and no AI review result is available")
 

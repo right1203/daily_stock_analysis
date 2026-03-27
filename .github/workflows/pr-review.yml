@@ -1,5 +1,5 @@
-# PR 自动审查 - 语法检查 + AI 语义审查
-# 当有 PR 创建或更新时自动触发
+# PR 자동 리뷰 - 문법 검사 + AI 의미 리뷰
+# PR이 생성되거나 업데이트될 때 자동으로 실행
 
 name: PR Review
 
@@ -20,10 +20,10 @@ on:
       - '.github/scripts/**'
       - 'docker/Dockerfile'
       - 'docker-compose.yml'
-  # 支持手动触发（用于重新审查）
+  # 수동 실행 지원（재검토용）
   workflow_dispatch:
 
-# 限制并发，避免同一 PR 多次触发时重复评论
+# 동시성 제한, 동일 PR에서 여러 번 실행될 때 중복 댓글 방지
 concurrency:
   group: pr-review-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
@@ -34,50 +34,50 @@ permissions:
   issues: write
 
 jobs:
-  # ==================== 安全检查（检测敏感文件修改）====================
+  # ==================== 보안 검사（민감한 파일 수정 감지）====================
   security-check:
-    name: 🔒 安全检查
+    name: 🔒 보안 검사
     runs-on: ubuntu-latest
     outputs:
       safe_to_run: ${{ steps.check_sensitive.outputs.safe_to_run }}
       sensitive_files_changed: ${{ steps.check_sensitive.outputs.sensitive_files_changed }}
-    
+
     steps:
-      - name: 📥 检出代码
+      - name: 📥 코드 체크아웃
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      
-      - name: 🔄 获取 base 分支
+
+      - name: 🔄 base 브랜치 가져오기
         run: git fetch origin ${{ github.base_ref || 'main' }}:refs/remotes/origin/${{ github.base_ref || 'main' }}
-      
-      - name: 🔒 检查敏感文件修改
+
+      - name: 🔒 민감한 파일 수정 확인
         id: check_sensitive
         run: |
           BASE_REF="${{ github.base_ref || 'main' }}"
           SENSITIVE_FILES=$(git diff --name-only origin/$BASE_REF...HEAD | grep -E '^(\.github/workflows/.*\.yml|\.github/scripts/.*\.py)$' || echo "")
-          
+
           if [ -n "$SENSITIVE_FILES" ]; then
-            echo "⚠️ **检测到敏感文件修改，需要人工审核！**" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **민감한 파일 수정이 감지되었습니다. 수동 검토가 필요합니다!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "修改的敏感文件：" >> $GITHUB_STEP_SUMMARY
+            echo "수정된 민감한 파일:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$SENSITIVE_FILES" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "已标记为敏感变更，请重点人工复核；自动流程继续执行。" >> $GITHUB_STEP_SUMMARY
+            echo "민감한 변경사항으로 표시되었습니다. 수동 검토를 우선적으로 진행해 주세요. 자동 프로세스는 계속 실행됩니다." >> $GITHUB_STEP_SUMMARY
             echo "sensitive_files_changed=true" >> $GITHUB_OUTPUT
             echo "safe_to_run=true" >> $GITHUB_OUTPUT
           else
-            echo "✅ 未检测到敏感文件修改" >> $GITHUB_STEP_SUMMARY
+            echo "✅ 민감한 파일 수정이 감지되지 않았습니다" >> $GITHUB_STEP_SUMMARY
             echo "sensitive_files_changed=false" >> $GITHUB_OUTPUT
             echo "safe_to_run=true" >> $GITHUB_OUTPUT
           fi
 
-  # ==================== 静态检查（先于 AI 审查）====================
+  # ==================== 정적 검사（AI 리뷰보다 먼저 실행）====================
   auto-check:
-    name: 🔍 静态检查
+    name: 🔍 정적 검사
     runs-on: ubuntu-latest
     needs: [security-check]
     if: needs.security-check.outputs.safe_to_run == 'true'
@@ -85,29 +85,29 @@ jobs:
       syntax_ok: ${{ steps.syntax.outputs.syntax_ok }}
       has_py_changes: ${{ steps.check_files.outputs.has_py_changes }}
       has_reviewable_changes: ${{ steps.check_files.outputs.has_reviewable_changes }}
-    
+
     steps:
-      - name: 📥 检出代码
+      - name: 📥 코드 체크아웃
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      
-      - name: 🔄 获取 base 分支
+
+      - name: 🔄 base 브랜치 가져오기
         run: git fetch origin ${{ github.base_ref || 'main' }}:refs/remotes/origin/${{ github.base_ref || 'main' }}
-      
-      - name: 🐍 设置 Python
+
+      - name: 🐍 Python 설정
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      
-      - name: 📦 安装依赖
+
+      - name: 📦 의존성 설치
         run: |
           pip install --upgrade pip
           pip install flake8
-      
-      - name: 📋 检查变更文件
+
+      - name: 📋 변경 파일 확인
         id: check_files
         run: |
           BASE_REF="${{ github.base_ref || 'main' }}"
@@ -122,67 +122,67 @@ jobs:
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "has_py_changes=false" >> $GITHUB_OUTPUT
-            echo "✅ 没有修改 Python 文件" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Python 파일이 수정되지 않았습니다" >> $GITHUB_STEP_SUMMARY
           else
             echo "has_py_changes=true" >> $GITHUB_OUTPUT
             echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
             echo "$CHANGED_FILES" >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
           fi
-      
-      - name: 🐍 Python 语法检查
+
+      - name: 🐍 Python 문법 검사
         id: syntax
         if: steps.check_files.outputs.has_py_changes == 'true'
         run: |
-          echo "## 🐍 语法检查" >> $GITHUB_STEP_SUMMARY
-          echo "检查文件: $CHANGED_FILES"
-          
+          echo "## 🐍 문법 검사" >> $GITHUB_STEP_SUMMARY
+          echo "검사 파일: $CHANGED_FILES"
+
           ERRORS=""
           SYNTAX_OK="true"
           for file in $CHANGED_FILES; do
             if [ -f "$file" ]; then
               if ! python -m py_compile "$file" 2>&1; then
-                ERRORS="$ERRORS\n❌ $file 语法错误"
+                ERRORS="$ERRORS\n❌ $file 문법 오류"
                 SYNTAX_OK="false"
               fi
             fi
           done
-          
+
           echo "syntax_ok=$SYNTAX_OK" >> $GITHUB_OUTPUT
-          
+
           if [ "$SYNTAX_OK" = "false" ]; then
             echo -e "$ERRORS" >> $GITHUB_STEP_SUMMARY
             exit 1
           else
-            echo "✅ 所有文件语法正确" >> $GITHUB_STEP_SUMMARY
+            echo "✅ 모든 파일의 문법이 올바릅니다" >> $GITHUB_STEP_SUMMARY
           fi
-      
-      - name: 🔎 Flake8 检查（严重错误）
+
+      - name: 🔎 Flake8 검사（심각한 오류）
         if: steps.check_files.outputs.has_py_changes == 'true'
         run: |
-          echo "## 🔎 代码质量检查" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔎 코드 품질 검사" >> $GITHUB_STEP_SUMMARY
           RESULT=$(flake8 $CHANGED_FILES --select=E9,F63,F7,F82 --format='%(path)s:%(row)d: %(code)s %(text)s' 2>/dev/null || true)
           if [ -n "$RESULT" ]; then
-            echo "⚠️ 发现以下问题：" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ 다음 문제가 발견되었습니다:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$RESULT" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           else
-            echo "✅ 未发现严重代码问题" >> $GITHUB_STEP_SUMMARY
+            echo "✅ 심각한 코드 문제가 발견되지 않았습니다" >> $GITHUB_STEP_SUMMARY
           fi
-      
-      - name: 📊 变更统计
+
+      - name: 📊 변경 통계
         run: |
           BASE_REF="${{ github.base_ref || 'main' }}"
-          echo "## 📊 变更统计" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 변경 통계" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           STATS=$(git diff --stat origin/$BASE_REF...HEAD 2>/dev/null | tail -1)
           echo "$STATS" >> $GITHUB_STEP_SUMMARY
 
-  # ==================== AI 代码审查（依赖静态检查通过）====================
+  # ==================== AI 코드 리뷰（정적 검사 통과 후）====================
   ai-review:
-    name: 🤖 AI 代码审查
+    name: 🤖 AI 코드 리뷰
     runs-on: ubuntu-latest
     needs: [security-check, auto-check]
     if: |
@@ -190,10 +190,10 @@ jobs:
       needs.auto-check.result == 'success' &&
       needs.auto-check.outputs.has_reviewable_changes == 'true' &&
       vars.ENABLE_AI_REVIEW != 'false'
-    
+
     steps:
-      # 先检出主分支（获取最新的 .github/scripts）
-      - name: 📥 检出主分支脚本
+      # 먼저 main 브랜치 체크아웃（최신 .github/scripts 가져오기）
+      - name: 📥 main 브랜치 스크립트 체크아웃
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
@@ -201,28 +201,28 @@ jobs:
             .github/scripts
           sparse-checkout-cone-mode: false
           path: main-scripts
-      
-      # 再检出 PR 代码（用于 diff 分析）
-      - name: 📥 检出 PR 代码
+
+      # PR 코드 체크아웃（diff 분석용）
+      - name: 📥 PR 코드 체크아웃
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           path: pr-code
-      
-      - name: 🔄 获取 base 分支
+
+      - name: 🔄 base 브랜치 가져오기
         working-directory: pr-code
         run: git fetch origin ${{ github.base_ref || 'main' }}:refs/remotes/origin/${{ github.base_ref || 'main' }}
-      
-      - name: 🐍 设置 Python
+
+      - name: 🐍 Python 설정
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: 📦 安装依赖
+
+      - name: 📦 의존성 설치
         run: pip install google-genai openai httpx
-      
-      - name: 🤖 AI 审查代码变更
+
+      - name: 🤖 AI 코드 변경사항 리뷰
         working-directory: pr-code
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -235,8 +235,8 @@ jobs:
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           AI_REVIEW_STRICT: ${{ vars.AI_REVIEW_STRICT || 'false' }}
         run: python ../main-scripts/.github/scripts/ai_review.py
-      
-      - name: 📤 上传审查结果
+
+      - name: 📤 리뷰 결과 업로드
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -244,16 +244,16 @@ jobs:
           path: pr-code/ai_review_result.txt
           if-no-files-found: ignore
 
-  # ==================== PR 标签自动分类 ====================
+  # ==================== PR 라벨 자동 분류 ====================
   labeler:
-    name: 🏷️ 自动标签
+    name: 🏷️ 자동 라벨
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: 📥 检出代码
+      - name: 📥 코드 체크아웃
         uses: actions/checkout@v4
-      
-      - name: 🏷️ 添加标签
+
+      - name: 🏷️ 라벨 추가
         if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
         with:
@@ -263,12 +263,12 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             const labels = new Set();
-            
+
             for (const file of files) {
               const filename = file.filename.toLowerCase();
-              
+
               if (filename.includes('notification') || filename.includes('webhook')) {
                 labels.add('notification');
               }
@@ -294,11 +294,11 @@ jobs:
                 labels.add('testing');
               }
             }
-            
+
             const additions = files.reduce((sum, f) => sum + f.additions, 0);
             const deletions = files.reduce((sum, f) => sum + f.deletions, 0);
             const totalChanges = additions + deletions;
-            
+
             if (totalChanges < 50) {
               labels.add('size/S');
             } else if (totalChanges < 200) {
@@ -308,7 +308,7 @@ jobs:
             } else {
               labels.add('size/XL');
             }
-            
+
             if (labels.size > 0) {
               try {
                 await github.rest.issues.addLabels({
@@ -323,28 +323,28 @@ jobs:
               }
             }
 
-  # ==================== 自动评论检查结果 ====================
+  # ==================== 자동 검사 결과 댓글 ====================
   comment:
-    name: 💬 审查报告
+    name: 💬 리뷰 리포트
     runs-on: ubuntu-latest
     needs: [security-check, auto-check, ai-review]
     if: always() && github.event_name == 'pull_request_target' && needs.security-check.outputs.safe_to_run == 'true'
-    
+
     steps:
-      - name: 📥 检出代码
+      - name: 📥 코드 체크아웃
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: 📥 下载 AI 审查结果
+
+      - name: 📥 AI 리뷰 결과 다운로드
         uses: actions/download-artifact@v4
         if: needs.ai-review.result == 'success'
         continue-on-error: true
         with:
           name: ai-review-result
           path: .
-      
-      - name: 💬 生成审查报告
+
+      - name: 💬 리뷰 리포트 생성
         env:
           AUTO_CHECK_RESULT: ${{ needs.auto-check.result }}
           AI_REVIEW_RESULT: ${{ needs.ai-review.result }}
@@ -352,79 +352,79 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            
+
             const { data: files } = await github.rest.pulls.listFiles({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number
             });
-            
+
             const additions = files.reduce((sum, f) => sum + f.additions, 0);
             const deletions = files.reduce((sum, f) => sum + f.deletions, 0);
             const changedFiles = files.length;
-            
+
             let aiReview = '';
             try {
               aiReview = fs.readFileSync('ai_review_result.txt', 'utf8');
             } catch (e) {
               console.log('No AI review result found');
             }
-            
+
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
-            
-            const botComment = comments.find(c => 
-              c.user.type === 'Bot' && 
-              c.body.includes('## 🤖 自动审查报告')
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('## 🤖 자동 리뷰 리포트')
             );
-            
-            const checkStatus = process.env.AUTO_CHECK_RESULT === 'success' ? '✅ 通过' : '⚠️ 有问题';
-            const aiStatus = process.env.AI_REVIEW_RESULT === 'success' ? '✅ 已完成' : 
-                            process.env.AI_REVIEW_RESULT === 'skipped' ? '⏭️ 跳过' : '⚠️ 失败';
-            
-            let report = `## 🤖 自动审查报告
 
-            | 项目 | 结果 |
+            const checkStatus = process.env.AUTO_CHECK_RESULT === 'success' ? '✅ 통과' : '⚠️ 문제 있음';
+            const aiStatus = process.env.AI_REVIEW_RESULT === 'success' ? '✅ 완료' :
+                            process.env.AI_REVIEW_RESULT === 'skipped' ? '⏭️ 건너뜀' : '⚠️ 실패';
+
+            let report = `## 🤖 자동 리뷰 리포트
+
+            | 항목 | 결과 |
             |------|------|
-            | 📊 变更文件 | ${changedFiles} 个 |
-            | ➕ 新增行数 | ${additions} 行 |
-            | ➖ 删除行数 | ${deletions} 行 |
-            | 🔍 静态检查 | ${checkStatus} |
-            | 🧠 AI 审查 | ${aiStatus} |
+            | 📊 변경 파일 | ${changedFiles}개 |
+            | ➕ 추가 줄 수 | ${additions}줄 |
+            | ➖ 삭제 줄 수 | ${deletions}줄 |
+            | 🔍 정적 검사 | ${checkStatus} |
+            | 🧠 AI 리뷰 | ${aiStatus} |
 
-            ### 📁 修改的文件
+            ### 📁 수정된 파일
 
             `;
-            
+
             for (const file of files.slice(0, 20)) {
-              const status = file.status === 'added' ? '🆕' : 
+              const status = file.status === 'added' ? '🆕' :
                             file.status === 'removed' ? '🗑️' : '📝';
               report += `- ${status} \`${file.filename}\` (+${file.additions}/-${file.deletions})\n`;
             }
-            
+
             if (files.length > 20) {
-              report += `\n... 还有 ${files.length - 20} 个文件\n`;
+              report += `\n... 외 ${files.length - 20}개 파일\n`;
             }
-            
+
             if (aiReview) {
               report += `
             ---
 
-            ### 🧠 AI 代码审查意见
+            ### 🧠 AI 코드 리뷰 의견
 
             ${aiReview}
             `;
             }
-            
+
             report += `
             ---
 
-            > 💡 **提示**: 请确保代码已通过本地测试，并遵循项目代码规范。
+            > 💡 **안내**: 코드가 로컬 테스트를 통과했는지 확인하고, 프로젝트 코드 규범을 따르세요.
             `;
-            
+
             if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
