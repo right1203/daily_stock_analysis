@@ -57,28 +57,28 @@ class NotificationChannel(Enum):
 
 class ChannelDetector:
     """
-    渠道检测器 - 简化版
-    
-    根据配置直接判断渠道类型（不再需要 URL 解析）
+    채널 감지기 - 간소화 버전
+
+    설정에 따라 직접 채널 유형을 판단합니다 (URL 파싱 불필요)
     """
     
     @staticmethod
     def get_channel_name(channel: NotificationChannel) -> str:
-        """获取渠道中文名称"""
+        """채널 한국어 이름을 반환합니다"""
         names = {
-            NotificationChannel.WECHAT: "企业微信",
-            NotificationChannel.FEISHU: "飞书",
+            NotificationChannel.WECHAT: "WeChat",
+            NotificationChannel.FEISHU: "Feishu",
             NotificationChannel.TELEGRAM: "Telegram",
-            NotificationChannel.EMAIL: "邮件",
+            NotificationChannel.EMAIL: "이메일",
             NotificationChannel.PUSHOVER: "Pushover",
             NotificationChannel.PUSHPLUS: "PushPlus",
             NotificationChannel.SERVERCHAN3: "Server酱3",
-            NotificationChannel.CUSTOM: "自定义Webhook",
-            NotificationChannel.DISCORD: "Discord机器人",
-            NotificationChannel.ASTRBOT: "ASTRBOT机器人",
-            NotificationChannel.UNKNOWN: "未知渠道",
+            NotificationChannel.CUSTOM: "사용자 정의 Webhook",
+            NotificationChannel.DISCORD: "Discord 봇",
+            NotificationChannel.ASTRBOT: "ASTRBOT 봇",
+            NotificationChannel.UNKNOWN: "알 수 없는 채널",
         }
-        return names.get(channel, "未知渠道")
+        return names.get(channel, "알 수 없는 채널")
 
 
 class NotificationService(
