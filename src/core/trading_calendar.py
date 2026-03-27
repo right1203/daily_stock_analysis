@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-交易日历模块 (Issue #373)
+거래 캘린더 모듈 (Issue #373)
 ===================================
 
-职责：
-1. 按市场（A股/港股/美股）判断当日是否为交易日
-2. 按市场时区取“今日”日期，避免服务器 UTC 导致日期错误
-3. 支持 per-stock 过滤：只分析当日开市市场的股票
+역할:
+1. 시장별 (한국/미국) 당일 거래일 여부 판단
+2. 시장 시간대 기준 '오늘' 날짜 취득 (서버 UTC 오류 방지)
+3. per-stock 필터링 지원: 당일 개장된 시장의 종목만 분석
 
-依赖：exchange-calendars（可选，不可用时 fail-open）
+의존성: exchange-calendars (선택 사항, 사용 불가 시 fail-open)
 """
 
 import logging
@@ -30,12 +30,11 @@ except ImportError:
     )
 
 # Market -> exchange code (exchange-calendars)
-MARKET_EXCHANGE = {"cn": "XSHG", "hk": "XHKG", "us": "XNYS"}
+MARKET_EXCHANGE = {"kr": "XKRX", "us": "XNYS"}
 
 # Market -> IANA timezone for "today"
 MARKET_TIMEZONE = {
-    "cn": "Asia/Shanghai",
-    "hk": "Asia/Hong_Kong",
+    "kr": "Asia/Seoul",
     "us": "America/New_York",
 }
 
@@ -45,21 +44,21 @@ def get_market_for_stock(code: str) -> Optional[str]:
     Infer market region for a stock code.
 
     Returns:
-        'cn' | 'hk' | 'us' | None (None = unrecognized, fail-open: treat as open)
+        'kr' | 'us' | None (None = unrecognized, fail-open: treat as open)
     """
     if not code or not isinstance(code, str):
         return None
     code = (code or "").strip().upper()
 
-    from data_provider import is_us_stock_code, is_us_index_code, is_hk_stock_code
+    from data_provider import is_us_stock_code, is_us_index_code
+    from data_provider.kr_index_mapping import is_kr_index_code, is_kr_stock_code
 
+    # Check KR indices first: known KR symbols like KOSPI would otherwise
+    # match the generic US-stock regex (1-5 uppercase letters).
+    if is_kr_index_code(code) or is_kr_stock_code(code):
+        return "kr"
     if is_us_stock_code(code) or is_us_index_code(code):
         return "us"
-    if is_hk_stock_code(code):
-        return "hk"
-    # A-share: 6-digit numeric
-    if code.isdigit() and len(code) == 6:
-        return "cn"
     return None
 
 
@@ -70,7 +69,7 @@ def is_market_open(market: str, check_date: date) -> bool:
     Fail-open: returns True if exchange-calendars unavailable or date out of range.
 
     Args:
-        market: 'cn' | 'hk' | 'us'
+        market: 'kr' | 'us'
         check_date: Date to check
 
     Returns:
@@ -95,10 +94,10 @@ def get_open_markets_today() -> Set[str]:
     Get markets that are open today (by each market's local timezone).
 
     Returns:
-        Set of market keys ('cn', 'hk', 'us') that are trading today
+        Set of market keys ('kr', 'us') that are trading today
     """
     if not _XCALS_AVAILABLE:
-        return {"cn", "hk", "us"}
+        return {"kr", "us"}
     result: Set[str] = set()
     from zoneinfo import ZoneInfo
     for mkt, tz_name in MARKET_TIMEZONE.items():
@@ -120,24 +119,24 @@ def compute_effective_region(
     Compute effective market review region given config and open markets.
 
     Args:
-        config_region: From MARKET_REVIEW_REGION ('cn' | 'us' | 'both')
+        config_region: From MARKET_REVIEW_REGION ('kr' | 'us' | 'both')
         open_markets: Markets open today
 
     Returns:
         None: caller uses config default (check disabled)
         '': all relevant markets closed, skip market review
-        'cn' | 'us' | 'both': effective subset for today
+        'kr' | 'us' | 'both': effective subset for today
     """
-    if config_region not in ("cn", "us", "both"):
-        config_region = "cn"
-    if config_region == "cn":
-        return "cn" if "cn" in open_markets else ""
+    if config_region not in ("kr", "us", "both"):
+        config_region = "kr"
+    if config_region == "kr":
+        return "kr" if "kr" in open_markets else ""
     if config_region == "us":
         return "us" if "us" in open_markets else ""
     # both
     parts = []
-    if "cn" in open_markets:
-        parts.append("cn")
+    if "kr" in open_markets:
+        parts.append("kr")
     if "us" in open_markets:
         parts.append("us")
     if not parts:
