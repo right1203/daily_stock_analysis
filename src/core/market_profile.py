@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-大盘复盘市场区域配置
+대시보드 복기 시장 영역 설정
 
-定义各市场区域的指数、新闻搜索词、Prompt 提示等元数据，
-供 MarketAnalyzer 按 region 切换 A 股/美股复盘行为。
+각 시장 영역의 지수, 뉴스 검색어, 프롬프트 힌트 등 메타데이터를 정의합니다.
+MarketAnalyzer에서 region에 따라 한국/미국 복기 동작을 전환합니다.
 """
 
 from dataclasses import dataclass
@@ -12,30 +12,30 @@ from typing import List
 
 @dataclass
 class MarketProfile:
-    """大盘复盘市场区域配置"""
+    """대시보드 복기 시장 영역 설정"""
 
-    region: str  # "cn" | "us"
-    # 用于判断整体走势的指数代码，cn 用上证 000001，us 用标普 SPX
+    region: str  # "kr" | "us"
+    # 전체 추세 판단에 사용할 지수 코드
     mood_index_code: str
-    # 新闻搜索关键词
+    # 뉴스 검색 키워드
     news_queries: List[str]
-    # 指数点评 Prompt 提示语
+    # 지수 분석 프롬프트 힌트
     prompt_index_hint: str
-    # 市场概况是否包含涨跌家数、涨停跌停（A 股有，美股无）
+    # 시장 개요에 상승/하락 종목 수, 상한가/하한가 포함 여부
     has_market_stats: bool
-    # 市场概况是否包含板块涨跌（A 股有，美股暂无）
+    # 시장 개요에 업종별 등락 포함 여부
     has_sector_rankings: bool
 
 
-CN_PROFILE = MarketProfile(
-    region="cn",
-    mood_index_code="000001",
+KR_PROFILE = MarketProfile(
+    region="kr",
+    mood_index_code="KOSPI",
     news_queries=[
-        "A股 大盘 复盘",
-        "股市 行情 分析",
-        "A股 市场 热点 板块",
+        "코스피 코스닥 시장 동향",
+        "한국 증시 분석",
+        "한국 주식시장 주요 테마",
     ],
-    prompt_index_hint="分析上证、深证、创业板等各指数走势特点",
+    prompt_index_hint="코스피, 코스닥 등 각 지수의 추세 특징을 분석하세요",
     has_market_stats=True,
     has_sector_rankings=True,
 )
@@ -44,18 +44,18 @@ US_PROFILE = MarketProfile(
     region="us",
     mood_index_code="SPX",
     news_queries=[
-        "美股 大盘",
-        "US stock market",
-        "S&P 500 NASDAQ",
+        "US stock market today",
+        "S&P 500 NASDAQ analysis",
+        "Wall Street market recap",
     ],
-    prompt_index_hint="分析标普500、纳斯达克、道指等各指数走势特点",
+    prompt_index_hint="S&P 500, NASDAQ, Dow Jones 등 각 지수의 추세 특징을 분석하세요",
     has_market_stats=False,
     has_sector_rankings=False,
 )
 
 
 def get_profile(region: str) -> MarketProfile:
-    """根据 region 返回对应的 MarketProfile"""
+    """region에 따라 해당 MarketProfile을 반환합니다"""
     if region == "us":
         return US_PROFILE
-    return CN_PROFILE
+    return KR_PROFILE
