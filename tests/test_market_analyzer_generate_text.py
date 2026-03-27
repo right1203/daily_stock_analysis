@@ -76,7 +76,7 @@ class TestAnalyzerGenerateText:
 class TestMarketAnalyzerBypassFix:
     def _make_market_analyzer_with_mock_generate_text(self, return_value="复盘报告"):
         """Return a MarketAnalyzer whose embedded Analyzer.generate_text is mocked."""
-        from src.core.market_profile import CN_PROFILE
+        from src.core.market_profile import KR_PROFILE
         from src.core.market_strategy import get_market_strategy_blueprint
 
         with patch("src.analyzer.get_config") as mock_cfg, \
@@ -90,7 +90,7 @@ class TestMarketAnalyzerBypassFix:
             cfg.deepseek_api_keys = []
             cfg.llm_model_list = []
             cfg.openai_base_url = None
-            cfg.market_review_region = "cn"
+            cfg.market_review_region = "kr"
             mock_cfg.return_value = cfg
             mock_cfg2.return_value = cfg
 
@@ -104,9 +104,9 @@ class TestMarketAnalyzerBypassFix:
 
             ma = MarketAnalyzer.__new__(MarketAnalyzer)
             ma.analyzer = analyzer
-            ma.profile = CN_PROFILE
-            ma.strategy = get_market_strategy_blueprint("cn")
-            ma.region = "cn"
+            ma.profile = KR_PROFILE
+            ma.strategy = get_market_strategy_blueprint("kr")
+            ma.region = "kr"
             return ma
 
     def test_no_access_to_private_model_attribute(self):

@@ -10,13 +10,13 @@ from src.market_analyzer import MarketAnalyzer, MarketOverview
 class TestMarketStrategyBlueprint(unittest.TestCase):
     """Validate CN/US strategy blueprint basics."""
 
-    def test_cn_blueprint_contains_action_framework(self):
-        blueprint = get_market_strategy_blueprint("cn")
+    def test_kr_blueprint_contains_action_framework(self):
+        blueprint = get_market_strategy_blueprint("kr")
         block = blueprint.to_prompt_block()
 
-        self.assertIn("A股市场三段式复盘策略", block)
+        self.assertIn("한국 시장 3단계 복기 전략", block)
         self.assertIn("Action Framework", block)
-        self.assertIn("进攻", block)
+        self.assertIn("공격", block)
 
     def test_us_blueprint_contains_regime_strategy(self):
         blueprint = get_market_strategy_blueprint("us")
@@ -30,12 +30,12 @@ class TestMarketStrategyBlueprint(unittest.TestCase):
 class TestMarketAnalyzerStrategyPrompt(unittest.TestCase):
     """Validate strategy section is injected into prompt/report."""
 
-    def test_cn_prompt_contains_strategy_plan_section(self):
-        analyzer = MarketAnalyzer(region="cn")
+    def test_kr_prompt_contains_strategy_plan_section(self):
+        analyzer = MarketAnalyzer(region="kr")
         prompt = analyzer._build_review_prompt(MarketOverview(date="2026-02-24"), [])
 
         self.assertIn("策略计划", prompt)
-        self.assertIn("A股市场三段式复盘策略", prompt)
+        self.assertIn("한국 시장 3단계 복기 전략", prompt)
 
     def test_us_prompt_contains_strategy_plan_section(self):
         analyzer = MarketAnalyzer(region="us")

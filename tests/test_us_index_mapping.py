@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-data_provider/us_index_mapping.py 的单元测试
+data_provider/us_index_mapping.py 단위 테스트
 """
 import unittest
 import sys
 import os
 
-# 确保能导入 data_provider 模块（直接导入避免加载重量级依赖）
+# data_provider 모듈 임포트 경로 설정 (무거운 의존성 로딩 방지)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data_provider')))
 
 from us_index_mapping import (
@@ -143,25 +143,25 @@ class TestGetUsIndexYfSymbol(unittest.TestCase):
         """SPX should map to ^GSPC"""
         symbol, name = get_us_index_yf_symbol('SPX')
         self.assertEqual(symbol, '^GSPC')
-        self.assertEqual(name, '标普500指数')
+        self.assertEqual(name, 'S&P 500 지수')
 
     def test_dji_mapping(self):
         """DJI should map to ^DJI"""
         symbol, name = get_us_index_yf_symbol('DJI')
         self.assertEqual(symbol, '^DJI')
-        self.assertEqual(name, '道琼斯工业指数')
+        self.assertEqual(name, '다우존스 산업지수')
 
     def test_nasdaq_mapping(self):
         """NASDAQ should map to ^IXIC"""
         symbol, name = get_us_index_yf_symbol('NASDAQ')
         self.assertEqual(symbol, '^IXIC')
-        self.assertEqual(name, '纳斯达克综合指数')
+        self.assertEqual(name, '나스닥 종합지수')
 
     def test_vix_mapping(self):
         """VIX should map to ^VIX"""
         symbol, name = get_us_index_yf_symbol('VIX')
         self.assertEqual(symbol, '^VIX')
-        self.assertEqual(name, 'VIX恐慌指数')
+        self.assertEqual(name, 'VIX 공포지수')
 
     def test_case_insensitive(self):
         """Mapping should be case-insensitive"""
@@ -173,7 +173,7 @@ class TestGetUsIndexYfSymbol(unittest.TestCase):
         """Codes already in YF format should still work"""
         symbol, name = get_us_index_yf_symbol('^GSPC')
         self.assertEqual(symbol, '^GSPC')
-        self.assertEqual(name, '标普500指数')
+        self.assertEqual(name, 'S&P 500 지수')
 
     def test_unknown_code_returns_none(self):
         """Unknown codes should return (None, None)"""
@@ -191,8 +191,8 @@ class TestGetUsIndexYfSymbol(unittest.TestCase):
 class TestUsMappingCompleteness(unittest.TestCase):
     """Tests for US_INDEX_MAPPING completeness"""
 
-    def test_all_indices_have_chinese_names(self):
-        """All indices in mapping should have non-empty Chinese names"""
+    def test_all_indices_have_korean_names(self):
+        """All indices in mapping should have non-empty Korean names"""
         for code, (symbol, name) in US_INDEX_MAPPING.items():
             with self.subTest(code=code):
                 self.assertIsNotNone(name)

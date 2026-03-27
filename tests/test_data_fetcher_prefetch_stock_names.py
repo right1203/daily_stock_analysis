@@ -26,12 +26,12 @@ class TestPrefetchStockNames(unittest.TestCase):
         manager = DataFetcherManager.__new__(DataFetcherManager)
         manager.get_stock_name = MagicMock(return_value="")
 
-        DataFetcherManager.prefetch_stock_names(manager, ["SH600519", "000001"], use_bulk=False)
+        DataFetcherManager.prefetch_stock_names(manager, ["KR005930", "000660"], use_bulk=False)
 
         manager.get_stock_name.assert_has_calls(
             [
-                call("600519", allow_realtime=False),
-                call("000001", allow_realtime=False),
+                call("005930", allow_realtime=False),
+                call("000660", allow_realtime=False),
             ]
         )
 
