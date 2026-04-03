@@ -678,7 +678,7 @@ wheels = [
 [[package]]
 name = "daily-stock-analysis"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "akshare" },
     { name = "baostock" },
@@ -717,13 +717,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "flake8" },
-    { name = "google-genai" },
-    { name = "pytest" },
-]
-
-[package.dev-dependencies]
 dev = [
     { name = "flake8" },
     { name = "google-genai" },
@@ -771,13 +764,6 @@ requires-dist = [
     { name = "yfinance", specifier = ">=0.2.0" },
 ]
 provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "flake8" },
-    { name = "google-genai" },
-    { name = "pytest" },
-]
 
 [[package]]
 name = "datetime"

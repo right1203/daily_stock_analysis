@@ -56,10 +56,6 @@ dev = [
     "google-genai",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [tool.black]
 line-length = 120
 target-version = ['py310', 'py311', 'py312']
@@ -88,10 +84,3 @@ skip = [".git", "__pycache__", ".env", "venv", ".venv"]
 [tool.bandit]
 exclude_dirs = ["tests", "test_*.py"]
 skips = ["B101"]
-
-[tool.uv]
-dev-dependencies = [
-    "flake8",
-    "pytest",
-    "google-genai",
-]
