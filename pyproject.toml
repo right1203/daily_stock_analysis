@@ -1,3 +1,65 @@
+[project]
+name = "daily-stock-analysis"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    # 핵심 의존성
+    "python-dotenv>=1.0.0",
+    "tenacity>=8.2.0",
+    "sqlalchemy>=2.0.0",
+    "schedule>=1.2.0",
+    "exchange-calendars>=4.5.0",
+    # 데이터 소스 (다중 소스 전략, 우선순위 순)
+    "efinance>=0.5.5",
+    "akshare>=1.12.0",
+    "tushare>=1.4.0",
+    "pytdx>=1.72",
+    "baostock>=0.8.0",
+    "yfinance>=0.2.0",
+    "pykrx>=1.0.45",
+    # 飞书
+    "lark-oapi>=1.0.0",
+    # 데이터 처리
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "json-repair>=0.55.1",
+    # AI 분석
+    "litellm>=1.80.10",
+    "tiktoken>=0.8.0,<0.12.0",
+    "openai>=1.0.0",
+    "PyYAML>=6.0",
+    # 검색 엔진
+    "tavily-python>=0.3.0",
+    "google-search-results>=2.4.0",
+    # 네트워크 요청
+    "requests>=2.31.0",
+    "markdown2>=2.4.0",
+    "imgkit>=1.2.0",
+    "fake-useragent>=1.4.0",
+    "httpx[socks]",
+    "dingtalk-stream>=0.24.3",
+    # Discord 봇
+    "discord.py>=2.0.0",
+    # 웹 콘텐츠 추출
+    "newspaper3k>=0.2.8",
+    "lxml-html-clean",
+    # FastAPI 웹 프레임워크
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "pytest",
+    "google-genai",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.black]
 line-length = 120
 target-version = ['py310', 'py311', 'py312']
@@ -25,4 +87,11 @@ skip = [".git", "__pycache__", ".env", "venv", ".venv"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "test_*.py"]
-skips = ["B101"]  # assert 语句在测试中是允许的
+skips = ["B101"]
+
+[tool.uv]
+dev-dependencies = [
+    "flake8",
+    "pytest",
+    "google-genai",
+]

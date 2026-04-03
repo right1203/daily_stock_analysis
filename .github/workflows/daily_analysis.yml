@@ -42,15 +42,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Python 환경 설정
-        uses: actions/setup-python@v5
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: 의존성 설치
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync
 
       - name: 필수 디렉토리 생성
         run: |
@@ -212,11 +209,11 @@ jobs:
 
           # 분석 실행
           if [ "$MODE" = "market-only" ]; then
-            python main.py --market-review $FORCE_RUN_ARG
+            uv run python main.py --market-review $FORCE_RUN_ARG
           elif [ "$MODE" = "stocks-only" ]; then
-            python main.py --no-market-review $FORCE_RUN_ARG
+            uv run python main.py --no-market-review $FORCE_RUN_ARG
           else
-            python main.py $FORCE_RUN_ARG
+            uv run python main.py $FORCE_RUN_ARG
           fi
 
       - name: 분석 리포트 업로드

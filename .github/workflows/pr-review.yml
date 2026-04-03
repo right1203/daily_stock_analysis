@@ -97,15 +97,12 @@ jobs:
         run: git fetch origin ${{ github.base_ref || 'main' }}:refs/remotes/origin/${{ github.base_ref || 'main' }}
 
       - name: 🐍 Python 설정
-        uses: actions/setup-python@v5
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.11'
-          cache: 'pip'
 
       - name: 📦 의존성 설치
-        run: |
-          pip install --upgrade pip
-          pip install flake8
+        run: uv sync --extra dev
 
       - name: 📋 변경 파일 확인
         id: check_files
@@ -141,7 +138,7 @@ jobs:
           SYNTAX_OK="true"
           for file in $CHANGED_FILES; do
             if [ -f "$file" ]; then
-              if ! python -m py_compile "$file" 2>&1; then
+              if ! uv run python -m py_compile "$file" 2>&1; then
                 ERRORS="$ERRORS\n❌ $file 문법 오류"
                 SYNTAX_OK="false"
               fi
@@ -161,7 +158,7 @@ jobs:
         if: steps.check_files.outputs.has_py_changes == 'true'
         run: |
           echo "## 🔎 코드 품질 검사" >> $GITHUB_STEP_SUMMARY
-          RESULT=$(flake8 $CHANGED_FILES --select=E9,F63,F7,F82 --format='%(path)s:%(row)d: %(code)s %(text)s' 2>/dev/null || true)
+          RESULT=$(uv run flake8 $CHANGED_FILES --select=E9,F63,F7,F82 --format='%(path)s:%(row)d: %(code)s %(text)s' 2>/dev/null || true)
           if [ -n "$RESULT" ]; then
             echo "⚠️ 다음 문제가 발견되었습니다:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
@@ -215,12 +212,12 @@ jobs:
         run: git fetch origin ${{ github.base_ref || 'main' }}:refs/remotes/origin/${{ github.base_ref || 'main' }}
 
       - name: 🐍 Python 설정
-        uses: actions/setup-python@v5
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.11'
 
       - name: 📦 의존성 설치
-        run: pip install google-genai openai httpx
+        run: uv pip install google-genai openai httpx
 
       - name: 🤖 AI 코드 변경사항 리뷰
         working-directory: pr-code
@@ -234,7 +231,7 @@ jobs:
           OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           AI_REVIEW_STRICT: ${{ vars.AI_REVIEW_STRICT || 'false' }}
-        run: python ../main-scripts/.github/scripts/ai_review.py
+        run: uv run python ../main-scripts/.github/scripts/ai_review.py
 
       - name: 📤 리뷰 결과 업로드
         uses: actions/upload-artifact@v4
