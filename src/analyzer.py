@@ -86,115 +86,115 @@ def get_stock_name_multi_source(
     4. 기본 이름 반환 (종목+코드)
 
     Args:
-        stock_code: 股票代码
-        context: 分析上下文（可选）
-        data_manager: DataFetcherManager 实例（可选）
+        stock_code: 종목 코드
+        context: 분석 컨텍스트 (선택)
+        data_manager: DataFetcherManager 인스턴스 (선택)
 
     Returns:
-        股票中文名称
+        종목 이름
     """
-    # 1. 从上下文获取（实时行情数据）
+    # 1. 컨텍스트에서 조회 (실시간 데이터)
     if context:
-        # 优先从 stock_name 字段获取
+        # 우선 stock_name 필드에서 조회
         if context.get('stock_name'):
             name = context['stock_name']
-            if name and not name.startswith('股票'):
+            if name and not name.startswith('종목'):
                 return name
 
-        # 其次从 realtime 数据获取
+        # 다음으로 realtime 데이터에서 조회
         if 'realtime' in context and context['realtime'].get('name'):
             return context['realtime']['name']
 
-    # 2. 从静态映射表获取
+    # 2. 정적 매핑 테이블에서 조회
     if stock_code in STOCK_NAME_MAP:
         return STOCK_NAME_MAP[stock_code]
 
-    # 3. 从数据源获取
+    # 3. 데이터 소스에서 조회
     if data_manager is None:
         try:
             from data_provider.base import DataFetcherManager
             data_manager = DataFetcherManager()
         except Exception as e:
-            logger.debug(f"无法初始化 DataFetcherManager: {e}")
+            logger.debug(f"DataFetcherManager 초기화 불가: {e}")
 
     if data_manager:
         try:
             name = data_manager.get_stock_name(stock_code)
             if name:
-                # 更新缓存
+                # 캐시 업데이트
                 STOCK_NAME_MAP[stock_code] = name
                 return name
         except Exception as e:
-            logger.debug(f"从数据源获取股票名称失败: {e}")
+            logger.debug(f"데이터 소스에서 종목 이름 조회 실패: {e}")
 
-    # 4. 返回默认名称
-    return f'股票{stock_code}'
+    # 4. 기본 이름 반환
+    return f'종목{stock_code}'
 
 
 @dataclass
 class AnalysisResult:
     """
-    AI 分析结果数据类 - 决策仪表盘版
+    AI 분석 결과 데이터 클래스 - 의사결정 대시보드 버전
 
-    封装 Gemini 返回的分析结果，包含决策仪表盘和详细分析
+    Gemini 반환 분석 결과를 캡슐화, 의사결정 대시보드 및 상세 분석 포함
     """
     code: str
     name: str
 
-    # ========== 核心指标 ==========
-    sentiment_score: int  # 综合评分 0-100 (>70强烈看多, >60看多, 40-60震荡, <40看空)
-    trend_prediction: str  # 趋势预测：强烈看多/看多/震荡/看空/强烈看空
-    operation_advice: str  # 操作建议：买入/加仓/持有/减仓/卖出/观望
-    decision_type: str = "hold"  # 决策类型：buy/hold/sell（用于统计）
-    confidence_level: str = "中"  # 置信度：高/中/低
+    # ========== 핵심 지표 ==========
+    sentiment_score: int  # 종합 점수 0-100 (>70 강력 매수, >60 매수, 40-60 횡보, <40 매도)
+    trend_prediction: str  # 추세 예측: 강력 매수/매수/횡보/매도/강력 매도
+    operation_advice: str  # 운용 제안: 매수/추가매수/보유/비중축소/매도/관망
+    decision_type: str = "hold"  # 결정 유형: buy/hold/sell (통계용)
+    confidence_level: str = "보통"  # 신뢰도: 높음/보통/낮음
 
-    # ========== 决策仪表盘 (新增) ==========
-    dashboard: Optional[Dict[str, Any]] = None  # 完整的决策仪表盘数据
+    # ========== 의사결정 대시보드 ==========
+    dashboard: Optional[Dict[str, Any]] = None  # 전체 의사결정 대시보드 데이터
 
-    # ========== 走势分析 ==========
-    trend_analysis: str = ""  # 走势形态分析（支撑位、压力位、趋势线等）
-    short_term_outlook: str = ""  # 短期展望（1-3日）
-    medium_term_outlook: str = ""  # 中期展望（1-2周）
+    # ========== 추세 분석 ==========
+    trend_analysis: str = ""  # 추세 형태 분석 (지지선, 저항선, 추세선 등)
+    short_term_outlook: str = ""  # 단기 전망 (1-3일)
+    medium_term_outlook: str = ""  # 중기 전망 (1-2주)
 
-    # ========== 技术面分析 ==========
-    technical_analysis: str = ""  # 技术指标综合分析
-    ma_analysis: str = ""  # 均线分析（多头/空头排列，金叉/死叉等）
-    volume_analysis: str = ""  # 量能分析（放量/缩量，主力动向等）
-    pattern_analysis: str = ""  # K线形态分析
+    # ========== 기술적 분석 ==========
+    technical_analysis: str = ""  # 기술 지표 종합 분석
+    ma_analysis: str = ""  # 이동평균선 분석 (정배열/역배열, 골든크로스/데드크로스 등)
+    volume_analysis: str = ""  # 거래량 분석 (거래량 증가/감소, 주력 동향 등)
+    pattern_analysis: str = ""  # 캔들 패턴 분석
 
-    # ========== 基本面分析 ==========
-    fundamental_analysis: str = ""  # 基本面综合分析
-    sector_position: str = ""  # 板块地位和行业趋势
-    company_highlights: str = ""  # 公司亮点/风险点
+    # ========== 기본적 분석 ==========
+    fundamental_analysis: str = ""  # 기본적 분석 종합
+    sector_position: str = ""  # 업종 지위 및 산업 추세
+    company_highlights: str = ""  # 기업 하이라이트/리스크
 
-    # ========== 情绪面/消息面分析 ==========
-    news_summary: str = ""  # 近期重要新闻/公告摘要
-    market_sentiment: str = ""  # 市场情绪分析
-    hot_topics: str = ""  # 相关热点话题
+    # ========== 심리/뉴스 분석 ==========
+    news_summary: str = ""  # 최근 주요 뉴스/공시 요약
+    market_sentiment: str = ""  # 시장 심리 분석
+    hot_topics: str = ""  # 관련 이슈
 
-    # ========== 综合分析 ==========
-    analysis_summary: str = ""  # 综合分析摘要
-    key_points: str = ""  # 核心看点（3-5个要点）
-    risk_warning: str = ""  # 风险提示
-    buy_reason: str = ""  # 买入/卖出理由
+    # ========== 종합 분석 ==========
+    analysis_summary: str = ""  # 종합 분석 요약
+    key_points: str = ""  # 핵심 포인트 (3-5개)
+    risk_warning: str = ""  # 리스크 경고
+    buy_reason: str = ""  # 매수/매도 근거
 
-    # ========== 元数据 ==========
-    market_snapshot: Optional[Dict[str, Any]] = None  # 当日行情快照（展示用）
-    raw_response: Optional[str] = None  # 原始响应（调试用）
-    search_performed: bool = False  # 是否执行了联网搜索
-    data_sources: str = ""  # 数据来源说明
+    # ========== 메타데이터 ==========
+    market_snapshot: Optional[Dict[str, Any]] = None  # 당일 시장 스냅샷 (표시용)
+    raw_response: Optional[str] = None  # 원시 응답 (디버그용)
+    search_performed: bool = False  # 인터넷 검색 실행 여부
+    data_sources: str = ""  # 데이터 출처 설명
     success: bool = True
     error_message: Optional[str] = None
 
-    # ========== 价格数据（分析时快照）==========
-    current_price: Optional[float] = None  # 分析时的股价
-    change_pct: Optional[float] = None     # 分析时的涨跌幅(%)
+    # ========== 가격 데이터 (분석 시 스냅샷) ==========
+    current_price: Optional[float] = None  # 분석 시 주가
+    change_pct: Optional[float] = None     # 분석 시 등락률(%)
 
-    # ========== 模型标记（Issue #528）==========
-    model_used: Optional[str] = None  # 分析使用的 LLM 模型（完整名，如 gemini/gemini-2.0-flash）
+    # ========== 모델 표기 (Issue #528) ==========
+    model_used: Optional[str] = None  # 분석에 사용된 LLM 모델 (전체 이름, 예: gemini/gemini-2.0-flash)
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
+        """딕셔너리로 변환"""
         return {
             'code': self.code,
             'name': self.name,
@@ -203,7 +203,7 @@ class AnalysisResult:
             'operation_advice': self.operation_advice,
             'decision_type': self.decision_type,
             'confidence_level': self.confidence_level,
-            'dashboard': self.dashboard,  # 决策仪表盘数据
+            'dashboard': self.dashboard,  # 의사결정 대시보드 데이터
             'trend_analysis': self.trend_analysis,
             'short_term_outlook': self.short_term_outlook,
             'medium_term_outlook': self.medium_term_outlook,
@@ -231,13 +231,13 @@ class AnalysisResult:
         }
 
     def get_core_conclusion(self) -> str:
-        """获取核心结论（一句话）"""
+        """핵심 결론 조회 (한 줄)"""
         if self.dashboard and 'core_conclusion' in self.dashboard:
             return self.dashboard['core_conclusion'].get('one_sentence', self.analysis_summary)
         return self.analysis_summary
 
     def get_position_advice(self, has_position: bool = False) -> str:
-        """获取持仓建议"""
+        """보유 포지션 조언 조회"""
         if self.dashboard and 'core_conclusion' in self.dashboard:
             pos_advice = self.dashboard['core_conclusion'].get('position_advice', {})
             if has_position:
@@ -246,40 +246,40 @@ class AnalysisResult:
         return self.operation_advice
 
     def get_sniper_points(self) -> Dict[str, str]:
-        """获取狙击点位"""
+        """매매 포인트 조회"""
         if self.dashboard and 'battle_plan' in self.dashboard:
             return self.dashboard['battle_plan'].get('sniper_points', {})
         return {}
 
     def get_checklist(self) -> List[str]:
-        """获取检查清单"""
+        """체크리스트 조회"""
         if self.dashboard and 'battle_plan' in self.dashboard:
             return self.dashboard['battle_plan'].get('action_checklist', [])
         return []
 
     def get_risk_alerts(self) -> List[str]:
-        """获取风险警报"""
+        """리스크 경고 조회"""
         if self.dashboard and 'intelligence' in self.dashboard:
             return self.dashboard['intelligence'].get('risk_alerts', [])
         return []
 
     def get_emoji(self) -> str:
-        """根据操作建议返回对应 emoji"""
+        """운용 제안에 대응하는 emoji 반환"""
         emoji_map = {
-            '买入': '🟢',
-            '加仓': '🟢',
-            '强烈买入': '💚',
-            '持有': '🟡',
-            '观望': '⚪',
-            '减仓': '🟠',
-            '卖出': '🔴',
-            '强烈卖出': '❌',
+            '매수': '🟢',
+            '추가매수': '🟢',
+            '강력 매수': '💚',
+            '보유': '🟡',
+            '관망': '⚪',
+            '비중축소': '🟠',
+            '매도': '🔴',
+            '강력 매도': '❌',
         }
         advice = self.operation_advice or ''
         # Direct match first
         if advice in emoji_map:
             return emoji_map[advice]
-        # Handle compound advice like "卖出/观望" — use the first part
+        # Handle compound advice like "매도/관망" — use the first part
         for part in advice.replace('/', '|').split('|'):
             part = part.strip()
             if part in emoji_map:
@@ -300,30 +300,30 @@ class AnalysisResult:
             return '🔴'
 
     def get_confidence_stars(self) -> str:
-        """返回置信度星级"""
-        star_map = {'高': '⭐⭐⭐', '中': '⭐⭐', '低': '⭐'}
+        """신뢰도 별점 반환"""
+        star_map = {'높음': '⭐⭐⭐', '보통': '⭐⭐', '낮음': '⭐'}
         return star_map.get(self.confidence_level, '⭐⭐')
 
 
 class GeminiAnalyzer:
     """
-    Gemini AI 分析器
+    Gemini AI 분석기
 
-    职责：
-    1. 调用 Google Gemini API 进行股票分析
-    2. 结合预先搜索的新闻和技术面数据生成分析报告
-    3. 解析 AI 返回的 JSON 格式结果
+    역할:
+    1. Google Gemini API를 호출하여 주식 분석 수행
+    2. 사전 검색된 뉴스 및 기술적 데이터를 결합하여 분석 리포트 생성
+    3. AI 반환 JSON 형식 결과 파싱
 
-    使用方式：
+    사용 방법:
         analyzer = GeminiAnalyzer()
         result = analyzer.analyze(context, news_context)
     """
 
     # ========================================
-    # 系统提示词 - 决策仪表盘 v2.0
+    # 시스템 프롬프트 - 의사결정 대시보드 v2.0
     # ========================================
-    # 输出格式升级：从简单信号升级为决策仪表盘
-    # 核心模块：核心结论 + 数据透视 + 舆情情报 + 作战计划
+    # 출력 형식 업그레이드: 단순 신호 → 의사결정 대시보드
+    # 핵심 모듈: 핵심 결론 + 데이터 투시 + 뉴스 정보 + 전략 계획
     # ========================================
 
     SYSTEM_PROMPT = """당신은 추세 매매에 특화된 주식 투자 분석가이며, 전문적인 【의사결정 대시보드】 분석 리포트를 생성합니다.
@@ -700,257 +700,257 @@ class GeminiAnalyzer:
         news_context: Optional[str] = None
     ) -> AnalysisResult:
         """
-        分析单只股票
-        
-        流程：
-        1. 格式化输入数据（技术面 + 新闻）
-        2. 调用 Gemini API（带重试和模型切换）
-        3. 解析 JSON 响应
-        4. 返回结构化结果
-        
+        단일 종목 분석
+
+        처리 흐름:
+        1. 입력 데이터 포맷 (기술적 분석 + 뉴스)
+        2. Gemini API 호출 (재시도 및 모델 전환 포함)
+        3. JSON 응답 파싱
+        4. 구조화된 결과 반환
+
         Args:
-            context: 从 storage.get_analysis_context() 获取的上下文数据
-            news_context: 预先搜索的新闻内容（可选）
-            
+            context: storage.get_analysis_context()에서 가져온 컨텍스트 데이터
+            news_context: 사전 검색된 뉴스 내용 (선택)
+
         Returns:
-            AnalysisResult 对象
+            AnalysisResult 객체
         """
         code = context.get('code', 'Unknown')
         config = get_config()
-        
-        # 请求前增加延时（防止连续请求触发限流）
+
+        # 요청 전 지연 추가 (연속 요청 시 속도 제한 방지)
         request_delay = config.gemini_request_delay
         if request_delay > 0:
-            logger.debug(f"[LLM] 请求前等待 {request_delay:.1f} 秒...")
+            logger.debug(f"[LLM] 요청 전 {request_delay:.1f}초 대기...")
             time.sleep(request_delay)
-        
-        # 优先从上下文获取股票名称（由 main.py 传入）
+
+        # 컨텍스트에서 종목 이름 우선 조회 (main.py에서 전달)
         name = context.get('stock_name')
-        if not name or name.startswith('股票'):
-            # 备选：从 realtime 中获取
+        if not name or name.startswith('종목'):
+            # 대안: realtime에서 조회
             if 'realtime' in context and context['realtime'].get('name'):
                 name = context['realtime']['name']
             else:
-                # 最后从映射表获取
-                name = STOCK_NAME_MAP.get(code, f'股票{code}')
-        
-        # 如果模型不可用，返回默认结果
+                # 마지막으로 매핑 테이블에서 조회
+                name = STOCK_NAME_MAP.get(code, f'종목{code}')
+
+        # 모델 사용 불가 시 기본 결과 반환
         if not self.is_available():
             return AnalysisResult(
                 code=code,
                 name=name,
                 sentiment_score=50,
-                trend_prediction='震荡',
-                operation_advice='持有',
-                confidence_level='低',
-                analysis_summary='AI 分析功能未启用（未配置 API Key）',
-                risk_warning='请配置 LLM API Key（GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY）后重试',
+                trend_prediction='횡보',
+                operation_advice='보유',
+                confidence_level='낮음',
+                analysis_summary='AI 분석 기능 미활성화 (API Key 미설정)',
+                risk_warning='LLM API Key (GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY)를 설정 후 재시도하세요',
                 success=False,
-                error_message='LLM API Key 未配置',
+                error_message='LLM API Key 미설정',
                 model_used=None,
             )
-        
+
         try:
-            # 格式化输入（包含技术面数据和新闻）
+            # 입력 포맷 (기술적 데이터 + 뉴스 포함)
             prompt = self._format_prompt(context, name, news_context)
-            
+
             config = get_config()
             model_name = config.litellm_model or "unknown"
-            logger.info(f"========== AI 分析 {name}({code}) ==========")
-            logger.info(f"[LLM配置] 模型: {model_name}")
-            logger.info(f"[LLM配置] Prompt 长度: {len(prompt)} 字符")
-            logger.info(f"[LLM配置] 是否包含新闻: {'是' if news_context else '否'}")
+            logger.info(f"========== AI 분석 {name}({code}) ==========")
+            logger.info(f"[LLM 설정] 모델: {model_name}")
+            logger.info(f"[LLM 설정] 프롬프트 길이: {len(prompt)}자")
+            logger.info(f"[LLM 설정] 뉴스 포함 여부: {'예' if news_context else '아니오'}")
 
-            # 记录完整 prompt 到日志（INFO级别记录摘要，DEBUG记录完整）
+            # 로그에 전체 프롬프트 기록 (INFO 레벨: 요약, DEBUG: 전체)
             prompt_preview = prompt[:500] + "..." if len(prompt) > 500 else prompt
-            logger.info(f"[LLM Prompt 预览]\n{prompt_preview}")
-            logger.debug(f"=== 完整 Prompt ({len(prompt)}字符) ===\n{prompt}\n=== End Prompt ===")
+            logger.info(f"[LLM 프롬프트 미리보기]\n{prompt_preview}")
+            logger.debug(f"=== 전체 프롬프트 ({len(prompt)}자) ===\n{prompt}\n=== 프롬프트 끝 ===")
 
-            # 设置生成配置
+            # 생성 설정
             generation_config = {
                 "temperature": config.gemini_temperature,
                 "max_output_tokens": 8192,
             }
 
-            logger.info(f"[LLM调用] 开始调用 {model_name}...")
+            logger.info(f"[LLM 호출] {model_name} 호출 시작...")
 
-            # 使用 litellm 调用
+            # litellm으로 호출
             start_time = time.time()
             response_text, model_used = self._call_litellm(prompt, generation_config)
             elapsed = time.time() - start_time
 
-            # 记录响应信息
-            logger.info(f"[LLM返回] {model_name} 响应成功, 耗时 {elapsed:.2f}s, 响应长度 {len(response_text)} 字符")
-            
-            # 记录响应预览（INFO级别）和完整响应（DEBUG级别）
+            # 응답 정보 기록
+            logger.info(f"[LLM 응답] {model_name} 응답 성공, 소요 {elapsed:.2f}초, 응답 길이 {len(response_text)}자")
+
+            # 응답 미리보기 기록 (INFO) 및 전체 응답 (DEBUG)
             response_preview = response_text[:300] + "..." if len(response_text) > 300 else response_text
-            logger.info(f"[LLM返回 预览]\n{response_preview}")
-            logger.debug(f"=== {model_name} 完整响应 ({len(response_text)}字符) ===\n{response_text}\n=== End Response ===")
-            
-            # 解析响应
+            logger.info(f"[LLM 응답 미리보기]\n{response_preview}")
+            logger.debug(f"=== {model_name} 전체 응답 ({len(response_text)}자) ===\n{response_text}\n=== 응답 끝 ===")
+
+            # 응답 파싱
             result = self._parse_response(response_text, code, name)
             result.raw_response = response_text
             result.search_performed = bool(news_context)
             result.market_snapshot = self._build_market_snapshot(context)
             result.model_used = model_used
 
-            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
-            
+            logger.info(f"[LLM 파싱] {name}({code}) 분석 완료: {result.trend_prediction}, 점수 {result.sentiment_score}")
+
             return result
-            
+
         except Exception as e:
-            logger.error(f"AI 分析 {name}({code}) 失败: {e}")
+            logger.error(f"AI 분석 {name}({code}) 실패: {e}")
             return AnalysisResult(
                 code=code,
                 name=name,
                 sentiment_score=50,
-                trend_prediction='震荡',
-                operation_advice='持有',
-                confidence_level='低',
-                analysis_summary=f'分析过程出错: {str(e)[:100]}',
-                risk_warning='分析失败，请稍后重试或手动分析',
+                trend_prediction='횡보',
+                operation_advice='보유',
+                confidence_level='낮음',
+                analysis_summary=f'분석 중 오류 발생: {str(e)[:100]}',
+                risk_warning='분석 실패. 나중에 다시 시도하거나 수동으로 분석하세요',
                 success=False,
                 error_message=str(e),
                 model_used=None,
             )
     
     def _format_prompt(
-        self, 
-        context: Dict[str, Any], 
+        self,
+        context: Dict[str, Any],
         name: str,
         news_context: Optional[str] = None
     ) -> str:
         """
-        格式化分析提示词（决策仪表盘 v2.0）
-        
-        包含：技术指标、实时行情（量比/换手率）、筹码分布、趋势分析、新闻
-        
+        분석 프롬프트 생성 (의사결정 대시보드 v2.0)
+
+        포함 항목: 기술 지표, 실시간 시세(거래량비율/회전율), 수급 분포, 추세 분석, 뉴스
+
         Args:
-            context: 技术面数据上下文（包含增强数据）
-            name: 股票名称（默认值，可能被上下文覆盖）
-            news_context: 预先搜索的新闻内容
+            context: 기술적 데이터 컨텍스트 (강화 데이터 포함)
+            name:    종목명 (기본값, 컨텍스트에서 덮어쓸 수 있음)
+            news_context: 사전 검색된 뉴스 내용
         """
         code = context.get('code', 'Unknown')
-        
-        # 优先使用上下文中的股票名称（从 realtime_quote 获取）
-        stock_name = context.get('stock_name', name)
-        if not stock_name or stock_name == f'股票{code}':
-            stock_name = STOCK_NAME_MAP.get(code, f'股票{code}')
-            
-        today = context.get('today', {})
-        
-        # ========== 构建决策仪表盘格式的输入 ==========
-        prompt = f"""# 决策仪表盘分析请求
 
-## 📊 股票基础信息
-| 项目 | 数据 |
+        # 컨텍스트의 종목명 우선 사용 (realtime_quote에서 가져옴)
+        stock_name = context.get('stock_name', name)
+        if not stock_name or stock_name == f'주식{code}':
+            stock_name = STOCK_NAME_MAP.get(code, f'종목{code}')
+
+        today = context.get('today', {})
+
+        # ========== 의사결정 대시보드 형식 프롬프트 구성 ==========
+        prompt = f"""# 의사결정 대시보드 분석 요청
+
+## 📊 종목 기본 정보
+| 항목 | 데이터 |
 |------|------|
-| 股票代码 | **{code}** |
-| 股票名称 | **{stock_name}** |
-| 分析日期 | {context.get('date', '未知')} |
+| 종목 코드 | **{code}** |
+| 종목명 | **{stock_name}** |
+| 분석 날짜 | {context.get('date', '알 수 없음')} |
 
 ---
 
-## 📈 技术面数据
+## 📈 기술적 데이터
 
-### 今日行情
-| 指标 | 数值 |
+### 당일 시세
+| 지표 | 수치 |
 |------|------|
-| 收盘价 | {today.get('close', 'N/A')} 元 |
-| 开盘价 | {today.get('open', 'N/A')} 元 |
-| 最高价 | {today.get('high', 'N/A')} 元 |
-| 最低价 | {today.get('low', 'N/A')} 元 |
-| 涨跌幅 | {today.get('pct_chg', 'N/A')}% |
-| 成交量 | {self._format_volume(today.get('volume'))} |
-| 成交额 | {self._format_amount(today.get('amount'))} |
+| 종가 | {today.get('close', 'N/A')} |
+| 시가 | {today.get('open', 'N/A')} |
+| 고가 | {today.get('high', 'N/A')} |
+| 저가 | {today.get('low', 'N/A')} |
+| 등락률 | {today.get('pct_chg', 'N/A')}% |
+| 거래량 | {self._format_volume(today.get('volume'))} |
+| 거래대금 | {self._format_amount(today.get('amount'))} |
 
-### 均线系统（关键判断指标）
-| 均线 | 数值 | 说明 |
+### 이동평균선 시스템 (핵심 판단 지표)
+| 이평선 | 수치 | 설명 |
 |------|------|------|
-| MA5 | {today.get('ma5', 'N/A')} | 短期趋势线 |
-| MA10 | {today.get('ma10', 'N/A')} | 中短期趋势线 |
-| MA20 | {today.get('ma20', 'N/A')} | 中期趋势线 |
-| 均线形态 | {context.get('ma_status', '未知')} | 多头/空头/缠绕 |
+| MA5 | {today.get('ma5', 'N/A')} | 단기 추세선 |
+| MA10 | {today.get('ma10', 'N/A')} | 단중기 추세선 |
+| MA20 | {today.get('ma20', 'N/A')} | 중기 추세선 |
+| 이평선 형태 | {context.get('ma_status', '알 수 없음')} | 정배열/역배열/혼조 |
 """
-        
-        # 添加实时行情数据（量比、换手率等）
+
+        # 실시간 시세 강화 데이터 추가 (거래량비율, 회전율 등)
         if 'realtime' in context:
             rt = context['realtime']
             prompt += f"""
-### 实时行情增强数据
-| 指标 | 数值 | 解读 |
+### 실시간 시세 강화 데이터
+| 지표 | 수치 | 해석 |
 |------|------|------|
-| 当前价格 | {rt.get('price', 'N/A')} 元 | |
-| **量比** | **{rt.get('volume_ratio', 'N/A')}** | {rt.get('volume_ratio_desc', '')} |
-| **换手率** | **{rt.get('turnover_rate', 'N/A')}%** | |
-| 市盈率(动态) | {rt.get('pe_ratio', 'N/A')} | |
-| 市净率 | {rt.get('pb_ratio', 'N/A')} | |
-| 总市值 | {self._format_amount(rt.get('total_mv'))} | |
-| 流通市值 | {self._format_amount(rt.get('circ_mv'))} | |
-| 60日涨跌幅 | {rt.get('change_60d', 'N/A')}% | 中期表现 |
+| 현재가 | {rt.get('price', 'N/A')} | |
+| **거래량비율** | **{rt.get('volume_ratio', 'N/A')}** | {rt.get('volume_ratio_desc', '')} |
+| **회전율** | **{rt.get('turnover_rate', 'N/A')}%** | |
+| PER(동적) | {rt.get('pe_ratio', 'N/A')} | |
+| PBR | {rt.get('pb_ratio', 'N/A')} | |
+| 시가총액 | {self._format_amount(rt.get('total_mv'))} | |
+| 유통시가총액 | {self._format_amount(rt.get('circ_mv'))} | |
+| 60일 등락률 | {rt.get('change_60d', 'N/A')}% | 중기 성과 |
 """
-        
-        # 添加筹码分布数据
+
+        # 수급 분포 데이터 추가
         if 'chip' in context:
             chip = context['chip']
             profit_ratio = chip.get('profit_ratio', 0)
             prompt += f"""
-### 筹码分布数据（效率指标）
-| 指标 | 数值 | 健康标准 |
+### 수급 분포 데이터 (효율 지표)
+| 지표 | 수치 | 건강 기준 |
 |------|------|----------|
-| **获利比例** | **{profit_ratio:.1%}** | 70-90%时警惕 |
-| 平均成本 | {chip.get('avg_cost', 'N/A')} 元 | 现价应高于5-15% |
-| 90%筹码集中度 | {chip.get('concentration_90', 0):.2%} | <15%为集中 |
-| 70%筹码集中度 | {chip.get('concentration_70', 0):.2%} | |
-| 筹码状态 | {chip.get('chip_status', '未知')} | |
+| **수익 비율** | **{profit_ratio:.1%}** | 70-90% 구간 주의 |
+| 평균 매수단가 | {chip.get('avg_cost', 'N/A')} | 현재가가 5-15% 이상이어야 함 |
+| 90% 수급 집중도 | {chip.get('concentration_90', 0):.2%} | <15% 집중 |
+| 70% 수급 집중도 | {chip.get('concentration_70', 0):.2%} | |
+| 수급 상태 | {chip.get('chip_status', '알 수 없음')} | |
 """
-        
-        # 添加趋势分析结果（基于交易理念的预判）
+
+        # 추세 분석 결과 추가 (매매 원칙 기반 사전 판단)
         if 'trend_analysis' in context:
             trend = context['trend_analysis']
-            bias_warning = "🚨 超过5%，严禁追高！" if trend.get('bias_ma5', 0) > 5 else "✅ 安全范围"
+            bias_warning = "🚨 5% 초과 — 고점 추격 금지!" if trend.get('bias_ma5', 0) > 5 else "✅ 안전 범위"
             prompt += f"""
-### 趋势分析预判（基于交易理念）
-| 指标 | 数值 | 判定 |
+### 추세 분석 사전 판단 (매매 원칙 기반)
+| 지표 | 수치 | 판정 |
 |------|------|------|
-| 趋势状态 | {trend.get('trend_status', '未知')} | |
-| 均线排列 | {trend.get('ma_alignment', '未知')} | MA5>MA10>MA20为多头 |
-| 趋势强度 | {trend.get('trend_strength', 0)}/100 | |
-| **乖离率(MA5)** | **{trend.get('bias_ma5', 0):+.2f}%** | {bias_warning} |
-| 乖离率(MA10) | {trend.get('bias_ma10', 0):+.2f}% | |
-| 量能状态 | {trend.get('volume_status', '未知')} | {trend.get('volume_trend', '')} |
-| 系统信号 | {trend.get('buy_signal', '未知')} | |
-| 系统评分 | {trend.get('signal_score', 0)}/100 | |
+| 추세 상태 | {trend.get('trend_status', '알 수 없음')} | |
+| 이평선 배열 | {trend.get('ma_alignment', '알 수 없음')} | MA5>MA10>MA20 정배열 |
+| 추세 강도 | {trend.get('trend_strength', 0)}/100 | |
+| **이격률(MA5)** | **{trend.get('bias_ma5', 0):+.2f}%** | {bias_warning} |
+| 이격률(MA10) | {trend.get('bias_ma10', 0):+.2f}% | |
+| 거래량 상태 | {trend.get('volume_status', '알 수 없음')} | {trend.get('volume_trend', '')} |
+| 시스템 신호 | {trend.get('buy_signal', '알 수 없음')} | |
+| 시스템 점수 | {trend.get('signal_score', 0)}/100 | |
 
-#### 系统分析理由
-**买入理由**：
-{chr(10).join('- ' + r for r in trend.get('signal_reasons', ['无'])) if trend.get('signal_reasons') else '- 无'}
+#### 시스템 분석 근거
+**매수 근거:**
+{chr(10).join('- ' + r for r in trend.get('signal_reasons', ['없음'])) if trend.get('signal_reasons') else '- 없음'}
 
-**风险因素**：
-{chr(10).join('- ' + r for r in trend.get('risk_factors', ['无'])) if trend.get('risk_factors') else '- 无'}
+**리스크 요인:**
+{chr(10).join('- ' + r for r in trend.get('risk_factors', ['없음'])) if trend.get('risk_factors') else '- 없음'}
 """
-        
-        # 添加昨日对比数据
+
+        # 전일 대비 데이터 추가
         if 'yesterday' in context:
             volume_change = context.get('volume_change_ratio', 'N/A')
             prompt += f"""
-### 量价变化
-- 成交量较昨日变化：{volume_change}倍
-- 价格较昨日变化：{context.get('price_change_ratio', 'N/A')}%
+### 거래량/가격 변화
+- 거래량 전일 대비: {volume_change}배
+- 가격 전일 대비: {context.get('price_change_ratio', 'N/A')}%
 """
-        
-        # 添加新闻搜索结果（重点区域）
+
+        # 뉴스 검색 결과 추가
         prompt += """
 ---
 
-## 📰 舆情情报
+## 📰 뉴스 및 시장 정보
 """
         if news_context:
             prompt += f"""
-以下是 **{stock_name}({code})** 近7日的新闻搜索结果，请重点提取：
-1. 🚨 **风险警报**：减持、处罚、利空
-2. 🎯 **利好催化**：业绩、合同、政策
-3. 📊 **业绩预期**：年报预告、业绩快报
+아래는 **{stock_name}({code})** 최근 7일 뉴스 검색 결과입니다. 다음 항목을 중점 추출하세요:
+1. 🚨 **리스크 경보**: 대량 매도, 제재, 악재
+2. 🎯 **호재 촉매**: 실적, 계약, 정책
+3. 📊 **실적 전망**: 사전 공시, 실적 속보
 
 ```
 {news_context}
@@ -958,82 +958,84 @@ class GeminiAnalyzer:
 """
         else:
             prompt += """
-未搜索到该股票近期的相关新闻。请主要依据技术面数据进行分析。
+해당 종목의 최근 뉴스를 찾을 수 없습니다. 기술적 데이터를 중심으로 분석하세요.
 """
 
-        # 注入缺失数据警告
+        # 데이터 누락 경고 주입
         if context.get('data_missing'):
             prompt += """
-⚠️ **数据缺失警告**
-由于接口限制，当前无法获取完整的实时行情和技术指标数据。
-请 **忽略上述表格中的 N/A 数据**，重点依据 **【📰 舆情情报】** 中的新闻进行基本面和情绪面分析。
-在回答技术面问题（如均线、乖离率）时，请直接说明“数据缺失，无法判断”，**严禁编造数据**。
+⚠️ **데이터 누락 경고**
+인터페이스 제한으로 인해 전체 실시간 시세 및 기술 지표 데이터를 가져올 수 없습니다.
+위 표의 **N/A 데이터는 무시**하고, **【📰 뉴스 및 시장 정보】** 의 뉴스를 중심으로 기본적·심리적 분석을 수행하세요.
+기술적 질문(이평선, 이격률 등)에 대해서는 "데이터 누락으로 판단 불가"라고 직접 명시하고, **데이터를 임의로 생성하지 마세요**.
 """
 
-        # 明确的输出要求
+        # 출력 요구사항 명시
         prompt += f"""
 ---
 
-## ✅ 分析任务
+## ✅ 분석 작업
 
-请为 **{stock_name}({code})** 生成【决策仪表盘】，严格按照 JSON 格式输出。
+**{stock_name}({code})** 에 대한 【의사결정 대시보드】를 JSON 형식으로 출력하세요.
 """
         if context.get('is_index_etf'):
             prompt += """
-> ⚠️ **指数/ETF 分析约束**：该标的为指数跟踪型 ETF 或市场指数。
-> - 风险分析仅关注：**指数走势、跟踪误差、市场流动性**
-> - 严禁将基金公司的诉讼、声誉、高管变动纳入风险警报
-> - 业绩预期基于**指数成分股整体表现**，而非基金公司财报
-> - `risk_alerts` 中不得出现基金管理人相关的公司经营风险
+> ⚠️ **지수/ETF 분석 제약**: 이 종목은 지수 추종 ETF 또는 시장 지수입니다.
+> - 리스크 분석은 **지수 흐름, 추적 오차, 시장 유동성**만 다루세요.
+> - 운용사의 소송, 평판, 임원 변경은 리스크 경보에 포함하지 마세요.
+> - 실적 전망은 **지수 구성종목 전체 성과** 기준이며, 운용사 재무제표가 아닙니다.
+> - `risk_alerts`에 펀드 운용사 관련 경영 리스크를 포함하지 마세요.
 
 """
         prompt += f"""
-### ⚠️ 重要：输出正确的股票名称格式
-正确的股票名称格式为“股票名称（股票代码）”，例如“贵州茅台（600519）”。
-如果上方显示的股票名称为"股票{code}"或不正确，请在分析开头**明确输出该股票的正确中文全称**。
+### ⚠️ 중요: 올바른 종목명 형식 출력
+올바른 종목명 형식은 "종목명（종목 코드）"입니다. 예: "삼성전자（005930）".
+위에 표시된 종목명이 "종목{code}" 또는 올바르지 않다면, 분석 시작 부분에 **올바른 한국어 전체 이름을 명확히 출력**하세요.
 
-### 重点关注（必须明确回答）：
-1. ❓ 是否满足 MA5>MA10>MA20 多头排列？
-2. ❓ 当前乖离率是否在安全范围内（<5%）？—— 超过5%必须标注"严禁追高"
-3. ❓ 量能是否配合（缩量回调/放量突破）？
-4. ❓ 筹码结构是否健康？
-5. ❓ 消息面有无重大利空？（减持、处罚、业绩变脸等）
+### 중점 확인 사항 (반드시 명확히 답변):
+1. ❓ MA5>MA10>MA20 정배열 충족 여부?
+2. ❓ 현재 이격률이 안전 범위(<5%) 이내인지? — 5% 초과 시 반드시 "고점 추격 금지" 표시
+3. ❓ 거래량 뒷받침 여부 (거래량 감소 조정 / 거래량 증가 돌파)?
+4. ❓ 수급 구조 건전성?
+5. ❓ 뉴스에 중대 악재 있는지? (대량 매도, 제재, 실적 악화 등)
 
-### 决策仪表盘要求：
-- **股票名称**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
-- **核心结论**：一句话说清该买/该卖/该等
-- **持仓分类建议**：空仓者怎么做 vs 持仓者怎么做
-- **具体狙击点位**：买入价、止损价、目标价（精确到分）
-- **检查清单**：每项用 ✅/⚠️/❌ 标记
+### 의사결정 대시보드 요구사항:
+- **종목명**: 올바른 한국어 전체 이름 출력 (예: "종목005930" 불가, "삼성전자" 가능)
+- **핵심 결론**: 매수/매도/대기 여부를 한 문장으로
+- **포지션 분류 제안**: 미보유자 대응 vs 보유자 대응
+- **구체적 저격 포인트**: 매수가, 손절가, 목표가 (정확한 수치)
+- **확인 체크리스트**: 각 항목에 ✅/⚠️/❌ 표시
 
-请输出完整的 JSON 格式决策仪表盘。"""
-        
+JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
+
         return prompt
-    
+
     def _format_volume(self, volume: Optional[float]) -> str:
-        """格式化成交量显示"""
+        """거래량 포맷 출력"""
         if volume is None:
             return 'N/A'
         if volume >= 1e8:
-            return f"{volume / 1e8:.2f} 亿股"
+            return f"{volume / 1e8:.2f} 억주"
         elif volume >= 1e4:
-            return f"{volume / 1e4:.2f} 万股"
+            return f"{volume / 1e4:.2f} 만주"
         else:
-            return f"{volume:.0f} 股"
-    
+            return f"{volume:.0f} 주"
+
     def _format_amount(self, amount: Optional[float]) -> str:
-        """格式化成交额显示"""
+        """거래대금 포맷 출력"""
         if amount is None:
             return 'N/A'
-        if amount >= 1e8:
-            return f"{amount / 1e8:.2f} 亿元"
+        if amount >= 1e12:
+            return f"{amount / 1e12:.2f} 조원"
+        elif amount >= 1e8:
+            return f"{amount / 1e8:.2f} 억원"
         elif amount >= 1e4:
-            return f"{amount / 1e4:.2f} 万元"
+            return f"{amount / 1e4:.2f} 만원"
         else:
-            return f"{amount:.0f} 元"
+            return f"{amount:.0f} 원"
 
     def _format_percent(self, value: Optional[float]) -> str:
-        """格式化百分比显示"""
+        """형식化百分比표시"""
         if value is None:
             return 'N/A'
         try:
@@ -1042,7 +1044,7 @@ class GeminiAnalyzer:
             return 'N/A'
 
     def _format_price(self, value: Optional[float]) -> str:
-        """格式化价格显示"""
+        """형식化가격표시"""
         if value is None:
             return 'N/A'
         try:
@@ -1051,7 +1053,7 @@ class GeminiAnalyzer:
             return 'N/A'
 
     def _build_market_snapshot(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """构建当日行情快照（展示用）"""
+        """构建当日시세快照（展示用）"""
         today = context.get('today', {}) or {}
         realtime = context.get('realtime', {}) or {}
         yesterday = context.get('yesterday', {}) or {}
@@ -1075,7 +1077,7 @@ class GeminiAnalyzer:
                 change_amount = None
 
         snapshot = {
-            "date": context.get('date', '未知'),
+            "date": context.get('date', '알 수 없음'),
             "close": self._format_price(close),
             "open": self._format_price(today.get('open')),
             "high": self._format_price(high),
@@ -1105,47 +1107,47 @@ class GeminiAnalyzer:
         name: str
     ) -> AnalysisResult:
         """
-        解析 Gemini 响应（决策仪表盘版）
+        파싱 Gemini 응답（决策仪表盘版）
         
-        尝试从响应中提取 JSON 格式的分析结果，包含 dashboard 字段
-        如果解析失败，尝试智能提取或返回默认结果
+        尝试从응답中提取 JSON 형식的분석결과，包含 dashboard 字段
+        如果파싱실패，尝试지능형提取或반환기본값결과
         """
         try:
-            # 清理响应文本：移除 markdown 代码块标记
+            # 清理응답텍스트：移除 markdown 코드块标记
             cleaned_text = response_text
             if '```json' in cleaned_text:
                 cleaned_text = cleaned_text.replace('```json', '').replace('```', '')
             elif '```' in cleaned_text:
                 cleaned_text = cleaned_text.replace('```', '')
             
-            # 尝试找到 JSON 内容
+            # 尝试找到 JSON 내용
             json_start = cleaned_text.find('{')
             json_end = cleaned_text.rfind('}') + 1
             
             if json_start >= 0 and json_end > json_start:
                 json_str = cleaned_text[json_start:json_end]
                 
-                # 尝试修复常见的 JSON 问题
+                # 尝试수정常见的 JSON 问题
                 json_str = self._fix_json_string(json_str)
                 
                 data = json.loads(json_str)
                 
-                # 提取 dashboard 数据
+                # 提取 dashboard 데이터
                 dashboard = data.get('dashboard', None)
 
-                # 优先使用 AI 返回的股票名称（如果原名称无效或包含代码）
+                # 优先사용 AI 반환的종목명（如果原이름无效或包含코드）
                 ai_stock_name = data.get('stock_name')
-                if ai_stock_name and (name.startswith('股票') or name == code or 'Unknown' in name):
+                if ai_stock_name and (name.startswith('주식') or name == code or 'Unknown' in name):
                     name = ai_stock_name
 
-                # 解析所有字段，使用默认值防止缺失
-                # 解析 decision_type，如果没有则根据 operation_advice 推断
+                # 파싱所有字段，사용기본값防止缺失
+                # 파싱 decision_type，如果没有则기준으로 operation_advice 推断
                 decision_type = data.get('decision_type', '')
                 if not decision_type:
-                    op = data.get('operation_advice', '持有')
-                    if op in ['买入', '加仓', '强烈买入']:
+                    op = data.get('operation_advice', '보유')
+                    if op in ['매수', '加仓', '强烈매수']:
                         decision_type = 'buy'
-                    elif op in ['卖出', '减仓', '强烈卖出']:
+                    elif op in ['매도', '减仓', '强烈매도']:
                         decision_type = 'sell'
                     else:
                         decision_type = 'hold'
@@ -1156,12 +1158,12 @@ class GeminiAnalyzer:
                     # 核心指标
                     sentiment_score=int(data.get('sentiment_score', 50)),
                     trend_prediction=data.get('trend_prediction', '震荡'),
-                    operation_advice=data.get('operation_advice', '持有'),
+                    operation_advice=data.get('operation_advice', '보유'),
                     decision_type=decision_type,
                     confidence_level=data.get('confidence_level', '中'),
                     # 决策仪表盘
                     dashboard=dashboard,
-                    # 走势分析
+                    # 走势분석
                     trend_analysis=data.get('trend_analysis', ''),
                     short_term_outlook=data.get('short_term_outlook', ''),
                     medium_term_outlook=data.get('medium_term_outlook', ''),
@@ -1174,38 +1176,38 @@ class GeminiAnalyzer:
                     fundamental_analysis=data.get('fundamental_analysis', ''),
                     sector_position=data.get('sector_position', ''),
                     company_highlights=data.get('company_highlights', ''),
-                    # 情绪面/消息面
+                    # 情绪面/메시지面
                     news_summary=data.get('news_summary', ''),
                     market_sentiment=data.get('market_sentiment', ''),
                     hot_topics=data.get('hot_topics', ''),
                     # 综合
-                    analysis_summary=data.get('analysis_summary', '分析完成'),
+                    analysis_summary=data.get('analysis_summary', '분석완료'),
                     key_points=data.get('key_points', ''),
                     risk_warning=data.get('risk_warning', ''),
                     buy_reason=data.get('buy_reason', ''),
-                    # 元数据
+                    # 元데이터
                     search_performed=data.get('search_performed', False),
-                    data_sources=data.get('data_sources', '技术面数据'),
+                    data_sources=data.get('data_sources', '技术面데이터'),
                     success=True,
                 )
             else:
-                # 没有找到 JSON，尝试从纯文本中提取信息
-                logger.warning(f"无法从响应中提取 JSON，使用原始文本分析")
+                # 没有找到 JSON，尝试从纯텍스트中提取정보
+                logger.warning(f"无法从응답中提取 JSON，사용原始텍스트분석")
                 return self._parse_text_response(response_text, code, name)
                 
         except json.JSONDecodeError as e:
-            logger.warning(f"JSON 解析失败: {e}，尝试从文本提取")
+            logger.warning(f"JSON 파싱실패: {e}，尝试从텍스트提取")
             return self._parse_text_response(response_text, code, name)
     
     def _fix_json_string(self, json_str: str) -> str:
-        """修复常见的 JSON 格式问题"""
+        """수정常见的 JSON 형식问题"""
         import re
         
         # 移除注释
         json_str = re.sub(r'//.*?\n', '\n', json_str)
         json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
         
-        # 修复尾随逗号
+        # 수정尾随逗号
         json_str = re.sub(r',\s*}', '}', json_str)
         json_str = re.sub(r',\s*]', ']', json_str)
         
@@ -1223,36 +1225,36 @@ class GeminiAnalyzer:
         code: str, 
         name: str
     ) -> AnalysisResult:
-        """从纯文本响应中尽可能提取分析信息"""
-        # 尝试识别关键词来判断情绪
+        """从纯텍스트응답中尽可能提取분석정보"""
+        # 尝试识别关键词来판단情绪
         sentiment_score = 50
         trend = '震荡'
-        advice = '持有'
+        advice = '보유'
         
         text_lower = response_text.lower()
         
         # 简单的情绪识别
-        positive_keywords = ['看多', '买入', '上涨', '突破', '强势', '利好', '加仓', 'bullish', 'buy']
-        negative_keywords = ['看空', '卖出', '下跌', '跌破', '弱势', '利空', '减仓', 'bearish', 'sell']
+        positive_keywords = ['강세', '매수', '上涨', '突破', '强势', '利好', '加仓', 'bullish', 'buy']
+        negative_keywords = ['看空', '매도', '下跌', '跌破', '弱势', '利空', '减仓', 'bearish', 'sell']
         
         positive_count = sum(1 for kw in positive_keywords if kw in text_lower)
         negative_count = sum(1 for kw in negative_keywords if kw in text_lower)
         
         if positive_count > negative_count + 1:
             sentiment_score = 65
-            trend = '看多'
-            advice = '买入'
+            trend = '강세'
+            advice = '매수'
             decision_type = 'buy'
         elif negative_count > positive_count + 1:
             sentiment_score = 35
             trend = '看空'
-            advice = '卖出'
+            advice = '매도'
             decision_type = 'sell'
         else:
             decision_type = 'hold'
         
-        # 截取前500字符作为摘要
-        summary = response_text[:500] if response_text else '无分析结果'
+        # 截取前500字符作为요약
+        summary = response_text[:500] if response_text else '无분석결과'
         
         return AnalysisResult(
             code=code,
@@ -1263,8 +1265,8 @@ class GeminiAnalyzer:
             decision_type=decision_type,
             confidence_level='低',
             analysis_summary=summary,
-            key_points='JSON解析失败，仅供参考',
-            risk_warning='分析结果可能不准确，建议结合其他信息判断',
+            key_points='JSON파싱실패，仅供参考',
+            risk_warning='분석결과可能不准确，建议结合其他정보판단',
             raw_response=response_text,
             success=True,
         )
@@ -1275,16 +1277,16 @@ class GeminiAnalyzer:
         delay_between: float = 2.0
     ) -> List[AnalysisResult]:
         """
-        批量分析多只股票
+        일괄여러 종목 분석
         
-        注意：为避免 API 速率限制，每次分析之间会有延迟
+        주의：为방지 API 速率限制，每次분석之间会有延迟
         
         Args:
-            contexts: 上下文数据列表
-            delay_between: 每次分析之间的延迟（秒）
+            contexts: 上下文데이터목록
+            delay_between: 每次분석之间的延迟（秒）
             
         Returns:
-            AnalysisResult 列表
+            AnalysisResult 목록
         """
         results = []
         
@@ -1299,17 +1301,17 @@ class GeminiAnalyzer:
         return results
 
 
-# 便捷函数
+# 도우미 함수
 def get_analyzer() -> GeminiAnalyzer:
-    """获取 LLM 分析器实例"""
+    """가져오기 LLM 분석器인스턴스"""
     return GeminiAnalyzer()
 
 
 if __name__ == "__main__":
-    # 测试代码
+    # 테스트코드
     logging.basicConfig(level=logging.DEBUG)
     
-    # 模拟上下文数据
+    # 模拟上下文데이터
     test_context = {
         'code': '600519',
         'date': '2026-01-09',
@@ -1326,7 +1328,7 @@ if __name__ == "__main__":
             'ma20': 1790.0,
             'volume_ratio': 1.2,
         },
-        'ma_status': '多头排列 📈',
+        'ma_status': '정배열 📈',
         'volume_change_ratio': 1.3,
         'price_change_ratio': 1.5,
     }
@@ -1334,8 +1336,8 @@ if __name__ == "__main__":
     analyzer = GeminiAnalyzer()
     
     if analyzer.is_available():
-        print("=== AI 分析测试 ===")
+        print("=== AI 분석테스트 ===")
         result = analyzer.analyze(test_context)
-        print(f"分析结果: {result.to_dict()}")
+        print(f"분석결과: {result.to_dict()}")
     else:
-        print("Gemini API 未配置，跳过测试")
+        print("Gemini API 未설정，跳过테스트")
