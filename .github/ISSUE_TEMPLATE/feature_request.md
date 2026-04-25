@@ -1,6 +1,6 @@
 ---
-name: 功能建议
-about: 提出新功能或改进建议
+name: 功能권장 조치
+about: 提出新功能或개선권장 조치
 title: '[Feature] '
 labels: enhancement
 assignees: ''
@@ -20,5 +20,5 @@ assignees: ''
 
 ## 相关信息
 - 是否愿意贡献代码实现: [是/否]
-- 参考链接/文档:
-- 其他说明:
+- 参考链接/문서:
+- 其他설명:

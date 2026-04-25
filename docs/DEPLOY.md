@@ -1,21 +1,21 @@
-# 🚀 部署指南
+# 🚀 배포指南
 
-本文档介绍如何将 A股自选股智能分析系统部署到服务器。
+本문서介绍如何将 A股自选股智能分析系统배포到服务器。
 
-## 📋 部署方案对比
+## 📋 배포方案对比
 
 | 方案 | 优点 | 缺点 | 推荐场景 |
 |------|------|------|----------|
-| **Docker Compose** ⭐ | 一键部署、环境隔离、易迁移、易升级 | 需要安装 Docker | **推荐**：大多数场景 |
-| **直接部署** | 简单直接、无额外依赖 | 环境依赖、迁移麻烦 | 临时测试 |
+| **Docker Compose** ⭐ | 一键배포、环境隔离、易迁移、易升级 | 需要安装 Docker | **推荐**：大多数场景 |
+| **直接배포** | 简单直接、无额外依赖 | 环境依赖、迁移麻烦 | 临时测试 |
 | **Systemd 服务** | 系统级管理、开机自启 | 配置繁琐 | 长期稳定运行 |
 | **Supervisor** | 进程管理、自动重启 | 需要额外安装 | 多进程管理 |
 
-**结论：推荐使用 Docker Compose，迁移最快最方便！**
+**결론：推荐使用 Docker Compose，迁移最快最方便！**
 
 ---
 
-## 🐳 方案一：Docker Compose 部署（推荐）
+## 🐳 方案一：Docker Compose 배포（推荐）
 
 ### 1. 安装 Docker
 
@@ -64,7 +64,7 @@ docker-compose -f ./docker/docker-compose.yml down
 # 重启服务
 docker-compose -f ./docker/docker-compose.yml restart
 
-# 更新代码后重新部署
+# 업데이트代码后重新배포
 git pull
 docker-compose -f ./docker/docker-compose.yml build --no-cache
 docker-compose -f ./docker/docker-compose.yml up -d
@@ -85,7 +85,7 @@ docker-compose -f ./docker/docker-compose.yml exec stock-analyzer python main.py
 
 ---
 
-## 🖥️ 方案二：直接部署
+## 🖥️ 方案二：直接배포
 
 ### 1. 安装 Python 环境
 
@@ -178,11 +178,11 @@ journalctl -u stock-analyzer -f
 
 ---
 
-## ⚙️ 配置说明
+## ⚙️ 配置설명
 
 ### 必须配置项
 
-| 配置项 | 说明 | 获取方式 |
+| 配置项 | 설명 | 获取方式 |
 |--------|------|----------|
 | `GEMINI_API_KEY` | AI 分析必需 | [Google AI Studio](https://aistudio.google.com/) |
 | `STOCK_LIST` | 自选股列表 | 逗号分隔的股票代码 |
@@ -190,7 +190,7 @@ journalctl -u stock-analyzer -f
 
 ### 可选配置项
 
-| 配置项 | 默认值 | 说明 |
+| 配置项 | 기본값 | 설명 |
 |--------|--------|------|
 | `SCHEDULE_ENABLED` | `false` | 是否启用定时任务 |
 | `SCHEDULE_TIME` | `18:00` | 每日执行时间 |
@@ -212,7 +212,7 @@ environment:
   - https_proxy=http://your-proxy:port
 ```
 
-### 直接部署方式
+### 直接배포方式
 
 编辑 `main.py` 顶部：
 ```python
@@ -230,7 +230,7 @@ os.environ["https_proxy"] = "http://your-proxy:port"
 # Docker 方式
 docker-compose -f ./docker/docker-compose.yml logs -f --tail=100
 
-# 直接部署
+# 直接배포
 tail -f /opt/stock-analyzer/logs/stock_analysis_*.log
 ```
 
@@ -256,7 +256,7 @@ find /opt/stock-analyzer/reports -mtime +30 -delete
 
 ---
 
-## ❓ 常见问题
+## ❓ 자주 묻는 질문
 
 ### 1. Docker 构建失败
 
@@ -297,7 +297,7 @@ deploy:
 cd /opt/stock-analyzer
 tar -czvf stock-analyzer-backup.tar.gz .env data/ logs/ reports/
 
-# 目标服务器：部署
+# 目标服务器：배포
 mkdir -p /opt/stock-analyzer
 cd /opt/stock-analyzer
 git clone <your-repo-url> .
@@ -307,7 +307,7 @@ docker-compose -f ./docker/docker-compose.yml up -d
 
 ---
 
-## ☁️ 方案四：GitHub Actions 部署（免服务器）
+## ☁️ 方案四：GitHub Actions 배포（免服务器）
 
 **最简单的方案！** 无需服务器，利用 GitHub 免费计算资源。
 
@@ -322,7 +322,7 @@ docker-compose -f ./docker/docker-compose.yml up -d
 - ⚠️ 定时可能有几分钟延迟
 - ⚠️ 无法提供 HTTP API
 
-### 部署步骤
+### 배포步骤
 
 #### 1. 创建 GitHub 仓库
 
@@ -346,7 +346,7 @@ git push -u origin main
 
 添加以下 Secrets：
 
-| Secret 名称 | 说明 | 必填 |
+| Secret 名称 | 설명 | 필수 |
 |------------|------|------|
 | `GEMINI_API_KEY` | Gemini AI API Key | ✅ |
 | `WECHAT_WEBHOOK_URL` | 企业微信机器人 Webhook | 可选* |
@@ -393,7 +393,7 @@ git push
 - 点击具体的运行记录查看详细日志
 - 分析报告会作为 Artifact 保存 30 天
 
-### 定时说明
+### 定时설명
 
 默认配置：**周一到周五，北京时间 18:00** 自动执行
 
@@ -405,7 +405,7 @@ schedule:
 ```
 
 常用 cron 示例：
-| 表达式 | 说明 |
+| 表达式 | 설명 |
 |--------|------|
 | `'0 10 * * 1-5'` | 周一到周五 18:00（北京时间） |
 | `'30 7 * * 1-5'` | 周一到周五 15:30（北京时间） |
@@ -418,12 +418,12 @@ schedule:
 
 方法二：直接修改代码后推送：
 ```bash
-# 修改 .env.example 或在代码中设置默认值
+# 修改 .env.example 或在代码中设置기본값
 git commit -am "Update stock list"
 git push
 ```
 
-### 常见问题
+### 자주 묻는 질문
 
 **Q: 为什么定时任务没有执行？**
 A: GitHub Actions 定时任务可能有 5-15 分钟延迟，且仅在仓库有活动时才触发。长时间无 commit 可能导致 workflow 被禁用。
@@ -436,5 +436,5 @@ A: 每次运行约 2-5 分钟，一个月 22 个工作日 = 44-110 分钟，远�
 
 ---
 
-**祝部署顺利！🎉**
+**祝배포顺利！🎉**
 

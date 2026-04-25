@@ -1,8 +1,8 @@
-# 📖 完整配置与部署指南
+# 📖 完整配置与배포指南
 
-本文档包含 A股智能分析系统的完整配置说明，适合需要高级功能或特殊部署方式的用户。
+本문서包含 A股智能分析系统的完整配置설명，适合需要高级功能或特殊배포方式的用户。
 
-> 💡 快速上手请参考 [README.md](../README.md)，本文档为进阶配置。
+> 💡 빠른 시작请参考 [README.md](../README.md)，本문서为进阶配置。
 
 ## � 项目结构
 
@@ -19,7 +19,7 @@ daily_stock_analysis/
 ├── api/                 # FastAPI 后端服务
 ├── apps/dsa-web/        # React 前端
 ├── docker/              # Docker 配置
-├── docs/                # 项目文档
+├── docs/                # 项目문서
 └── .github/workflows/   # GitHub Actions
 ```
 
@@ -28,7 +28,7 @@ daily_stock_analysis/
 - [项目结构](#项目结构)
 - [GitHub Actions 详细配置](#github-actions-详细配置)
 - [环境变量完整列表](#环境变量完整列表)
-- [Docker 部署](#docker-部署)
+- [Docker 배포](#docker-배포)
 - [本地运行详细配置](#本地运行详细配置)
 - [定时任务配置](#定时任务配置)
 - [通知渠道详细配置](#通知渠道详细配置)
@@ -55,7 +55,7 @@ daily_stock_analysis/
 
 #### AI 模型配置（二选一）
 
-| Secret 名称 | 说明 | 必填 |
+| Secret 名称 | 설명 | 필수 |
 |------------|------|:----:|
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/) 获取免费 Key | ✅* |
 | `OPENAI_API_KEY` | OpenAI 兼容 API Key（支持 DeepSeek、通义千问等） | 可选 |
@@ -66,7 +66,7 @@ daily_stock_analysis/
 
 #### 通知渠道配置（可同时配置多个，全部推送）
 
-| Secret 名称 | 说明 | 必填 |
+| Secret 名称 | 설명 | 필수 |
 |------------|------|:----:|
 | `WECHAT_WEBHOOK_URL` | 企业微信 Webhook URL | 可选 |
 | `FEISHU_WEBHOOK_URL` | 飞书 Webhook URL | 可选 |
@@ -84,13 +84,13 @@ daily_stock_analysis/
 | `SERVERCHAN3_SENDKEY` | Server酱³ Sendkey（[获取地址](https://sc3.ft07.com/)，手机APP推送服务） | 可选 |
 | `CUSTOM_WEBHOOK_URLS` | 自定义 Webhook（支持钉钉等，多个用逗号分隔） | 可选 |
 | `CUSTOM_WEBHOOK_BEARER_TOKEN` | 自定义 Webhook 的 Bearer Token（用于需要认证的 Webhook） | 可选 |
-| `WEBHOOK_VERIFY_SSL` | Webhook HTTPS 证书校验（默认 true）。设为 false 可支持自签名证书。警告：关闭有严重安全风险（MITM），仅限可信内网 | 可选 |
+| `WEBHOOK_VERIFY_SSL` | Webhook HTTPS 证书校验（默认 true）。设为 false 可支持自签名证书。警告：닫기有严重安全风险（MITM），仅限可信内网 | 可选 |
 
 > *注：至少配置一个渠道，配置多个则同时推送
 
 #### 推送行为配置
 
-| Secret 名称 | 说明 | 必填 |
+| Secret 名称 | 설명 | 필수 |
 |------------|------|:----:|
 | `SINGLE_STOCK_NOTIFY` | 单股推送模式：设为 `true` 则每分析完一只股票立即推送 | 可选 |
 | `REPORT_TYPE` | 报告类型：`simple`(精简) 或 `full`(完整)，Docker环境推荐设为 `full` | 可选 |
@@ -104,7 +104,7 @@ daily_stock_analysis/
 
 #### 其他配置
 
-| Secret 名称 | 说明 | 必填 |
+| Secret 名称 | 설명 | 필수 |
 |------------|------|:----:|
 | `STOCK_LIST` | 自选股代码，如 `600519,300750,002594` | ✅ |
 | `TAVILY_API_KEYS` | [Tavily](https://tavily.com/) 搜索 API（新闻搜索） | 推荐 |
@@ -119,7 +119,7 @@ daily_stock_analysis/
 
 1. **AI 模型**：`AIHUBMIX_KEY`（[AIHubmix](https://aihubmix.com/?aff=CfMq)，一 Key 多模型）、`GEMINI_API_KEY` 或 `OPENAI_API_KEY`
 2. **通知渠道**：至少配置一个，如 `WECHAT_WEBHOOK_URL` 或 `EMAIL_SENDER` + `EMAIL_PASSWORD`
-3. **股票列表**：`STOCK_LIST`（必填）
+3. **股票列表**：`STOCK_LIST`（필수）
 4. **搜索 API**：`TAVILY_API_KEYS`（强烈推荐，用于新闻搜索）
 
 > 💡 配置完以上 4 项即可开始使用！
@@ -148,9 +148,9 @@ daily_stock_analysis/
 
 ### AI 模型配置
 
-> 完整说明见 [LLM 配置指南](LLM_CONFIG_GUIDE.md)（三层配置、渠道模式、Vision、Agent、排错）。
+> 完整설명见 [LLM 配置指南](LLM_CONFIG_GUIDE.md)（三层配置、渠道模式、Vision、Agent、排错）。
 
-| 变量名 | 说明 | 默认值 | 必填 |
+| 变量名 | 설명 | 기본값 | 필수 |
 |--------|------|--------|:----:|
 | `LITELLM_MODEL` | 主模型，格式 `provider/model`（如 `gemini/gemini-2.5-flash`），推荐优先使用 | - | 否 |
 | `LITELLM_FALLBACK_MODELS` | 备选模型，逗号分隔 | - | 否 |
@@ -172,7 +172,7 @@ daily_stock_analysis/
 
 ### 通知渠道配置
 
-| 变量名 | 说明 | 必填 |
+| 变量名 | 설명 | 필수 |
 |--------|------|:----:|
 | `WECHAT_WEBHOOK_URL` | 企业微信机器人 Webhook URL | 可选 |
 | `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook URL | 可选 |
@@ -190,21 +190,21 @@ daily_stock_analysis/
 | `STOCK_GROUP_N` / `EMAIL_GROUP_N` | 股票分组发往不同邮箱（Issue #268），如 `STOCK_GROUP_1=600519,300750` 与 `EMAIL_GROUP_1=user1@example.com` 配对 | 可选 |
 | `CUSTOM_WEBHOOK_URLS` | 自定义 Webhook（逗号分隔） | 可选 |
 | `CUSTOM_WEBHOOK_BEARER_TOKEN` | 自定义 Webhook Bearer Token | 可选 |
-| `WEBHOOK_VERIFY_SSL` | Webhook HTTPS 证书校验（默认 true）。设为 false 可支持自签名。警告：关闭有严重安全风险 | 可选 |
+| `WEBHOOK_VERIFY_SSL` | Webhook HTTPS 证书校验（默认 true）。设为 false 可支持自签名。警告：닫기有严重安全风险 | 可选 |
 | `PUSHOVER_USER_KEY` | Pushover 用户 Key | 可选 |
 | `PUSHOVER_API_TOKEN` | Pushover API Token | 可选 |
 | `PUSHPLUS_TOKEN` | PushPlus Token（国内推送服务） | 可选 |
 | `SERVERCHAN3_SENDKEY` | Server酱³ Sendkey | 可选 |
 
-#### 飞书云文档配置（可选，解决消息截断问题）
+#### 飞书云문서配置（可选，解决消息截断문제）
 
-| 变量名 | 说明 | 必填 |
+| 变量名 | 설명 | 필수 |
 |--------|------|:----:|
 | `FEISHU_APP_ID` | 飞书应用 ID | 可选 |
 | `FEISHU_APP_SECRET` | 飞书应用 Secret | 可选 |
 | `FEISHU_FOLDER_TOKEN` | 飞书云盘文件夹 Token | 可选 |
 
-> 飞书云文档配置步骤：
+> 飞书云문서配置步骤：
 > 1. 在 [飞书开发者后台](https://open.feishu.cn/app) 创建应用
 > 2. 配置 GitHub Secrets
 > 3. 创建群组并添加应用机器人
@@ -212,7 +212,7 @@ daily_stock_analysis/
 
 ### 搜索服务配置
 
-| 变量名 | 说明 | 必填 |
+| 变量名 | 설명 | 필수 |
 |--------|------|:----:|
 | `TAVILY_API_KEYS` | Tavily 搜索 API Key（推荐） | 推荐 |
 | `BOCHA_API_KEYS` | 博查搜索 API Key（中文优化） | 可选 |
@@ -223,22 +223,22 @@ daily_stock_analysis/
 
 ### 数据源配置
 
-| 变量名 | 说明 | 默认值 | 必填 |
+| 变量名 | 설명 | 기본값 | 필수 |
 |--------|------|--------|:----:|
 | `TUSHARE_TOKEN` | Tushare Pro Token | - | 可选 |
-| `ENABLE_REALTIME_QUOTE` | 启用实时行情（关闭后使用历史收盘价分析） | `true` | 可选 |
-| `ENABLE_REALTIME_TECHNICAL_INDICATORS` | 盘中实时技术面：启用时用实时价计算 MA5/MA10/MA20 与多头排列（Issue #234）；关闭则用昨日收盘 | `true` | 可选 |
-| `ENABLE_CHIP_DISTRIBUTION` | 启用筹码分布分析（该接口不稳定，云端部署建议关闭） | `true` | 可选 |
-| `ENABLE_EASTMONEY_PATCH` | 东财接口补丁：东财接口频繁失败（如 RemoteDisconnected、连接被关闭）时建议设为 `true`，注入 NID 令牌与随机 User-Agent 以降低被限流概率 | `false` | 可选 |
-| `REALTIME_SOURCE_PRIORITY` | 实时行情数据源优先级（逗号分隔），如 `tencent,akshare_sina,efinance,akshare_em` | 见 .env.example | 可选 |
+| `ENABLE_REALTIME_QUOTE` | 启用实时行情（닫기后使用历史收盘价分析） | `true` | 可选 |
+| `ENABLE_REALTIME_TECHNICAL_INDICATORS` | 盘中实时技术面：启用时用实时价计算 MA5/MA10/MA20 与多头排列（Issue #234）；닫기则用昨日收盘 | `true` | 可选 |
+| `ENABLE_CHIP_DISTRIBUTION` | 启用筹码分布分析（该接口不稳定，云端배포권장 조치닫기） | `true` | 可选 |
+| `ENABLE_EASTMONEY_PATCH` | 东财接口补丁：东财接口频繁失败（如 RemoteDisconnected、连接被닫기）时권장 조치设为 `true`，注入 NID 令牌与随机 User-Agent 以降低被限流概率 | `false` | 可选 |
+| `REALTIME_SOURCE_PRIORITY` | 实时行情数据源우선순위（逗号分隔），如 `tencent,akshare_sina,efinance,akshare_em` | 见 .env.example | 可选 |
 
 ### 其他配置
 
-| 变量名 | 说明 | 默认值 |
+| 变量名 | 설명 | 기본값 |
 |--------|------|--------|
 | `STOCK_LIST` | 自选股代码（逗号分隔） | - |
 | `ADMIN_AUTH_ENABLED` | Web 登录：设为 `true` 启用密码保护；首次访问在网页设置初始密码，可在「系统设置 > 修改密码」修改；忘记密码执行 `python -m src.auth reset_password` | `false` |
-| `TRUST_X_FORWARDED_FOR` | 反向代理部署时设为 `true`，从 `X-Forwarded-For` 获取真实 IP（限流等）；直连公网时保持 `false` 防伪造 | `false` |
+| `TRUST_X_FORWARDED_FOR` | 反向代理배포时设为 `true`，从 `X-Forwarded-For` 获取真实 IP（限流等）；直连公网时保持 `false` 防伪造 | `false` |
 | `MAX_WORKERS` | 并发线程数 | `3` |
 | `MARKET_REVIEW_ENABLED` | 启用大盘复盘 | `true` |
 | `MARKET_REVIEW_REGION` | 大盘复盘市场区域：cn(A股)、us(美股)、both(两者)，us 适合仅关注美股的用户 | `cn` |
@@ -249,7 +249,7 @@ daily_stock_analysis/
 
 ---
 
-## Docker 部署
+## Docker 배포
 
 Dockerfile 使用多阶段构建，前端会在构建镜像时自动打包并内置到 `static/`。
 如需覆盖静态资源，可挂载本地 `static/` 到容器内 `/app/static`。
@@ -277,9 +277,9 @@ docker-compose -f ./docker/docker-compose.yml up -d            # 同时启动两
 docker-compose -f ./docker/docker-compose.yml logs -f server
 ```
 
-### 运行模式说明
+### 运行模式설명
 
-| 命令 | 说明 | 端口 |
+| 命令 | 설명 | 端口 |
 |------|------|------|
 | `docker-compose -f ./docker/docker-compose.yml up -d server` | Web 服务模式，提供 API 与 WebUI | 8000 |
 | `docker-compose -f ./docker/docker-compose.yml up -d analyzer` | 定时任务模式，每日自动执行 | - |
@@ -334,7 +334,7 @@ docker-compose -f ./docker/docker-compose.yml logs -f server
 # 停止服务
 docker-compose -f ./docker/docker-compose.yml down
 
-# 重建镜像（代码更新后）
+# 重建镜像（代码업데이트后）
 docker-compose -f ./docker/docker-compose.yml build --no-cache
 docker-compose -f ./docker/docker-compose.yml up -d server
 ```
@@ -408,7 +408,7 @@ schedule:
 - `TRADING_DAY_CHECK_ENABLED`：仓库级配置（`Settings → Secrets and variables → Actions`），默认 `true`
 - `workflow_dispatch.force_run`：手动触发时的单次开关，默认 `false`
 
-推荐优先级理解：
+推荐우선순위理解：
 
 | 配置组合 | 非交易日行为 |
 |---------|-------------|
@@ -442,7 +442,7 @@ python main.py --schedule --no-run-immediately
 
 你也可以通过环境变量配置定时行为（适用于 Docker 或 .env）：
 
-| 变量名 | 说明 | 默认值 | 示例 |
+| 变量名 | 설명 | 기본값 | 示例 |
 |--------|------|:-------:|:-----:|
 | `SCHEDULE_ENABLED` | 是否启用定时任务 | `false` | `true` |
 | `SCHEDULE_TIME` | 每日执行时间 (HH:MM) | `18:00` | `09:30` |
@@ -572,7 +572,7 @@ PUSHOVER_API_TOKEN=your_api_token
 
 特点：
 - 支持 iOS/Android 双平台
-- 支持通知优先级和声音设置
+- 支持通知우선순위和声音设置
 - 免费额度足够个人使用（每月 10,000 条）
 - 消息可保留 7 天
 
@@ -594,7 +594,7 @@ PUSHOVER_API_TOKEN=your_api_token
 
 单股推送模式（`SINGLE_STOCK_NOTIFY=true`）下，若希望 Telegram 等渠道以图片形式推送，需同时配置 `MARKDOWN_TO_IMAGE_CHANNELS=telegram` 并安装转图工具（wkhtmltopdf 或 markdown-to-file）。个股日报汇总同样支持转图，无需额外配置。
 
-**故障排查**：若日志出现「Markdown 转图片失败，将回退为文本发送」，请检查 `MARKDOWN_TO_IMAGE_CHANNELS` 配置及转图工具是否已正确安装（`which wkhtmltoimage` 或 `which m2f`）。
+**故障排查**：若日志出现「Markdown 转图片失败，将回退为文本发送」，请检查 `MARKDOWN_TO_IMAGE_CHANNELS` 配置及转图工具是否已올바름安装（`which wkhtmltoimage` 或 `which m2f`）。
 
 ---
 
@@ -618,11 +618,11 @@ PUSHOVER_API_TOKEN=your_api_token
 ### YFinance
 - 免费，无需配置
 - 支持美股/港股数据
-- 美股历史数据与实时行情均统一使用 YFinance，以避免 akshare 美股复权异常导致的技术指标错误
+- 美股历史数据与实时行情均统一使用 YFinance，以避免 akshare 美股复权异常导致的技术指标잘못됨
 
 ### 东财接口频繁失败时的处理
 
-若日志出现 `RemoteDisconnected`、`push2his.eastmoney.com` 连接被关闭等，多为东财限流。建议：
+若日志出现 `RemoteDisconnected`、`push2his.eastmoney.com` 连接被닫기等，多为东财限流。권장 조치：
 
 1. 在 `.env` 中设置 `ENABLE_EASTMONEY_PATCH=true`
 2. 将 `MAX_WORKERS=1` 降低并发
@@ -683,13 +683,13 @@ LITELLM_FALLBACK_MODELS=anthropic/claude-3-5-sonnet-20241022,openai/gpt-4o-mini
 > ⚠️ `LITELLM_MODEL` 必须包含 provider 前缀（如 `gemini/`、`anthropic/`、`openai/`），
 > 否则系统无法识别应使用哪组 API Key。旧格式的 `GEMINI_MODEL`（无前缀）仅用于未配置 `LITELLM_MODEL` 时的自动推断。
 
-**依赖说明**：`requirements.txt` 中保留 `openai>=1.0.0`，因 LiteLLM 内部依赖 OpenAI SDK 作为统一接口；显式保留可确保版本兼容性，用户无需单独配置。
+**依赖설명**：`requirements.txt` 中保留 `openai>=1.0.0`，因 LiteLLM 内部依赖 OpenAI SDK 作为统一接口；显式保留可确保版本兼容性，用户无需单独配置。
 
 **视觉模型（图片提取股票代码）**：详见 [LLM 配置指南 - Vision](LLM_CONFIG_GUIDE.md#41-vision-模型图片识别股票代码)。
 
 从图片提取股票代码（如 `/api/v1/stocks/extract-from-image`）使用 LiteLLM Vision，采用 OpenAI `image_url` 格式，支持 Gemini、Claude、OpenAI、DeepSeek 等 Vision-capable 模型。
 
-- **模型优先级**：`VISION_MODEL` > `LITELLM_MODEL` > 根据已有 API Key 推断（`OPENAI_VISION_MODEL` 已废弃，请改用 `VISION_MODEL`）
+- **模型우선순위**：`VISION_MODEL` > `LITELLM_MODEL` > 根据已有 API Key 推断（`OPENAI_VISION_MODEL` 已废弃，请改用 `VISION_MODEL`）
 - **Provider 回退**：主模型失败时，按 `VISION_PROVIDER_PRIORITY`（默认 `gemini,anthropic,openai`）自动切换到下一个可用 provider
 - **主模型不支持 Vision 时**：若主模型为 DeepSeek 等非 Vision 模型，可显式配置 `VISION_MODEL=openai/gpt-4o` 或 `gemini/gemini-2.0-flash` 供图片提取使用
 - **配置校验**：若配置了 `VISION_MODEL` 但未配置对应 provider 的 API Key，启动时会输出 warning，图片提取功能将不可用
@@ -708,19 +708,19 @@ python main.py --debug
 
 ## 回测功能
 
-回测模块自动对历史 AI 分析记录进行事后验证，评估分析建议的准确性。
+回测模块自动对历史 AI 分析记录进行事后验证，评估分析권장 조치的准确性。
 
 ### 工作原理
 
 1. 选取已过冷却期（默认 14 天）的 `AnalysisHistory` 记录
 2. 获取分析日之后的日线数据（前向 K 线）
-3. 根据操作建议推断预期方向，与实际走势对比
+3. 根据操作권장 조치推断预期方向，与实际走势对比
 4. 评估止盈/止损命中情况，模拟执行收益
 5. 汇总为整体和单股两个维度的表现指标
 
-### 操作建议映射
+### 操作권장 조치映射
 
-| 操作建议 | 仓位推断 | 预期方向 | 胜利条件 |
+| 操作권장 조치 | 仓位推断 | 预期方向 | 胜利条件 |
 |---------|---------|---------|---------|
 | 买入/加仓/strong buy | long | up | 涨幅 ≥ 中性带 |
 | 卖出/减仓/strong sell | cash | down | 跌幅 ≥ 中性带 |
@@ -729,9 +729,9 @@ python main.py --debug
 
 ### 配置
 
-在 `.env` 中设置以下变量（均有默认值，可选）：
+在 `.env` 中设置以下变量（均有기본값，可选）：
 
-| 变量 | 默认值 | 说明 |
+| 变量 | 기본값 | 설명 |
 |------|-------|------|
 | `BACKTEST_ENABLED` | `true` | 是否在每日分析后自动运行回测 |
 | `BACKTEST_EVAL_WINDOW_DAYS` | `10` | 评估窗口（交易日数） |
@@ -745,7 +745,7 @@ python main.py --debug
 
 ### 评估指标
 
-| 指标 | 说明 |
+| 指标 | 설명 |
 |------|------|
 | `direction_accuracy_pct` | 方向预测准确率（预期方向与实际一致） |
 | `win_rate_pct` | 胜率（胜 / (胜+负)，不含中性） |
@@ -762,7 +762,7 @@ FastAPI 提供 RESTful API 服务，支持配置管理和触发分析。
 
 ### 启动方式
 
-| 命令 | 说明 |
+| 命令 | 설명 |
 |------|------|
 | `python main.py --serve` | 启动 API 服务 + 执行一次完整分析 |
 | `python main.py --serve-only` | 仅启动 API 服务，手动触发分析 |
@@ -771,13 +771,13 @@ FastAPI 提供 RESTful API 服务，支持配置管理和触发分析。
 
 - 📝 **配置管理** - 查看/修改自选股列表
 - 🚀 **快速分析** - 通过 API 接口触发分析
-- 📊 **实时进度** - 分析任务状态实时更新，支持多任务并行
+- 📊 **实时进度** - 分析任务状态实时업데이트，支持多任务并行
 - 📈 **回测验证** - 评估历史分析准确率，查询方向胜率与模拟收益
-- 🔗 **API 文档** - 访问 `/docs` 查看 Swagger UI
+- 🔗 **API 문서** - 访问 `/docs` 查看 Swagger UI
 
 ### API 接口
 
-| 接口 | 方法 | 说明 |
+| 接口 | 方法 | 설명 |
 |------|------|------|
 | `/api/v1/analysis/analyze` | POST | 触发股票分析 |
 | `/api/v1/analysis/tasks` | GET | 查询任务列表 |
@@ -789,7 +789,7 @@ FastAPI 提供 RESTful API 服务，支持配置管理和触发分析。
 | `/api/v1/backtest/performance/{code}` | GET | 获取单股回测表现 |
 | `/api/v1/stocks/extract-from-image` | POST | 从图片提取股票代码（multipart，超时 60s） |
 | `/api/health` | GET | 健康检查 |
-| `/docs` | GET | API Swagger 文档 |
+| `/docs` | GET | API Swagger 문서 |
 
 **调用示例**：
 ```bash
@@ -842,7 +842,7 @@ python main.py --serve-only --host 0.0.0.0 --port 8888
 | 美股 | 1-5 字母（可选 .X 后缀） | `AAPL`、`TSLA`、`BRK.B` |
 | 美股指数 | SPX/DJI/IXIC 等 | `SPX`、`DJI`、`NASDAQ`、`VIX` |
 
-### 注意事项
+### 주의 사항
 
 - 浏览器访问：`http://127.0.0.1:8000`（或您配置的端口）
 - 分析完成后自动推送通知到配置的渠道
@@ -850,10 +850,10 @@ python main.py --serve-only --host 0.0.0.0 --port 8888
 
 ---
 
-## 常见问题
+## 자주 묻는 질문
 
 ### Q: 推送消息被截断？
-A: 企业微信/飞书有消息长度限制，系统已自动分段发送。如需完整内容，可配置飞书云文档功能。
+A: 企业微信/飞书有消息长度限制，系统已自动分段发送。如需完整内容，可配置飞书云문서功能。
 
 ### Q: 数据获取失败？
 A: AkShare 使用爬虫机制，可能被临时限流。系统已配置重试机制，一般等待几分钟后重试即可。
@@ -862,8 +862,8 @@ A: AkShare 使用爬虫机制，可能被临时限流。系统已配置重试机
 A: 修改 `STOCK_LIST` 环境变量，多个代码用逗号分隔。
 
 ### Q: GitHub Actions 没有执行？
-A: 检查是否启用了 Actions，以及 cron 表达式是否正确（注意是 UTC 时间）。
+A: 检查是否启用了 Actions，以及 cron 表达式是否올바름（注意是 UTC 时间）。
 
 ---
 
-更多问题请 [提交 Issue](https://github.com/ZhuLinsen/daily_stock_analysis/issues)
+更多문제请 [提交 Issue](https://github.com/ZhuLinsen/daily_stock_analysis/issues)

@@ -3,9 +3,9 @@
 Ask command - analyze a stock using a specific Agent strategy.
 
 Usage:
-    /ask 600519                        -> Analyze with default strategy
-    /ask 600519 用缠论分析              -> Parse strategy from message
-    /ask 600519 chan_theory             -> Specify strategy id directly
+    /ask 005930                        -> Analyze with default strategy
+    /ask 005930 추세분석                -> Parse strategy from natural-language input
+    /ask 005930 chan_theory             -> Specify strategy id directly
 """
 
 import re
@@ -61,10 +61,10 @@ class AskCommand(BotCommand):
     Ask command handler - invoke Agent with a specific strategy to analyze a stock.
 
     Usage:
-        /ask 600519                    -> Analyze with default strategy (bull_trend)
-        /ask 600519 用缠论分析          -> Automatically selects chan_theory strategy
-        /ask 600519 chan_theory         -> Directly specify strategy id
-        /ask hk00700 波浪理论看看       -> HK stock with wave_theory
+        /ask 005930                    -> Analyze with default strategy (bull_trend)
+        /ask 005930 파동이론            -> Automatically select wave_theory
+        /ask 005930 chan_theory         -> Directly specify strategy id
+        /ask AAPL trend                 -> US stock analysis
     """
 
     @property
@@ -90,11 +90,10 @@ class AskCommand(BotCommand):
 
         code = args[0].upper()
         is_a_stock = re.match(r"^\d{6}$", code)
-        is_hk_stock = re.match(r"^HK\d{5}$", code)
         is_us_stock = re.match(r"^[A-Z]{1,5}(\.[A-Z]{1,2})?$", code)
 
-        if not (is_a_stock or is_hk_stock or is_us_stock):
-            return f"无效的股票代码: {code}（A股6位数字 / 港股HK+5位数字 / 美股1-5个字母）"
+        if not (is_a_stock or is_us_stock):
+            return f"유효하지 않은 종목 코드: {code} (KR: 6 digits / US: 1-5 letters)"
 
         return None
 
@@ -116,9 +115,9 @@ class AskCommand(BotCommand):
         except Exception:
             pass
 
-        # Try CN name mapping
-        for cn_name, strategy_id in STRATEGY_NAME_MAP.items():
-            if cn_name in strategy_text:
+        # Try alias mapping
+        for alias_name, strategy_id in STRATEGY_NAME_MAP.items():
+            if alias_name in strategy_text:
                 return strategy_id
 
         # Default
@@ -130,7 +129,7 @@ class AskCommand(BotCommand):
 
         if not config.agent_mode:
             return BotResponse.text_response(
-                "⚠️ Agent 模式未开启，无法使用问股功能。\n请在配置中设置 `AGENT_MODE=true`。"
+                "⚠️ Agent 모드가 비활성화되어 있습니다.\n`AGENT_MODE=true`를 설정한 뒤 다시 시도하세요."
             )
 
         code = canonical_stock_code(args[0])
@@ -143,10 +142,10 @@ class AskCommand(BotCommand):
             from src.agent.factory import build_agent_executor
             executor = build_agent_executor(config, skills=[strategy_id] if strategy_id else None)
 
-            # Build message
-            user_msg = f"请使用 {strategy_id} 策略分析股票 {code}"
+            # Build request message
+            user_msg = f"{strategy_id} 전략으로 {code} 종목을 분석해 주세요."
             if strategy_text:
-                user_msg = f"请分析股票 {code}，{strategy_text}"
+                user_msg = f"{code} 종목을 다음 조건으로 분석해 주세요: {strategy_text}"
 
             # Each /ask invocation is a self-contained single-shot analysis; isolate
             # sessions per request so that different stocks or retry attempts never
@@ -167,12 +166,12 @@ class AskCommand(BotCommand):
                 except Exception:
                     pass
 
-                header = f"📊 {code} | 策略: {strategy_name}\n{'─' * 30}\n"
+                header = f"📊 {code} | 전략: {strategy_name}\n{'─' * 30}\n"
                 return BotResponse.text_response(header + result.content)
             else:
-                return BotResponse.text_response(f"⚠️ 分析失败: {result.error}")
+                return BotResponse.text_response(f"⚠️ 분석 실패: {result.error}")
 
         except Exception as e:
             logger.error(f"Ask command failed: {e}")
             logger.exception("Ask error details:")
-            return BotResponse.text_response(f"⚠️ 问股执行出错: {str(e)}")
+            return BotResponse.text_response(f"⚠️ 요청 처리 중 오류가 발생했습니다: {str(e)}")

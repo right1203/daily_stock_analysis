@@ -147,7 +147,7 @@ class BotCommand(ABC):
     @property
     @abstractmethod
     def usage(self) -> str:
-        """使用说明"""
+        """使用설명"""
         pass
     
     @abstractmethod
@@ -181,7 +181,7 @@ class CommandDispatcher:
 
 ## 四、已支持的命令
 
-| 命令 | 别名 | 说明 | 示例 |
+| 命令 | 别名 | 설명 | 示例 |
 
 |------|------|------|------|
 
@@ -204,12 +204,12 @@ class CommandDispatcher:
 /bot/feishu      # POST - 飞书事件回调
 /bot/dingtalk    # POST - 钉钉事件回调
 /bot/wecom       # POST - 企业微信事件回调 （开发中）
-/bot/telegram    # POST - Telegram 更新回调 （开发中）
+/bot/telegram    # POST - Telegram 업데이트回调 （开发中）
 ```
 
 ## 配置
 
-在 [config.py](../config.py) 中新增机器人配置：
+在 [config.py](../config.py) 中추가机器人配置：
 
 ```python
 # === 机器人配置 ===
@@ -219,31 +219,31 @@ bot_command_prefix: str = "/"          # 命令前缀
 # 飞书机器人（事件订阅）
 feishu_app_id: str                     # 已有
 feishu_app_secret: str                 # 已有
-feishu_verification_token: str         # 新增：事件校验 Token
-feishu_encrypt_key: str                # 新增：加密密钥
+feishu_verification_token: str         # 추가：事件校验 Token
+feishu_encrypt_key: str                # 추가：加密密钥
 
 # 钉钉机器人（应用）
-dingtalk_app_key: str                  # 新增
-dingtalk_app_secret: str               # 新增
+dingtalk_app_key: str                  # 추가
+dingtalk_app_secret: str               # 추가
 
 # 企业微信机器人（开发中）
-wecom_token: str                       # 新增：回调 Token
-wecom_encoding_aes_key: str            # 新增：EncodingAESKey
+wecom_token: str                       # 추가：回调 Token
+wecom_encoding_aes_key: str            # 추가：EncodingAESKey
 
 # Telegram 机器人（开发中）
 telegram_bot_token: str                # 已有
-telegram_webhook_secret: str           # 新增：Webhook 密钥
+telegram_webhook_secret: str           # 추가：Webhook 密钥
 ```
 
-## 扩展说明
-### 怎样新增一个通知平台
+## 扩展설명
+### 怎样추가一个通知平台
 
 1. 在 `bot/platforms/` 创建新文件
 2. 继承 `BotPlatform` 基类
 3. 实现 `verify_request`, `parse_message`, `format_response`
 4. 在路由中注册 Webhook 端点
 
-### 怎样新增新增命令
+### 怎样추가추가命令
 
 1. 在 `bot/commands/` 创建新文件
 2. 继承 `BotCommand` 基类
@@ -255,7 +255,7 @@ telegram_webhook_secret: str           # 新增：Webhook 密钥
 - 支持命令频率限制（防刷）
 - 敏感操作（如批量分析）可设置权限白名单
 
-在 [config.py](../config.py) 中新增机器人安全配置：
+在 [config.py](../config.py) 中추가机器人安全配置：
 
 ```python
     bot_rate_limit_requests: int = 10     # 频率限制：窗口内最大请求数

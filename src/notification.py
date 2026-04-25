@@ -94,34 +94,34 @@ class NotificationService(
     WechatSender
 ):
     """
-    通知服务
-    
-    职责：
-    1. 生成 Markdown 格式的分析日报
-    2. 向所有已配置的渠道推送消息（多渠道并发）
-    3. 支持本地保存日报
-    
-    支持的渠道：
-    - 企业微信 Webhook
-    - 飞书 Webhook
+    알림 서비스
+
+    담당:
+    1. Markdown 형식의 분석 일보 생성
+    2. 설정된 모든 채널로 메시지 푸시 (다채널 병렬)
+    3. 로컬 일보 저장 지원
+
+    지원 채널:
+    - 기업 WeChat Webhook
+    - Feishu Webhook
     - Telegram Bot
-    - 邮件 SMTP
-    - Pushover（手机/桌面推送）
-    
-    注意：所有已配置的渠道都会收到推送
+    - 이메일 SMTP
+    - Pushover (모바일/데스크톱 푸시)
+
+    주의: 설정된 모든 채널로 푸시 전송됩니다
     """
     
     def __init__(self, source_message: Optional[BotMessage] = None):
         """
-        初始化通知服务
-        
-        检测所有已配置的渠道，推送时会向所有渠道发送
+        알림 서비스 초기화
+
+        설정된 모든 채널을 감지하며, 푸시 시 모든 채널로 전송합니다
         """
         config = get_config()
         self._source_message = source_message
         self._context_channels: List[str] = []
 
-        # Markdown 转图片（Issue #289）
+        # Markdown을 이미지로 변환 (Issue #289)
         self._markdown_to_image_channels = set(
             getattr(config, 'markdown_to_image_channels', []) or []
         )
@@ -129,10 +129,10 @@ class NotificationService(
             config, 'markdown_to_image_max_chars', 15000
         )
 
-        # 仅分析结果摘要（Issue #262）：true 时只推送汇总，不含个股详情
+        # 분석 결과 요약만 (Issue #262): true 시 요약만 푸시, 개별 종목 상세 제외
         self._report_summary_only = getattr(config, 'report_summary_only', False)
 
-        # 初始化各渠道
+        # 각 채널 초기화
         AstrbotSender.__init__(self, config)
         CustomWebhookSender.__init__(self, config)
         DiscordSender.__init__(self, config)
@@ -144,17 +144,17 @@ class NotificationService(
         TelegramSender.__init__(self, config)
         WechatSender.__init__(self, config)
         
-        # 检测所有已配置的渠道
+        # 설정된 모든 채널 감지
         self._available_channels = self._detect_all_channels()
         if self._has_context_channel():
-            self._context_channels.append("钉钉会话")
-        
+            self._context_channels.append("DingTalk 세션")
+
         if not self._available_channels and not self._context_channels:
-            logger.warning("未配置有效的通知渠道，将不发送推送通知")
+            logger.warning("유효한 알림 채널이 설정되지 않았습니다. 푸시 알림을 전송하지 않습니다")
         else:
             channel_names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
             channel_names.extend(self._context_channels)
-            logger.info(f"已配置 {len(channel_names)} 个通知渠道：{', '.join(channel_names)}")
+            logger.info(f"{len(channel_names)}개 알림 채널이 설정되었습니다: {', '.join(channel_names)}")
 
     def _collect_models_used(self, results: List[AnalysisResult]) -> List[str]:
         models: List[str] = []
@@ -166,29 +166,29 @@ class NotificationService(
     
     def _detect_all_channels(self) -> List[NotificationChannel]:
         """
-        检测所有已配置的渠道
-        
+        설정된 모든 채널 감지
+
         Returns:
-            已配置的渠道列表
+            설정된 채널 목록
         """
         channels = []
-        
-        # 企业微信
+
+        # 기업 WeChat
         if self._wechat_url:
             channels.append(NotificationChannel.WECHAT)
-        
-        # 飞书
+
+        # Feishu
         if self._feishu_url:
             channels.append(NotificationChannel.FEISHU)
-        
+
         # Telegram
         if self._is_telegram_configured():
             channels.append(NotificationChannel.TELEGRAM)
-        
-        # 邮件
+
+        # 이메일
         if self._is_email_configured():
             channels.append(NotificationChannel.EMAIL)
-        
+
         # Pushover
         if self._is_pushover_configured():
             channels.append(NotificationChannel.PUSHOVER)
@@ -200,8 +200,8 @@ class NotificationService(
        # Server酱3
         if self._serverchan3_sendkey:
             channels.append(NotificationChannel.SERVERCHAN3)
-       
-        # 自定义 Webhook
+
+        # 사용자 정의 Webhook
         if self._custom_webhook_urls:
             channels.append(NotificationChannel.CUSTOM)
         
@@ -214,30 +214,30 @@ class NotificationService(
         return channels
 
     def is_available(self) -> bool:
-        """检查通知服务是否可用（至少有一个渠道或上下文渠道）"""
+        """알림 서비스 사용 가능 여부 확인 (채널 또는 컨텍스트 채널이 하나 이상 존재)"""
         return len(self._available_channels) > 0 or self._has_context_channel()
-    
+
     def get_available_channels(self) -> List[NotificationChannel]:
-        """获取所有已配置的渠道"""
+        """설정된 모든 채널 반환"""
         return self._available_channels
-    
+
     def get_channel_names(self) -> str:
-        """获取所有已配置渠道的名称"""
+        """설정된 모든 채널 이름 반환"""
         names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
         if self._has_context_channel():
-            names.append("钉钉会话")
+            names.append("DingTalk 세션")
         return ', '.join(names)
 
     # ===== Context channel =====
     def _has_context_channel(self) -> bool:
-        """判断是否存在基于消息上下文的临时渠道（如钉钉会话、飞书会话）"""
+        """메시지 컨텍스트 기반 임시 채널(DingTalk 세션, Feishu 세션 등) 존재 여부 판단"""
         return (
             self._extract_dingtalk_session_webhook() is not None
             or self._extract_feishu_reply_info() is not None
         )
 
     def _extract_dingtalk_session_webhook(self) -> Optional[str]:
-        """从来源消息中提取钉钉会话 Webhook（用于 Stream 模式回复）"""
+        """소스 메시지에서 DingTalk 세션 Webhook 추출 (Stream 모드 응답용)"""
         if not isinstance(self._source_message, BotMessage):
             return None
         raw_data = getattr(self._source_message, "raw_data", {}) or {}

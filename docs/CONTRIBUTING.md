@@ -4,13 +4,13 @@
 
 ## 🐛 报告 Bug
 
-1. 先搜索 [Issues](https://github.com/ZhuLinsen/daily_stock_analysis/issues) 确认问题未被报告
+1. 先搜索 [Issues](https://github.com/ZhuLinsen/daily_stock_analysis/issues) 确认문제未被报告
 2. 使用 Bug Report 模板创建新 Issue
 3. 提供详细的复现步骤和环境信息
 
-## 💡 功能建议
+## 💡 功能권장 조치
 
-1. 先搜索 Issues 确认建议未被提出
+1. 先搜索 Issues 确认권장 조치未被提出
 2. 使用 Feature Request 模板创建新 Issue
 3. 详细描述你的使用场景和期望功能
 
@@ -49,8 +49,8 @@ cp .env.example .env
 
 ```
 feat: 新功能
-fix: Bug 修复
-docs: 文档更新
+fix: Bug 수정
+docs: 문서업데이트
 style: 代码格式（不影响功能）
 refactor: 重构
 perf: 性能优化
@@ -61,8 +61,8 @@ chore: 构建/工具相关
 示例：
 ```
 feat: 添加钉钉机器人支持
-fix: 修复 429 限流重试逻辑
-docs: 更新 README 部署说明
+fix: 수정 429 限流重试逻辑
+docs: 업데이트 README 배포설명
 ```
 
 ### 代码规范
@@ -70,17 +70,17 @@ docs: 更新 README 部署说明
 - Python 代码遵循 PEP 8
 - 函数和类需要添加 docstring
 - 重要逻辑添加注释
-- 新功能需要更新相关文档
+- 新功能需要업데이트相关문서
 
 ### CI 自动检查
 
 提交 PR 后，CI 会自动运行以下检查：
 
-| 检查项 | 说明 | 必须通过 |
+| 检查项 | 설명 | 必须通过 |
 |--------|------|:--------:|
-| backend-gate | `scripts/ci_gate.sh`（py_compile + flake8 严重错误 + 本地核心脚本 + offline pytest） | ✅ |
+| backend-gate | `scripts/ci_gate.sh`（py_compile + flake8 严重잘못됨 + 本地核心脚本 + offline pytest） | ✅ |
 | docker-build | Docker 镜像构建与关键模块导入 smoke | ✅ |
-| web-gate | 前端变更时执行 `npm run lint` + `npm run build` | ✅（触发时） |
+| web-gate | 前端변경时执行 `npm run lint` + `npm run build` | ✅（触发时） |
 | network-smoke | 定时/手动执行 `pytest -m network` + `test.sh quick`（非阻断） | ❌（观测项） |
 
 **本地运行检查：**
@@ -105,12 +105,12 @@ npm run build
 - 🔔 新通知渠道（钉钉、飞书、Telegram）
 - 🤖 新 AI 模型支持（GPT-4、Claude）
 - 📊 新数据源接入
-- 🐛 Bug 修复和性能优化
-- 📖 文档完善和翻译
+- 🐛 Bug 수정和性能优化
+- 📖 문서完善和翻译
 
-## ❓ 问题解答
+## ❓ 문제解答
 
-如有任何问题，欢迎：
+如有任何문제，欢迎：
 - 创建 Issue 讨论
 - 查看已有 Issue 和 Discussion
 

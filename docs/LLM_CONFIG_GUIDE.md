@@ -1,26 +1,26 @@
 # LLM 配置指南
 
-本文档系统讲解 A股智能分析系统的 LLM 配置方式，包括三层配置优先级、快速上手、渠道模式、Vision 模型、Agent 模式及配置校验排错。
+本문서系统讲解 A股智能分析系统的 LLM 配置方式，包括三层配置우선순위、빠른 시작、渠道模式、Vision 模型、Agent 模式及配置校验排错。
 
-> 快速上手请参考 [README](../README.md)，本文档为进阶配置。
+> 빠른 시작请参考 [README](../README.md)，本문서为进阶配置。
 
 ## 目录
 
-- [1. 快速上手（5 分钟）](#1-快速上手5-分钟)
-- [2. 三层配置优先级](#2-三层配置优先级)
+- [1. 빠른 시작（5 分钟）](#1-빠른 시작5-分钟)
+- [2. 三层配置우선순위](#2-三层配置우선순위)
 - [3. 进阶配置](#3-进阶配置)
 - [4. 扩展功能](#4-扩展功能)
 - [5. 迁移与兼容](#5-迁移与兼容)
 
 ---
 
-## 1. 快速上手（5 分钟）
+## 1. 빠른 시작（5 分钟）
 
 ### 1.1 最小配置
 
 任选其一即可运行 AI 分析：
 
-| 选项 | 环境变量 | 说明 |
+| 选项 | 环境变量 | 설명 |
 |------|----------|------|
 | Gemini | `GEMINI_API_KEY=xxx` | [Google AI Studio](https://aistudio.google.com/) 免费额度，需科学上网 |
 | DeepSeek | `DEEPSEEK_API_KEY=xxx` | [DeepSeek 平台](https://platform.deepseek.com) |
@@ -45,15 +45,15 @@
 
 ---
 
-## 2. 三层配置优先级
+## 2. 三层配置우선순위
 
-### 2.1 优先级
+### 2.1 우선순위
 
 ```
 LITELLM_CONFIG (YAML)  >  LLM_CHANNELS (env)  >  legacy keys
 ```
 
-高优先级一旦生效，低优先级**全部忽略**。
+高우선순위一旦生效，低우선순위**全部忽略**。
 
 ### 2.2 模式对比
 
@@ -63,9 +63,9 @@ LITELLM_CONFIG (YAML)  >  LLM_CHANNELS (env)  >  legacy keys
 | 渠道 | 多模型共存、每渠道独立 base_url/api_key | `LLM_CHANNELS=aihubmix,deepseek,gemini` + `LLM_{NAME}_*` |
 | Legacy | 单模型、最简单 | `GEMINI_API_KEY` / `DEEPSEEK_API_KEY` / `AIHUBMIX_KEY` 等 |
 
-### 2.3 「不要混用」说明
+### 2.3 「不要混用」설명
 
-一旦配置了渠道或 YAML，legacy 区域（`GEMINI_API_KEY`、`OPENAI_API_KEY` 等）**不参与**解析。反之，仅配置 legacy 时，渠道和 YAML 不生效。系统按优先级只取一种。
+一旦配置了渠道或 YAML，legacy 区域（`GEMINI_API_KEY`、`OPENAI_API_KEY` 等）**不参与**解析。反之，仅配置 legacy 时，渠道和 YAML 不生效。系统按우선순위只取一种。
 
 ### 2.4 provider 前缀
 
@@ -154,28 +154,28 @@ Agent 策略问股模式（`AGENT_MODE=true`）下：
 
 | 符号 | severity | 含义 |
 |------|----------|------|
-| ✗ | error | 必须修复，否则功能不可用 |
-| ⚠ | warning | 建议修复，部分功能受限 |
+| ✗ | error | 必须수정，否则功能不可用 |
+| ⚠ | warning | 권장 조치수정，部分功能受限 |
 | · | info | 提示信息，可忽略 |
 
-**常见 issue 与修复**：
+**常见 issue 与수정**：
 
-| 提示 | 修复 |
+| 提示 | 수정 |
 |------|------|
 | 未配置任何 LLM | 配置 `LITELLM_CONFIG` / `LLM_CHANNELS` 或至少一个 `*_API_KEY` |
-| LITELLM_MODEL 未配置 | 建议配置，格式如 `gemini/gemini-2.5-flash` |
+| LITELLM_MODEL 未配置 | 권장 조치配置，格式如 `gemini/gemini-2.5-flash` |
 | VISION_MODEL 已配置但未找到可用 Vision API Key | 配置对应 provider 的 API Key（Gemini/Anthropic/OpenAI） |
 | 未配置通知渠道 | 配置至少一个推送渠道 |
 | OPENAI_VISION_MODEL 已废弃 | 改用 `VISION_MODEL` |
 
-**常见运行时错误**：
+**常见运行时잘못됨**：
 
-| 错误 | 可能原因 | 建议 |
+| 잘못됨 | 可能原因 | 권장 조치 |
 |------|----------|------|
 | 400 | 模型/代理兼容、thought_signature 等 | 检查模型名格式、代理配置 |
 | 429 | API 限流 | 配置多 Key 负载均衡 |
 | timeout | 网络或服务延迟 | 检查代理、重试 |
-| invalid API key | Key 错误或过期 | 重新获取 Key |
+| invalid API key | Key 잘못됨或过期 | 重新获取 Key |
 
 ---
 
@@ -186,7 +186,7 @@ Agent 策略问股模式（`AGENT_MODE=true`）下：
 1. 确定要迁移的 provider（如 Gemini、DeepSeek）
 2. 设置 `LLM_CHANNELS=gemini`（或对应名称）
 3. 配置 `LLM_GEMINI_API_KEY`、`LLM_GEMINI_MODELS` 等
-4. 移除或注释原 `GEMINI_API_KEY`（渠道生效后 legacy 被忽略）
+4. 제거或注释原 `GEMINI_API_KEY`（渠道生效后 legacy 被忽略）
 
 ### 从渠道迁移到 YAML
 

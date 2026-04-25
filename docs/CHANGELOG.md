@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - 🔎 **Fetcher failure observability** — historical data logs now record fetcher start/success/failure with elapsed time, explicit failover transitions, and clearer final outcomes; Efinance/Eastmoney failures now include upstream endpoint and normalized categories such as `remote_disconnect` and `timeout`; Akshare 新浪/腾讯实时行情日志 now also include upstream endpoint and classified failures for HTTP status, disconnects, and malformed payloads
 ### Added
-- 📖 **LLM 配置指南** — 新增 [docs/LLM_CONFIG_GUIDE.md](LLM_CONFIG_GUIDE.md)，系统讲解三层配置、快速上手、Vision/Agent/Web UI/校验排错；同步更新 README、full-guide、.env.example、FAQ、英文版指南
+- 📖 **LLM 配置指南** — 추가 [docs/LLM_CONFIG_GUIDE.md](LLM_CONFIG_GUIDE.md)，系统讲解三层配置、빠른 시작、Vision/Agent/Web UI/校验排错；同步업데이트 README、full-guide、.env.example、FAQ、英文版指南
 
 ## [3.4.10] - 2026-03-07
 
@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🐛 **EfinanceFetcher ETF OHLCV data** (#541, #527) — switch `_fetch_etf_data` from `ef.fund.get_quote_history` (NAV-only, no OHLCV, no `beg`/`end` params) to `ef.stock.get_quote_history`; ETFs now return proper open/high/low/close/volume/amount instead of zeros; remove obsolete NAV column mappings from `_normalize_data`
 - 🐛 **tiktoken 0.12.0 `Unknown encoding cl100k_base`** (#537) — pin `tiktoken>=0.8.0,<0.12.0` in requirements.txt to avoid plugin-registration regression introduced in 0.12.0
 - 🐛 **Web UI API error classification** (#540) — frontend no longer treats every HTTP 400 as the same "server/network" failure; now distinguishes Agent disabled / missing params / model-tool incompatibility / upstream LLM errors / local connection failures
-- 🐛 **北交所代码识别失败** (#491, #533) — 8/4/92 开头的 6 位代码现正确识别为北交所；Tushare/Akshare/Yfinance 等数据源支持 .BJ 或 bj 前缀；Baostock/Pytdx 对北交所代码显式切换数据源；避免误判上海 B 股 900xxx
-- 🐛 **狙击点位解析错误** (#488, #532) — 理想买入/二次买入等字段在无「元」字时误提取括号内技术指标数字；现先截去第一个括号后内容再提取
+- 🐛 **北交所代码识别失败** (#491, #533) — 8/4/92 开头的 6 位代码现올바름识别为北交所；Tushare/Akshare/Yfinance 等数据源支持 .BJ 或 bj 前缀；Baostock/Pytdx 对北交所代码显式切换数据源；避免误判上海 B 股 900xxx
+- 🐛 **狙击点位解析잘못됨** (#488, #532) — 理想买入/二次买入等字段在无「元」字时误提取括号内技术指标数字；现先截去第一个括号后内容再提取
 
 ### Added
 - **Markdown-to-image for dashboard report** (#455, #535) — 个股日报汇总支持 markdown 转图片推送（Telegram、WeChat、Custom、Email），与大盘复盘行为一致
@@ -152,24 +152,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.2.11] - 2026-02-23
 
-### 修复（#patch）
+### 수정（#patch）
 - 🐛 **StockTrendAnalyzer 从未执行** (Issue #357)
   - 根因：`get_analysis_context` 仅返回 2 天数据且无 `raw_data`，pipeline 中 `raw_data in context` 始终为 False
-  - 修复：Step 3 直接调用 `get_data_range` 获取 90 日历天（约 60 交易日）历史数据用于趋势分析
+  - 수정：Step 3 直接调用 `get_data_range` 获取 90 日历天（约 60 交易日）历史数据用于趋势分析
   - 改善：趋势分析失败时用 `logger.warning(..., exc_info=True)` 记录完整 traceback
 
 ## [3.2.10] - 2026-02-22
 
-### 新增
+### 추가
 - ⚙️ 支持 `RUN_IMMEDIATELY` 配置项，设为 `true` 时定时任务触发后立即执行一次分析，无需等待首个定时点
 
-### 修复
-- 🐛 修复 Web UI 页面居中问题
-- 🐛 修复 Settings 返回 500 错误
+### 수정
+- 🐛 수정 Web UI 页面居中문제
+- 🐛 수정 Settings 返回 500 잘못됨
 
 ## [3.2.9] - 2026-02-22
 
-### 修复
+### 수정
 - 🐛 **ETF 分析仅关注指数走势**（Issue #274）
   - 美股/港股 ETF（如 VOO、QQQ）与 A 股 ETF 不再纳入基金公司层面风险（诉讼、声誉等）
   - 搜索维度：ETF/指数专用 risk_check、earnings、industry 查询，避免命中基金管理人新闻
@@ -177,39 +177,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.2.8] - 2026-02-21
 
-### 修复
+### 수정
 - 🐛 **BOT 与 WEB UI 股票代码大小写统一**（Issue #355）
   - BOT `/analyze` 与 WEB UI 触发分析的股票代码统一为大写（如 `aapl` → `AAPL`）
-  - 新增 `canonical_stock_code()`，在 BOT、API、Config、CLI、task_queue 入口处规范化
-  - 历史记录与任务去重逻辑可正确识别同一股票（大小写不再影响）
+  - 추가 `canonical_stock_code()`，在 BOT、API、Config、CLI、task_queue 入口处规范化
+  - 历史记录与任务去重逻辑可올바름识别同一股票（大小写不再影响）
 
 ## [3.2.7] - 2026-02-20
 
-### 新增
+### 추가
 - 🔐 **Web 页面密码验证**（Issue #320, #349）
   - 支持 `ADMIN_AUTH_ENABLED=true` 启用 Web 登录保护
   - 首次访问在网页设置初始密码；支持「系统设置 > 修改密码」和 CLI `python -m src.auth reset_password` 重置
 
 ## [3.2.6] - 2026-02-20
-### ⚠️ 破坏性变更（Breaking Changes）
+### ⚠️ 破坏性변경（Breaking Changes）
 
-- **历史记录 API 变更 (Issue #322)**
-  - 路由变更：`GET /api/v1/history/{query_id}` → `GET /api/v1/history/{record_id}`
-  - 参数变更：`query_id` (字符串) → `record_id` (整数)
-  - 新闻接口变更：`GET /api/v1/history/{query_id}/news` → `GET /api/v1/history/{record_id}/news`
+- **历史记录 API 변경 (Issue #322)**
+  - 路由변경：`GET /api/v1/history/{query_id}` → `GET /api/v1/history/{record_id}`
+  - 参数변경：`query_id` (字符串) → `record_id` (整数)
+  - 新闻接口변경：`GET /api/v1/history/{query_id}/news` → `GET /api/v1/history/{record_id}/news`
   - 原因：`query_id` 在批量分析时可能重复，无法唯一标识单条历史记录。改用数据库主键 `id` 确保唯一性
-  - 影响范围：使用旧版历史详情 API 的所有客户端需同步更新
+  - 영향 범위：使用旧版历史详情 API 的所有客户端需同步업데이트
 
-### 修复
-- 修复美股（如 ADBE）技术指标矛盾：akshare 美股复权数据异常，统一美股历史数据源为 YFinance（Issue #311）
-- 🐛 **历史记录查询和显示问题 (Issue #322)**
-  - 修复历史记录列表查询中日期不一致问题：使用明天作为 endDate，确保包含今天全天的数据
-  - 修复服务器 UI 报告选择问题：原因是多条记录共享同一 `query_id`，导致总是显示第一条。现改用 `analysis_history.id` 作为唯一标识
+### 수정
+- 수정美股（如 ADBE）技术指标矛盾：akshare 美股复权数据异常，统一美股历史数据源为 YFinance（Issue #311）
+- 🐛 **历史记录查询和显示문제 (Issue #322)**
+  - 수정历史记录列表查询中日期不一致문제：使用明天作为 endDate，确保包含今天全天的数据
+  - 수정服务器 UI 报告选择문제：原因是多条记录共享同一 `query_id`，导致总是显示第一条。现改用 `analysis_history.id` 作为唯一标识
   - 历史详情、新闻接口及前端组件已全面适配 `record_id`
-  - 新增后台轮询（每 30s）与页面可见性变更时静默刷新历史列表，确保 CLI 发起的分析完成后前端能及时同步，使用 `silent` 模式避免触发 loading 状态
+  - 추가后台轮询（每 30s）与页面可见性변경时静默刷新历史列表，确保 CLI 发起的分析完成后前端能及时同步，使用 `silent` 模式避免触发 loading 状态
 - 🐛 **美股指数实时行情与日线数据** (Issue #273)
-  - 修复 SPX、DJI、IXIC、NDX、VIX、RUT 等美股指数无法获取实时行情的问题
-  - 新增 `us_index_mapping` 模块，将用户输入（如 SPX）映射为 Yahoo Finance 符号（如 ^GSPC）
+  - 수정 SPX、DJI、IXIC、NDX、VIX、RUT 等美股指数无法获取实时行情的문제
+  - 추가 `us_index_mapping` 模块，将用户输入（如 SPX）映射为 Yahoo Finance 符号（如 ^GSPC）
   - 美股指数与美股股票日线数据直接路由至 YfinanceFetcher，避免遍历不支持的数据源
   - 消除重复的美股识别逻辑，统一使用 `is_us_stock_code()` 函数
 
@@ -222,7 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.2.5] - 2026-02-19
 
-### 新增
+### 추가
 - 🌍 **大盘复盘可选区域**（Issue #299）
   - 支持 `MARKET_REVIEW_REGION` 环境变量：`cn`（A股）、`us`（美股）、`both`（两者）
   - us 模式使用 SPX/纳斯达克/道指/VIX 等指数；both 模式可同时复盘 A 股与美股
@@ -230,22 +230,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.2.4] - 2026-02-18
 
-### 修复
+### 수정
 - 🐛 **统一美股数据源为 YFinance**（Issue #311）
   - akshare 美股复权数据异常，统一美股历史数据源为 YFinance
-  - 修复 ADBE 等美股股票技术指标矛盾问题
+  - 수정 ADBE 等美股股票技术指标矛盾문제
 
 ## [3.2.3] - 2026-02-18
 
-### 修复
+### 수정
 - 🐛 **标普500实时数据缺失**（Issue #273）
-  - 修复 SPX、DJI、IXIC、NDX、VIX、RUT 等美股指数无法获取实时行情的问题
-  - 新增 `us_index_mapping` 模块，将用户输入（如 SPX）映射为 Yahoo Finance 符号（如 `^GSPC`）
+  - 수정 SPX、DJI、IXIC、NDX、VIX、RUT 等美股指数无法获取实时行情的문제
+  - 추가 `us_index_mapping` 模块，将用户输入（如 SPX）映射为 Yahoo Finance 符号（如 `^GSPC`）
   - 美股指数与美股股票日线数据直接路由至 YfinanceFetcher，避免遍历不支持的数据源
 
 ## [3.2.2] - 2026-02-16
 
-### 新增
+### 추가
 - 📊 **PE 指标支持**（Issue #296）
   - AI System Prompt 增加 PE 估值关注
 - 📰 **新闻时效性筛查**（Issue #296）
@@ -256,50 +256,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.2.1] - 2026-02-16
 
-### 新增
+### 추가
 - 🔧 **东财接口补丁可配置开关**
   - 支持 `EFINANCE_PATCH_ENABLED` 环境变量开关东财接口补丁（默认 `true`）
-  - 补丁不可用时可降级关闭，避免影响主流程
+  - 补丁不可用时可降级닫기，避免影响主流程
 
 ## [3.2.0] - 2026-02-15
 
-### 新增
+### 추가
 - 🔒 **CI 门禁统一（P0）**
-  - 新增 `scripts/ci_gate.sh` 作为后端门禁单一入口
+  - 추가 `scripts/ci_gate.sh` 作为后端门禁单一入口
   - 主 CI 改为 `backend-gate`、`docker-build`、`web-gate` 三段式
   - CI 触发改为所有 PR，避免 Required Checks 因路径过滤缺失而卡住合并
-  - `web-gate` 支持前端路径变更按需触发
-  - 新增 `network-smoke` 工作流承载非阻断网络场景回归
+  - `web-gate` 支持前端路径변경按需触发
+  - 추가 `network-smoke` 工作流承载非阻断网络场景回归
 - 📦 **发布链路收敛（P0）**
   - `docker-publish` 调整为 tag 主触发，并增加发布前门禁校验
   - 手动发布增加 `release_tag` 输入与 semver/changelog 强校验
-  - 发布前新增 Docker smoke（关键模块导入）
+  - 发布前추가 Docker smoke（关键模块导入）
 - 📝 **PR 模板升级（P0）**
-  - 增加背景、范围、验证命令与结果、回滚方案、Issue 关联等必填项
+  - 增加背景、范围、验证命令与结果、롤백 방안、Issue 关联等필수项
 - 🤖 **AI 审查覆盖增强（P0）**
   - `pr-review` 纳入 `.github/workflows/**` 范围
-  - 新增 `AI_REVIEW_STRICT` 开关，可选将 AI 审查失败升级为阻断
+  - 추가 `AI_REVIEW_STRICT` 开关，可选将 AI 审查失败升级为阻断
 
 ## [3.1.13] - 2026-02-15
 
-### 新增
+### 추가
 - 📊 **仅分析结果摘要**（Issue #262）
   - 支持 `REPORT_SUMMARY_ONLY` 环境变量，设为 `true` 时只推送汇总，不含个股详情
   - 默认 `false`，多股时适合快速浏览
 
 ## [3.1.12] - 2026-02-15
 
-### 新增
+### 추가
 - 📧 **个股与大盘复盘合并推送**（Issue #190）
   - 支持 `MERGE_EMAIL_NOTIFICATION` 环境变量，设为 `true` 时将个股分析与大盘复盘合并为一次推送
   - 默认 `false`，减少邮件数量、降低被识别为垃圾邮件的风险
 
 ## [3.1.11] - 2026-02-15
 
-### 新增
+### 추가
 - 🤖 **Anthropic Claude API 支持**（Issue #257）
   - 支持 `ANTHROPIC_API_KEY`、`ANTHROPIC_MODEL`、`ANTHROPIC_TEMPERATURE`、`ANTHROPIC_MAX_TOKENS`
-  - AI 分析优先级：Gemini > Anthropic > OpenAI
+  - AI 分析우선순위：Gemini > Anthropic > OpenAI
 - 📷 **从图片识别股票代码**（Issue #257）
   - 上传自选股截图，通过 Vision LLM 自动提取股票代码
   - API: `POST /api/v1/stocks/extract-from-image`；支持 JPEG/PNG/WebP/GIF，最大 5MB
@@ -309,38 +309,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.1.10] - 2026-02-15
 
-### 新增
+### 추가
 - ⚙️ **立即运行配置**（Issue #332）
   - 支持 `RUN_IMMEDIATELY` 环境变量，`true` 时定时任务启动后立即执行一次
-- 🐛 修复 Docker 构建问题
+- 🐛 수정 Docker 构建문제
 
 ## [3.1.9] - 2026-02-14
 
-### 新增
+### 추가
 - 🔌 **东财接口补丁机制**
-  - 新增 `patch/eastmoney_patch.py` 修复 efinance 上游接口变更
+  - 추가 `patch/eastmoney_patch.py` 수정 efinance 上游接口변경
   - 不影响其他数据源的正常运行
 
 ## [3.1.8] - 2026-02-14
 
-### 新增
+### 추가
 - 🔐 **Webhook 证书校验开关**（Issue #265）
-  - 支持 `WEBHOOK_VERIFY_SSL` 环境变量，可关闭 HTTPS 证书校验以支持自签名证书
-  - 默认保持校验，关闭存在 MITM 风险，仅建议在可信内网使用
+  - 支持 `WEBHOOK_VERIFY_SSL` 环境变量，可닫기 HTTPS 证书校验以支持自签名证书
+  - 默认保持校验，닫기存在 MITM 风险，仅권장 조치在可信内网使用
 
 ## [3.1.7] - 2026-02-14
 
-### 修复
-- 🐛 修复包导入错误（package import error）
+### 수정
+- 🐛 수정包导入잘못됨（package import error）
 
 ## [3.1.6] - 2026-02-13
 
-### 修复
-- 🐛 修复 `news_intel` 中 `query_id` 不一致问题
+### 수정
+- 🐛 수정 `news_intel` 中 `query_id` 不一致문제
 
 ## [3.1.5] - 2026-02-13
 
-### 新增
+### 추가
 - 📷 **Markdown 转图片通知**（Issue #289）
   - 支持 `MARKDOWN_TO_IMAGE_CHANNELS` 配置，对 Telegram、企业微信、自定义 Webhook（Discord）、邮件发送图片格式报告
   - 邮件为内联附件，增强对不支持 HTML 客户端的兼容性
@@ -348,46 +348,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.1.4] - 2026-02-12
 
-### 新增
+### 추가
 - 📧 **股票分组发往不同邮箱**（Issue #268）
   - 支持 `STOCK_GROUP_N` + `EMAIL_GROUP_N` 配置，不同股票组报告发送到对应邮箱
   - 大盘复盘发往所有配置的邮箱
 
 ## [3.1.3] - 2026-02-12
 
-### 修复
-- 🐛 修复 Docker 内运行时通过页面修改配置报错 `[Errno 16] Device or resource busy` 的问题
+### 수정
+- 🐛 수정 Docker 内运行时通过页面修改配置报错 `[Errno 16] Device or resource busy` 的문제
 
 ## [3.1.2] - 2026-02-11
 
-### 修复
-- 🐛 修复 Docker 一致性问题，解决关键批次处理与通知 Bug
+### 수정
+- 🐛 수정 Docker 一致性문제，解决关键批次处理与通知 Bug
 
 ## [3.1.1] - 2026-02-11
 
-### 变更
+### 변경
 - ♻️ `API_HOST` → `WEBUI_HOST`：Docker Compose 配置项统一
 
 ## [3.1.0] - 2026-02-11
 
-### 新增
+### 추가
 - 📊 **ETF 支持增强与代码规范化**
   - 统一各数据源 ETF 代码处理逻辑
-  - 新增 `canonical_stock_code()` 统一代码格式，确保数据源路由正确
+  - 추가 `canonical_stock_code()` 统一代码格式，确保数据源路由올바름
 
 ## [3.0.5] - 2026-02-08
 
-### 修复
-- 🐛 修复信号 emoji 与建议不一致的问题（复合建议如"卖出/观望"未正确映射）
-- 🐛 修复 `*ST` 股票名在微信/Dashboard 中 markdown 转义问题
-- 🐛 修复 `idx.amount` 为 None 时大盘复盘 TypeError
-- 🐛 修复分析 API 返回 `report=None` 及 ReportStrategy 类型不一致问题
-- 🐛 修复 Tushare 返回类型错误（dict → UnifiedRealtimeQuote）及 API 端点指向
+### 수정
+- 🐛 수정信号 emoji 与권장 조치不一致的문제（复合권장 조치如"卖出/观望"未올바름映射）
+- 🐛 수정 `*ST` 股票名在微信/Dashboard 中 markdown 转义문제
+- 🐛 수정 `idx.amount` 为 None 时大盘复盘 TypeError
+- 🐛 수정分析 API 返回 `report=None` 及 ReportStrategy 类型不一致문제
+- 🐛 수정 Tushare 返回类型잘못됨（dict → UnifiedRealtimeQuote）及 API 端点指向
 
-### 新增
+### 추가
 - 📊 大盘复盘报告注入结构化数据（涨跌统计、指数表格、板块排名）
 - 🔍 搜索结果 TTL 缓存（500 条上限，FIFO 淘汰）
-- 🔧 Tushare Token 存在时自动注入实时行情优先级
+- 🔧 Tushare Token 存在时自动注入实时行情우선순위
 - 📰 新闻摘要截断长度 50→200 字
 
 ### 优化
@@ -395,40 +395,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [3.0.4] - 2026-02-07
 
-### 新增
+### 추가
 - 📈 **回测引擎** (PR #269)
-  - 新增基于历史分析记录的回测系统，支持收益率、胜率、最大回撤等指标评估
+  - 추가基于历史分析记录的回测系统，支持收益率、胜率、最大回撤等指标评估
   - WebUI 集成回测结果展示
 
 ## [3.0.3] - 2026-02-07
 
-### 修复
-- 🐛 修复狙击点位数据解析错误问题 (PR #271)
+### 수정
+- 🐛 수정狙击点位数据解析잘못됨문제 (PR #271)
 
 ## [3.0.2] - 2026-02-06
 
-### 新增
+### 추가
 - ✉️ 可配置邮件发送者名称 (PR #272)
 - 🌐 外国股票支持英文关键词搜索
 
 ## [3.0.1] - 2026-02-06
 
-### 修复
-- 🐛 修复 ETF 实时行情获取、市场数据回退、企业微信消息分块问题
+### 수정
+- 🐛 수정 ETF 实时行情获取、市场数据回退、企业微信消息分块문제
 - 🔧 CI 流程简化
 
 ## [3.0.0] - 2026-02-06
 
-### 移除
-- 🗑️ **移除旧版 WebUI**
+### 제거
+- 🗑️ **제거旧版 WebUI**
   - 删除基于 `http.server.ThreadingHTTPServer` 的旧版 WebUI（`web/` 包）
   - 旧版 WebUI 的功能已完全被 FastAPI（`api/`）+ React 前端替代
   - `--webui` / `--webui-only` 命令行参数标记为弃用，自动重定向到 `--serve` / `--serve-only`
   - `WEBUI_ENABLED` / `WEBUI_HOST` / `WEBUI_PORT` 环境变量保持兼容，自动转发到 FastAPI 服务
   - `webui.py` 保留为兼容入口，启动时直接调用 FastAPI 后端
-  - Docker Compose 中移除 `webui` 服务定义，统一使用 `server` 服务
+  - Docker Compose 中제거 `webui` 服务定义，统一使用 `server` 服务
 
-### 变更
+### 변경
 - ♻️ **服务层重构**
   - 将 `web/services.py` 中的异步任务服务迁移至 `src/services/task_service.py`
   - Bot 分析命令（`bot/commands/analyze.py`）改为使用 `src.services.task_service`
@@ -436,80 +436,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.3.0] - 2026-02-01
 
-### 新增
+### 추가
 - 🇺🇸 **增强美股支持** (Issue #153)
   - 实现基于 Akshare 的美股历史数据获取 (`ak.stock_us_daily()`)
   - 实现基于 Yfinance 的美股实时行情获取（优先策略）
   - 增加对不支持数据源（Tushare/Baostock/Pytdx/Efinance）的美股代码过滤和快速降级
 
-### 修复
-- 🐛 修复 AMD 等美股代码被误识别为 A 股的问题 (Issue #153)
+### 수정
+- 🐛 수정 AMD 等美股代码被误识别为 A 股的문제 (Issue #153)
 
 ## [2.2.5] - 2026-02-01
 
-### 新增
+### 추가
 - 🤖 **AstrBot 消息推送** (PR #217)
-  - 新增 AstrBot 通知渠道，支持推送到 QQ 和微信
+  - 추가 AstrBot 通知渠道，支持推送到 QQ 和微信
   - 支持 HMAC SHA256 签名验证，确保通信安全
   - 通过 `ASTRBOT_URL` 和 `ASTRBOT_TOKEN` 配置
 
 ## [2.2.4] - 2026-02-01
 
-### 新增
-- ⚙️ **可配置数据源优先级** (PR #215)
-  - 支持通过环境变量（如 `YFINANCE_PRIORITY=0`）动态调整数据源优先级
+### 추가
+- ⚙️ **可配置数据源우선순위** (PR #215)
+  - 支持通过环境变量（如 `YFINANCE_PRIORITY=0`）动态调整数据源우선순위
   - 无需修改代码即可优先使用特定数据源（如 Yahoo Finance）
 
 ## [2.2.3] - 2026-01-31
 
-### 修复
-- 📦 更新 requirements.txt，增加 `lxml_html_clean` 依赖以解决兼容性问题
+### 수정
+- 📦 업데이트 requirements.txt，增加 `lxml_html_clean` 依赖以解决兼容性문제
 
 ## [2.2.2] - 2026-01-31
 
-### 修复
-- 🐛 修复代理配置区分大小写问题 (fixes #211)
+### 수정
+- 🐛 수정代理配置区分大小写문제 (fixes #211)
 
 ## [2.2.1] - 2026-01-31
 
-### 修复
-- 🐛 **YFinance 兼容性修复** (PR #210, fixes #209)
-  - 修复新版 yfinance 返回 MultiIndex 列名导致的数据解析错误
+### 수정
+- 🐛 **YFinance 兼容性수정** (PR #210, fixes #209)
+  - 수정新版 yfinance 返回 MultiIndex 列名导致的数据解析잘못됨
 
 ## [2.2.0] - 2026-01-31
 
-### 新增
+### 추가
 - 🔄 **多源回退策略增强**
   - 实现了更健壮的数据获取回退机制 (feat: multi-source fallback strategy)
   - 优化了数据源故障时的自动切换逻辑
 
-### 修复
-- 🐛 修复 analyzer 运行后无法通过改 .env 文件的 stock_list 内容调整跟踪的股票
+### 수정
+- 🐛 수정 analyzer 运行后无法通过改 .env 文件的 stock_list 内容调整跟踪的股票
 
 ## [2.1.14] - 2026-01-31
 
-### 文档
-- 📝 更新 README 和优化 auto-tag 规则
+### 문서
+- 📝 업데이트 README 和优化 auto-tag 规则
 
 ## [2.1.13] - 2026-01-31
 
-### 修复
-- 🐛 **Tushare 优先级与实时行情** (Fixed #185)
-  - 修复 Tushare 数据源优先级设置问题
-  - 修复 Tushare 实时行情获取功能
+### 수정
+- 🐛 **Tushare 우선순위与实时行情** (Fixed #185)
+  - 수정 Tushare 数据源우선순위设置문제
+  - 수정 Tushare 实时行情获取功能
 
 ## [2.1.12] - 2026-01-30
 
-### 修复
-- 🌐 修复代理配置在某些情况下的区分大小写问题
-- 🌐 修复本地环境禁用代理的逻辑
+### 수정
+- 🌐 수정代理配置在某些情况下的区分大小写문제
+- 🌐 수정本地环境禁用代理的逻辑
 
 ## [2.1.11] - 2026-01-30
 
 ### 优化
 - 🚀 **飞书消息流优化** (PR #192)
   - 优化飞书 Stream 模式的消息类型处理
-  - 修改 Stream 消息模式默认为关闭，防止配置错误运行时报错
+  - 修改 Stream 消息模式默认为닫기，防止配置잘못됨运行时报错
 
 ## [2.1.10] - 2026-01-30
 
@@ -518,83 +518,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [2.1.9] - 2026-01-30
 
-### 新增
+### 추가
 - 💬 **微信文本消息支持** (PR #137)
-  - 新增微信推送的纯文本消息类型支持
+  - 추가微信推送的纯文本消息类型支持
   - 添加 `WECHAT_MSG_TYPE` 配置项
 
 ## [2.1.8] - 2026-01-30
 
-### 修复
-- 🐛 修正日志中 API 提供商显示错误 (PR #197)
+### 수정
+- 🐛 修正日志中 API 提供商显示잘못됨 (PR #197)
 
 ## [2.1.7] - 2026-01-30
 
-### 修复
-- 🌐 禁用本地环境的代理设置，避免网络连接问题
+### 수정
+- 🌐 禁用本地环境的代理设置，避免网络连接문제
 
 ## [2.1.6] - 2026-01-29
 
-### 新增
+### 추가
 - 📡 **Pytdx 数据源 (Priority 2)**
-  - 新增通达信数据源，免费无需注册
+  - 추가通达信数据源，免费无需注册
   - 多服务器自动切换
   - 支持实时行情和历史数据
 - 🏷️ **多源股票名称解析**
-  - DataFetcherManager 新增 `get_stock_name()` 方法
-  - 新增 `batch_get_stock_names()` 批量查询
+  - DataFetcherManager 추가 `get_stock_name()` 方法
+  - 추가 `batch_get_stock_names()` 批量查询
   - 自动在多数据源间回退
-  - Tushare 和 Baostock 新增股票名称/列表方法
+  - Tushare 和 Baostock 추가股票名称/列表方法
 - 🔍 **增强搜索回退**
-  - 新增 `search_stock_price_fallback()` 用于数据源全部失败时
-  - 新增搜索维度：市场分析、行业分析
+  - 추가 `search_stock_price_fallback()` 用于数据源全部失败时
+  - 추가搜索维度：市场分析、行业分析
   - 最大搜索次数从 3 增加到 5
-  - 改进搜索结果格式（每维度 4 条结果）
+  - 개선搜索结果格式（每维度 4 条结果）
 
-### 改进
-- 更新搜索查询模板以提高相关性
+### 개선
+- 업데이트搜索查询模板以提高相关性
 - 增强 `format_intel_report()` 输出结构
 
 ## [2.1.5] - 2026-01-29
 
-### 新增
-- 📡 新增 Pytdx 数据源和多源股票名称解析功能
+### 추가
+- 📡 추가 Pytdx 数据源和多源股票名称解析功能
 
 ## [2.1.4] - 2026-01-29
 
-### 文档
-- 📝 更新赞助商信息
+### 문서
+- 📝 업데이트赞助商信息
 
 ## [2.1.3] - 2026-01-28
 
-### 文档
+### 문서
 - 📝 重构 README 布局
-- 🌐 新增繁体中文翻译 (README_CHT.md)
+- 🌐 추가繁体中文翻译 (README_CHT.md)
 
-### 修复
-- 🐛 修复 WebUI 无法输入美股代码问题
+### 수정
+- 🐛 수정 WebUI 无法输入美股代码문제
   - 输入框逻辑改成所有字母都转换成大写
   - 支持 `.` 的输入（如 `BRK.B`）
 
 ## [2.1.2] - 2026-01-27
 
-### 修复
-- 🐛 修复个股分析推送失败和报告路径问题 (fixes #166)
-- 🐛 修改 CR 错误，确保微信消息最大字节配置生效
+### 수정
+- 🐛 수정个股分析推送失败和报告路径문제 (fixes #166)
+- 🐛 修改 CR 잘못됨，确保微信消息最大字节配置生效
 
 ## [2.1.1] - 2026-01-26
 
-### 新增
+### 추가
 - 🔧 添加 GitHub Actions auto-tag 工作流
 - 📡 添加 yfinance 兜底数据源及数据缺失警告
 
-### 修复
-- 🐳 修复 docker-compose 路径和文档命令
+### 수정
+- 🐳 수정 docker-compose 路径和문서命令
 - 🐳 Dockerfile 补充 copy src 文件夹 (fixes #145)
 
 ## [2.1.0] - 2026-01-25
 
-### 新增
+### 추가
 - 🇺🇸 **美股分析支持**
   - 支持美股代码直接输入（如 `AAPL`, `TSLA`）
   - 使用 YFinance 作为美股数据源
@@ -610,40 +610,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - 支持 Stream 长连接模式
 - 🌡️ **AI 温度参数可配置** (PR #142)
   - 支持自定义 AI 模型温度参数
-- 🐳 **Zeabur 部署支持**
-  - 添加 Zeabur 镜像部署工作流
+- 🐳 **Zeabur 배포支持**
+  - 添加 Zeabur 镜像배포工作流
   - 支持 commit hash 和 latest 双标签
 
 ### 重构
 - 🏗️ **项目结构优化**
   - 核心代码移至 `src/` 目录，根目录更清爽
-  - 文档移至 `docs/` 目录
+  - 문서移至 `docs/` 目录
   - Docker 配置移至 `docker/` 目录
-  - 修复所有 import 路径，保持向后兼容
+  - 수정所有 import 路径，保持向后兼容
 - 🔄 **数据源架构升级**
-  - 新增数据源熔断机制，单数据源连续失败自动切换
+  - 추가数据源熔断机制，单数据源连续失败自动切换
   - 实时行情缓存优化，批量预取减少 API 调用
   - 网络代理智能分流，国内接口自动直连
 - 🤖 Discord 机器人重构为平台适配器架构
 
-### 修复
+### 수정
 - 🌐 **网络稳定性增强**
   - 自动检测代理配置，对国内行情接口强制直连
-  - 修复 EfinanceFetcher 偶发的 `ProtocolError`
-  - 增加对底层网络错误的捕获和重试机制
+  - 수정 EfinanceFetcher 偶发的 `ProtocolError`
+  - 增加对底层网络잘못됨的捕获和重试机制
 - 📧 **邮件渲染优化**
-  - 修复邮件中表格不渲染问题 (#134)
+  - 수정邮件中表格不渲染문제 (#134)
   - 优化邮件排版，更紧凑美观
-- 📢 **企业微信推送修复**
-  - 修复大盘复盘推送不完整问题
+- 📢 **企业微信推送수정**
+  - 수정大盘复盘推送不完整문제
   - 增强消息分割逻辑，支持更多标题格式
   - 增加分批发送间隔，避免限流丢失
-- 👷 **CI/CD 修复**
-  - 修复 GitHub Actions 中路径引用的错误
+- 👷 **CI/CD 수정**
+  - 수정 GitHub Actions 中路径引用的잘못됨
 
 ## [2.0.0] - 2026-01-24
 
-### 新增
+### 추가
 - 🇺🇸 **美股分析支持**
   - 支持美股代码直接输入（如 `AAPL`, `TSLA`）
   - 使用 YFinance 作为美股数据源
@@ -655,41 +655,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - 支持 Discord Webhook 推送
   - 添加 Discord 环境变量到工作流
 
-### 修复
-- 🐳 修复 WebUI 在 Docker 中绑定 0.0.0.0 (fixed #118)
-- 🔔 修复飞书长连接通知问题
-- 🐛 修复 `analysis_delay` 未定义错误
-- 🔧 启动时 config.py 检测通知渠道，修复已配置自定义渠道情况下仍然提示未配置问题
+### 수정
+- 🐳 수정 WebUI 在 Docker 中绑定 0.0.0.0 (fixed #118)
+- 🔔 수정飞书长连接通知문제
+- 🐛 수정 `analysis_delay` 未定义잘못됨
+- 🔧 启动时 config.py 检测通知渠道，수정已配置自定义渠道情况下仍然提示未配置문제
 
-### 改进
-- 🔧 优化 Tushare 优先级判断逻辑，提升封装性
-- 🔧 修复 Tushare 优先级提升后仍排在 Efinance 之后的问题
-- ⚙️ 配置 TUSHARE_TOKEN 时自动提升 Tushare 数据源优先级
+### 개선
+- 🔧 优化 Tushare 우선순위判断逻辑，提升封装性
+- 🔧 수정 Tushare 우선순위提升后仍排在 Efinance 之后的문제
+- ⚙️ 配置 TUSHARE_TOKEN 时自动提升 Tushare 数据源우선순위
 - ⚙️ 实现 4 个用户反馈 issue (#112, #128, #38, #119)
 
 ## [1.6.0] - 2026-01-19
 
-### 新增
+### 추가
 - 🖥️ WebUI 管理界面及 API 支持（PR #72）
   - 全新 Web 架构：分层设计（Server/Router/Handler/Service）
   - 核心 API：支持 `/analysis` (触发分析), `/tasks` (查询进度), `/health` (健康检查)
   - 交互界面：支持页面直接输入代码并触发分析，实时展示进度
-  - 运行模式：新增 `--webui-only` 模式，仅启动 Web 服务
+  - 运行模式：추가 `--webui-only` 模式，仅启动 Web 服务
   - 解决了 [#70](https://github.com/ZhuLinsen/daily_stock_analysis/issues/70) 的核心需求（提供触发分析的接口）
 - ⚙️ GitHub Actions 配置灵活性增强（[#79](https://github.com/ZhuLinsen/daily_stock_analysis/issues/79)）
   - 支持从 Repository Variables 读取非敏感配置（如 STOCK_LIST, GEMINI_MODEL）
   - 保持对 Secrets 的向下兼容
 
-### 修复
-- 🐛 修复企业微信/飞书报告截断问题（[#73](https://github.com/ZhuLinsen/daily_stock_analysis/issues/73)）
-  - 移除 notification.py 中不必要的长度硬截断逻辑
+### 수정
+- 🐛 수정企业微信/飞书报告截断문제（[#73](https://github.com/ZhuLinsen/daily_stock_analysis/issues/73)）
+  - 제거 notification.py 中不必要的长度硬截断逻辑
   - 依赖底层自动分片机制处理长消息
-- 🐛 修复 GitHub Workflow 环境变量缺失（[#80](https://github.com/ZhuLinsen/daily_stock_analysis/issues/80)）
-  - 修复 `CUSTOM_WEBHOOK_BEARER_TOKEN` 未正确传递到 Runner 的问题
+- 🐛 수정 GitHub Workflow 环境变量缺失（[#80](https://github.com/ZhuLinsen/daily_stock_analysis/issues/80)）
+  - 수정 `CUSTOM_WEBHOOK_BEARER_TOKEN` 未올바름传递到 Runner 的문제
 
 ## [1.5.0] - 2026-01-17
 
-### 新增
+### 추가
 - 📲 单股推送模式（[#55](https://github.com/ZhuLinsen/daily_stock_analysis/issues/55)）
   - 每分析完一只股票立即推送，不用等全部分析完
   - 命令行参数：`--single-notify`
@@ -700,7 +700,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.4.0] - 2026-01-17
 
-### 新增
+### 추가
 - 📱 Pushover 推送支持（PR #26）
   - 支持 iOS/Android 跨平台推送
   - 通过 `PUSHOVER_USER_KEY` 和 `PUSHOVER_API_TOKEN` 配置
@@ -708,56 +708,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - 中文搜索优化，支持 AI 摘要
   - 通过 `BOCHA_API_KEYS` 配置
 - 📊 Efinance 数据源支持（PR #59）
-  - 新增 efinance 作为数据源选项
+  - 추가 efinance 作为数据源选项
 - 🇭🇰 港股支持（PR #17）
   - 支持 5 位代码或 HK 前缀（如 `hk00700`、`hk1810`）
 
-### 修复
+### 수정
 - 🔧 飞书 Markdown 渲染优化（PR #34）
-  - 使用交互卡片和格式化器修复渲染问题
-- ♻️ 股票列表热重载（PR #42 修复）
+  - 使用交互卡片和格式化器수정渲染문제
+- ♻️ 股票列表热重载（PR #42 수정）
   - 分析前自动重载 `STOCK_LIST` 配置
 - 🐛 钉钉 Webhook 20KB 限制处理
   - 长消息自动分块发送，避免被截断
 - 🔄 AkShare API 重试机制增强
   - 添加失败缓存，避免重复请求失败接口
 
-### 改进
+### 개선
 - 📝 README 精简优化
   - 高级配置移至 `docs/full-guide.md`
 
 
 ## [1.3.0] - 2026-01-12
 
-### 新增
+### 추가
 - 🔗 自定义 Webhook 支持
   - 支持任意 POST JSON 的 Webhook 端点
   - 自动识别钉钉、Discord、Slack、Bark 等常见服务格式
   - 支持配置多个 Webhook（逗号分隔）
   - 通过 `CUSTOM_WEBHOOK_URLS` 环境变量配置
 
-### 修复
+### 수정
 - 📝 企业微信长消息分批发送
-  - 解决自选股过多时内容超过 4096 字符限制导致推送失败的问题
+  - 解决自选股过多时内容超过 4096 字符限制导致推送失败的문제
   - 智能按股票分析块分割，每批添加分页标记（如 1/3, 2/3）
   - 批次间隔 1 秒，避免触发频率限制
 
 ## [1.2.0] - 2026-01-11
 
-### 新增
+### 추가
 - 📢 多渠道推送支持
   - 企业微信 Webhook
-  - 飞书 Webhook（新增）
-  - 邮件 SMTP（新增）
+  - 飞书 Webhook（추가）
+  - 邮件 SMTP（추가）
   - 自动识别渠道类型，配置更简单
 
-### 改进
+### 개선
 - 统一使用 `NOTIFICATION_URL` 配置，兼容旧的 `WECHAT_WEBHOOK_URL`
 - 邮件支持 Markdown 转 HTML 渲染
 
 ## [1.1.0] - 2026-01-11
 
-### 新增
+### 추가
 - 🤖 OpenAI 兼容 API 支持
   - 支持 DeepSeek、通义千问、Moonshot、智谱 GLM 等
   - Gemini 和 OpenAI 格式二选一
@@ -765,12 +765,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.0.0] - 2026-01-10
 
-### 新增
+### 추가
 - 🎯 AI 决策仪表盘分析
-  - 一句话核心结论
+  - 一句话核心결론
   - 精确买入/止损/目标点位
   - 检查清单（✅⚠️❌）
-  - 分持仓建议（空仓者 vs 持仓者）
+  - 分持仓권장 조치（空仓者 vs 持仓者）
 - 📊 大盘复盘功能
   - 主要指数行情
   - 涨跌统计
@@ -786,8 +786,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - SerpAPI
 - 💬 企业微信机器人推送
 - ⏰ 定时任务调度
-- 🐳 Docker 部署支持
-- 🚀 GitHub Actions 零成本部署
+- 🐳 Docker 배포支持
+- 🚀 GitHub Actions 零成本배포
 
 ### 技术特性
 - Gemini AI 模型（gemini-3-flash-preview）

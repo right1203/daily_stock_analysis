@@ -246,13 +246,13 @@ def _handle_get_stock_info(stock_code: str) -> dict:
             try:
                 board_df = fetcher.get_belong_board(stock_code)
                 if board_df is not None and not board_df.empty:
-                    # Typically columns: 板块名称, 板块代码, 涨跌幅, …
+                    # Typically columns: 섹터명, 섹터코드, 등락률, …
                     boards = board_df.to_dict(orient="records")
                     # Keep only name + change columns to limit token usage
                     clean["belong_boards"] = [
                         {k2: (str(v2) if not isinstance(v2, (int, float, str, type(None))) else v2)
                          for k2, v2 in row.items()
-                         if any(kw in str(k2) for kw in ["名称", "代码", "涨跌", "板块"])}
+                         if any(kw in str(k2) for kw in ["이름", "코드", "涨跌", "板块"])}
                         for row in boards[:10]
                     ]
             except Exception:

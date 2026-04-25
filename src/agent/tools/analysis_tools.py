@@ -145,9 +145,9 @@ def _handle_calculate_ma(stock_code: str, periods: Optional[str] = None, days: i
     result["above_ma_count"] = above_count
     result["total_ma_count"] = len(ma_values)
     result["ma_alignment"] = (
-        "多头排列" if above_count == len(ma_values)
-        else "空头排列" if above_count == 0
-        else f"混合({above_count}/{len(ma_values)}条均线上方)"
+        "강세 정렬" if above_count == len(ma_values)
+        else "약세 정렬" if above_count == 0
+        else f"혼합({above_count}/{len(ma_values)}개 이동평균 위)"
     )
     return result
 
@@ -156,7 +156,7 @@ calculate_ma_tool = ToolDefinition(
     name="calculate_ma",
     description="Calculate moving averages (MA5/10/20/30/60/120/250 or custom periods) "
                 "for a stock. Returns each MA value, price bias %, and whether price "
-                "is above each MA. Also returns overall MA alignment (多头/空头/混合).",
+                "is above each MA. Also returns overall MA alignment (강세/약세/혼합).",
     parameters=[
         ToolParameter(
             name="stock_code",
@@ -236,26 +236,26 @@ def _handle_get_volume_analysis(stock_code: str, days: int = 30) -> dict:
         recent_5_avg = float(volume.tail(5).mean())
         prior_5_avg = float(volume.iloc[-10:-5].mean())
         vol_trend_pct = round((recent_5_avg - prior_5_avg) / prior_5_avg * 100, 1) if prior_5_avg > 0 else 0
-        vol_trend = "放量" if vol_trend_pct > 20 else "缩量" if vol_trend_pct < -20 else "量能平稳"
+        vol_trend = "거래량 증가" if vol_trend_pct > 20 else "거래량 감소" if vol_trend_pct < -20 else "거래량 안정"
     else:
         vol_trend_pct = 0
-        vol_trend = "数据不足"
+        vol_trend = "데이터 부족"
 
     # High-volume days (> 2x 20d avg)
     high_vol_days = int((volume > avg_vol_20 * 2).sum()) if avg_vol_20 > 0 else 0
 
     # Volume-price pattern interpretation
-    pattern = "未知"
+    pattern = "알 수 없음"
     if avg_up_vol > avg_down_vol * 1.3:
-        pattern = "量价配合良好（上涨放量、下跌缩量）"
+        pattern = "거래량-가격 호응 양호（상승 시 거래량 증가, 하락 시 거래량 감소）"
     elif avg_down_vol > avg_up_vol * 1.3:
-        pattern = "量价背离（下跌放量、上涨缩量，偏空）"
+        pattern = "거래량-가격 배리（하락 시 거래량 증가, 상승 시 거래량 감소, 하락 편향）"
     elif vol_ratio_5d and vol_ratio_5d > 1.5:
-        pattern = "近期明显放量"
+        pattern = "최근 뚜렷한 거래량 증가"
     elif vol_ratio_5d and vol_ratio_5d < 0.6:
-        pattern = "近期明显缩量"
+        pattern = "최근 뚜렷한 거래량 감소"
     else:
-        pattern = "量价关系中性"
+        pattern = "거래량-가격 관계 중립"
 
     return {
         "code": stock_code,
@@ -280,7 +280,7 @@ get_volume_analysis_tool = ToolDefinition(
     name="get_volume_analysis",
     description="Analyse volume-price relationship for a stock. Returns volume ratios, "
                 "average volume on up vs down days, volume trend (expanding/shrinking), "
-                "and pattern interpretation (量价配合/背离). Useful for confirming trend "
+                "and pattern interpretation (거래량-가격 호응/배리). Useful for confirming trend "
                 "strength and detecting distribution or accumulation phases.",
     parameters=[
         ToolParameter(
@@ -356,78 +356,78 @@ def _handle_analyze_pattern(stock_code: str, days: int = 60) -> dict:
         # Doji
         if bd < avg_body * 0.1 and (us + ls) > bd * 3:
             patterns_detected.append({
-                "pattern": "十字星 (Doji)", "type": "reversal_signal",
+                "pattern": "십자선 (Doji)", "type": "reversal_signal",
                 "day_offset": -(n - 1 - i),
-                "strength": "弱", "desc": "多空平衡，可能变盘信号"
+                "strength": "약", "desc": "매수매도 균형, 추세 전환 신호 가능"
             })
 
         # Hammer / Hanging Man
         if ls > body(i) * 2 and us < body(i) * 0.5:
-            label = "锤子线 (Hammer)" if i == 0 or c[i] >= c[i - 1] else "上吊线 (Hanging Man)"
+            label = "망치형 (Hammer)" if i == 0 or c[i] >= c[i - 1] else "교수형 (Hanging Man)"
             patterns_detected.append({
                 "pattern": label, "type": "reversal_signal",
                 "day_offset": -(n - 1 - i),
-                "strength": "中", "desc": "下影线长，潜在支撑/反转"
+                "strength": "중", "desc": "아래 꼬리 길음, 잠재적 지지/반전"
             })
 
         # Shooting Star / Inverted Hammer
         if us > body(i) * 2 and ls < body(i) * 0.5:
-            label = "流星线 (Shooting Star)" if is_bearish(i) else "倒锤子"
+            label = "유성형 (Shooting Star)" if is_bearish(i) else "역망치형"
             patterns_detected.append({
                 "pattern": label, "type": "bearish_signal",
                 "day_offset": -(n - 1 - i),
-                "strength": "中", "desc": "上影线长，潜在压力/反转"
+                "strength": "중", "desc": "위 꼬리 길음, 잠재적 저항/반전"
             })
 
         # Big bullish / bearish candle
         if bd > avg_body * 2.5:
-            label = "大阳线" if is_bullish(i) else "大阴线"
+            label = "대양선" if is_bullish(i) else "대음선"
             t = "bullish" if is_bullish(i) else "bearish"
             patterns_detected.append({
                 "pattern": label, "type": t,
                 "day_offset": -(n - 1 - i),
-                "strength": "强", "desc": "实体大，方向明确"
+                "strength": "강", "desc": "실체 큼, 방향 명확"
             })
 
     # --- Multi-candle patterns (use last 10 days) ---
     if n >= 3:
         i = n - 1
-        # Morning Star (早晨之星) — bottom reversal
+        # Morning Star (모닝 스타) — bottom reversal
         if (is_bearish(i - 2) and body(i - 2) > avg_body * 1.5
                 and body(i - 1) < avg_body * 0.4
                 and is_bullish(i) and body(i) > avg_body * 1.5
                 and c[i] > (o[i - 2] + c[i - 2]) / 2):
             patterns_detected.append({
-                "pattern": "早晨之星 (Morning Star)", "type": "bullish_reversal",
-                "day_offset": -2, "strength": "强", "desc": "三根K线底部反转形态"
+                "pattern": "모닝 스타 (Morning Star)", "type": "bullish_reversal",
+                "day_offset": -2, "strength": "강", "desc": "3개 K선 바닥 반전 패턴"
             })
 
-        # Evening Star (黄昏之星) — top reversal
+        # Evening Star (이브닝 스타) — top reversal
         if (is_bullish(i - 2) and body(i - 2) > avg_body * 1.5
                 and body(i - 1) < avg_body * 0.4
                 and is_bearish(i) and body(i) > avg_body * 1.5
                 and c[i] < (o[i - 2] + c[i - 2]) / 2):
             patterns_detected.append({
-                "pattern": "黄昏之星 (Evening Star)", "type": "bearish_reversal",
-                "day_offset": -2, "strength": "强", "desc": "三根K线顶部反转形态"
+                "pattern": "이브닝 스타 (Evening Star)", "type": "bearish_reversal",
+                "day_offset": -2, "strength": "강", "desc": "3개 K선 천장 반전 패턴"
             })
 
-        # Engulfing (吞没形态)
+        # Engulfing (장악형)
         if (is_bullish(i) and is_bearish(i - 1)
                 and o[i] < c[i - 1] and c[i] > o[i - 1]):
             patterns_detected.append({
-                "pattern": "看涨吞没 (Bullish Engulfing)", "type": "bullish_reversal",
-                "day_offset": -1, "strength": "强", "desc": "阳线完全覆盖前一阴线"
+                "pattern": "상승 장악형 (Bullish Engulfing)", "type": "bullish_reversal",
+                "day_offset": -1, "strength": "강", "desc": "양봉이 이전 음봉을 완전히 포함"
             })
         elif (is_bearish(i) and is_bullish(i - 1)
               and o[i] > c[i - 1] and c[i] < o[i - 1]):
             patterns_detected.append({
-                "pattern": "看跌吞没 (Bearish Engulfing)", "type": "bearish_reversal",
-                "day_offset": -1, "strength": "强", "desc": "阴线完全覆盖前一阳线"
+                "pattern": "하락 장악형 (Bearish Engulfing)", "type": "bearish_reversal",
+                "day_offset": -1, "strength": "강", "desc": "음봉이 이전 양봉을 완전히 포함"
             })
 
     # --- Chart patterns over the window ---
-    # Double bottom detection (简化版: 两个相近低点 + 中间高点)
+    # Double bottom detection (단순화 버전: 두 개의 유사한 저점 + 중간 고점)
     recent_lows_idx = sorted(range(n), key=lambda i: l[i])[:5]
     if len(recent_lows_idx) >= 2:
         lo1, lo2 = sorted(recent_lows_idx[:2])
@@ -435,9 +435,9 @@ def _handle_analyze_pattern(stock_code: str, days: int = 60) -> dict:
             mid_high = max(h[lo1:lo2 + 1])
             if mid_high > l[lo1] * 1.03:
                 patterns_detected.append({
-                    "pattern": "双底 (Double Bottom)", "type": "bullish_reversal",
+                    "pattern": "이중 바닥 (Double Bottom)", "type": "bullish_reversal",
                     "day_offset": -(n - 1 - lo2),
-                    "strength": "强", "desc": "两个相近低点，W型底部形态"
+                    "strength": "강", "desc": "두 개의 유사한 저점, W형 바닥 패턴"
                 })
 
     # Upward breakout: closes above 20d high (excluding last day itself)
@@ -445,8 +445,8 @@ def _handle_analyze_pattern(stock_code: str, days: int = 60) -> dict:
         high_20d = max(h[n - 21:n - 1])
         if c[-1] > high_20d and (v is None or v[-1] > sum(v[n - 6:n - 1]) / 5 * 1.5):
             patterns_detected.append({
-                "pattern": "放量突破20日高点", "type": "bullish_breakout",
-                "day_offset": 0, "strength": "强", "desc": "收盘突破近20日最高，量能配合"
+                "pattern": "거래량 증가로 20일 고점 돌파", "type": "bullish_breakout",
+                "day_offset": 0, "strength": "강", "desc": "종가가 최근 20일 고점 돌파, 거래량 호응"
             })
 
     # Price in consolidation box (box oscillation)
@@ -456,9 +456,9 @@ def _handle_analyze_pattern(stock_code: str, days: int = 60) -> dict:
         box_range_pct = (recent_high - recent_low) / recent_low * 100 if recent_low > 0 else 0
         if box_range_pct < 8:
             patterns_detected.append({
-                "pattern": "箱体震荡", "type": "consolidation",
-                "day_offset": 0, "strength": "中",
-                "desc": f"近10日波幅 {box_range_pct:.1f}%，价格在区间内震荡"
+                "pattern": "박스권 횡보", "type": "consolidation",
+                "day_offset": 0, "strength": "중",
+                "desc": f"최근 10일 변동폭 {box_range_pct:.1f}%, 가격이 구간 내 횡보"
             })
 
     # Deduplicate by pattern name, keep most recent
@@ -478,7 +478,7 @@ def _handle_analyze_pattern(stock_code: str, days: int = 60) -> dict:
         "patterns_count": len(unique_patterns),
         "patterns": unique_patterns,
         "summary": (
-            "未发现明显形态" if not unique_patterns
+            "명확한 패턴 미발견" if not unique_patterns
             else "、".join(p["pattern"] for p in unique_patterns)
         ),
     }

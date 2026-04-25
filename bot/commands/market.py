@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-大盘复盘命令
+Market Review Command
 ===================================
 
-执行大盘复盘分析，生成市场概览报告。
+Run market review analysis and produce a market overview report.
 """
 
 import logging
@@ -19,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 class MarketCommand(BotCommand):
     """
-    大盘复盘命令
-    
-    执行大盘复盘分析，包括：
-    - 主要指数表现
-    - 板块热点
-    - 市场情绪
-    - 后市展望
-    
-    用法：
-        /market - 执行大盘复盘
+    Market review command.
+
+    Executes market review analysis including:
+    - Major index performance
+    - Sector highlights
+    - Market sentiment
+    - Near-term outlook
+
+    Usage:
+        /market - run market review
     """
 
     @property
@@ -37,21 +37,21 @@ class MarketCommand(BotCommand):
 
     @property
     def aliases(self) -> List[str]:
-        return ["m", "大盘", "复盘", "行情"]
+        return ["m", "시장", "복기", "시황"]
 
     @property
     def description(self) -> str:
-        return "大盘复盘分析"
+        return "시장 복기 분석"
 
     @property
     def usage(self) -> str:
         return "/market"
 
     def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
-        """执行大盘复盘命令"""
-        logger.info(f"[MarketCommand] 开始大盘复盘分析")
+        """Execute market review command."""
+        logger.info("[MarketCommand] Start market review analysis")
 
-        # 在后台线程中执行复盘（避免阻塞）
+        # Run in a background thread (avoid blocking command handling)
         thread = threading.Thread(
             target=self._run_market_review,
             args=(message,),
@@ -61,16 +61,16 @@ class MarketCommand(BotCommand):
 
         return BotResponse.markdown_response(
             "✅ **大盘复盘任务已启动**\n\n"
-            "正在分析：\n"
-            "• 主要指数表现\n"
-            "• 板块热点分析\n"
-            "• 市场情绪判断\n"
-            "• 后市展望\n\n"
-            "分析完成后将自动推送结果。"
+            "다음 항목을 분석합니다:\n"
+            "• 주요 지수 흐름\n"
+            "• 업종/테마 동향\n"
+            "• 시장 심리\n"
+            "• 단기 전망\n\n"
+            "완료되면 결과가 자동으로 전송됩니다."
         )
 
     def _run_market_review(self, message: BotMessage) -> None:
-        """后台执行大盘复盘"""
+        """Execute market review in the background."""
         try:
             from src.config import get_config
             from src.notification import NotificationService
@@ -81,7 +81,7 @@ class MarketCommand(BotCommand):
             config = get_config()
             notifier = NotificationService(source_message=message)
 
-            # 初始化搜索服务
+            # Initialize search service
             search_service = None
             if config.bocha_api_keys or config.tavily_api_keys or config.brave_api_keys or config.serpapi_keys:
                 search_service = SearchService(
@@ -92,15 +92,15 @@ class MarketCommand(BotCommand):
                     news_max_age_days=config.news_max_age_days,
                 )
 
-            # 初始化 AI 分析器
+            # Initialize AI analyzer
             analyzer = None
             if config.gemini_api_key or config.openai_api_key:
                 analyzer = GeminiAnalyzer()
 
-            # 读取配置中的市场区域，与定时任务/CLI 保持一致
+            # Use market region from config for consistency with scheduler/CLI
             region = getattr(config, 'market_review_region', 'kr')
 
-            # 执行复盘
+            # Run review
             market_analyzer = MarketAnalyzer(
                 search_service=search_service,
                 analyzer=analyzer,
@@ -110,13 +110,13 @@ class MarketCommand(BotCommand):
             review_report = market_analyzer.run_daily_review()
 
             if review_report:
-                # 推送结果
-                report_content = f"🎯 **大盘复盘**\n\n{review_report}"
+                # Send result
+                report_content = f"🎯 **시장 복기**\n\n{review_report}"
                 notifier.send(report_content, email_send_to_all=True)
-                logger.info("[MarketCommand] 大盘复盘完成并已推送")
+                logger.info("[MarketCommand] Market review completed and sent")
             else:
-                logger.warning("[MarketCommand] 大盘复盘返回空结果")
+                logger.warning("[MarketCommand] Market review returned empty result")
 
         except Exception as e:
-            logger.error(f"[MarketCommand] 大盘复盘失败: {e}")
+            logger.error(f"[MarketCommand] Market review failed: {e}")
             logger.exception(e)

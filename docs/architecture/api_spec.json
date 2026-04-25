@@ -117,7 +117,7 @@
             }
           },
           "400": {
-            "description": "请求参数错误",
+            "description": "请求参数잘못됨",
             "content": {
               "application/json": {
                 "schema": {
@@ -372,7 +372,7 @@
             }
           },
           "500": {
-            "description": "服务器错误",
+            "description": "服务器잘못됨",
             "content": {
               "application/json": {
                 "schema": {
@@ -390,7 +390,7 @@
           "SystemConfig"
         ],
         "summary": "获取系统配置",
-        "description": "读取当前系统配置并返回分类后的字段列表。敏感字段返回真实值，前端自行控制显示/隐藏。",
+        "description": "读取当前系统配置并返回분류后的字段列表。敏感字段返回真实值，前端自行控制显示/隐藏。",
         "operationId": "getSystemConfig",
         "parameters": [
           {
@@ -440,8 +440,8 @@
         "tags": [
           "SystemConfig"
         ],
-        "summary": "更新系统配置",
-        "description": "按键更新系统配置。若字段值为掩码（如 ******），则保留原值不覆盖。",
+        "summary": "업데이트系统配置",
+        "description": "按键업데이트系统配置。若字段值为掩码（如 ******），则保留原值不覆盖。",
         "operationId": "updateSystemConfig",
         "requestBody": {
           "required": true,
@@ -455,7 +455,7 @@
         },
         "responses": {
           "200": {
-            "description": "更新成功",
+            "description": "업데이트成功",
             "content": {
               "application/json": {
                 "schema": {
@@ -485,7 +485,7 @@
             }
           },
           "500": {
-            "description": "更新失败",
+            "description": "업데이트失败",
             "content": {
               "application/json": {
                 "schema": {
@@ -545,7 +545,7 @@
           "SystemConfig"
         ],
         "summary": "获取配置字段元数据",
-        "description": "返回配置分类、字段类型、校验规则和 UI 控件建议，用于前端动态渲染。",
+        "description": "返回配置분류、字段类型、校验规则和 UI 控件권장 조치，用于前端动态渲染。",
         "operationId": "getSystemConfigSchema",
         "responses": {
           "200": {
@@ -723,7 +723,7 @@
           },
           "error": {
             "type": "string",
-            "description": "错误信息（仅在 failed 时存在）"
+            "description": "잘못됨信息（仅在 failed 时存在）"
           }
         },
         "required": [
@@ -792,7 +792,7 @@
           },
           "error": {
             "type": "string",
-            "description": "错误信息"
+            "description": "잘못됨信息"
           }
         },
         "required": [
@@ -835,17 +835,17 @@
       },
       "DuplicateTaskError": {
         "type": "object",
-        "description": "重复任务错误响应",
+        "description": "重复任务잘못됨响应",
         "properties": {
           "error": {
             "type": "string",
             "example": "duplicate_task",
-            "description": "错误类型"
+            "description": "잘못됨类型"
           },
           "message": {
             "type": "string",
             "example": "股票 600519 正在分析中",
-            "description": "错误信息"
+            "description": "잘못됨信息"
           },
           "stock_code": {
             "type": "string",
@@ -1006,11 +1006,11 @@
             "properties": {
               "analysis_summary": {
                 "type": "string",
-                "description": "关键结论"
+                "description": "关键결론"
               },
               "operation_advice": {
                 "type": "string",
-                "description": "操作建议"
+                "description": "操作권장 조치"
               },
               "trend_prediction": {
                 "type": "string",
@@ -1146,7 +1146,7 @@
           },
           "description": {
             "type": "string",
-            "description": "字段说明"
+            "description": "字段설명"
           },
           "category": {
             "type": "string",
@@ -1159,7 +1159,7 @@
               "backtest",
               "uncategorized"
             ],
-            "description": "分类"
+            "description": "분류"
           },
           "data_type": {
             "type": "string",
@@ -1184,7 +1184,7 @@
               "switch",
               "time"
             ],
-            "description": "前端控件建议"
+            "description": "前端控件권장 조치"
           },
           "is_sensitive": {
             "type": "boolean"
@@ -1227,7 +1227,7 @@
       },
       "SystemConfigCategorySchema": {
         "type": "object",
-        "description": "配置分类元数据",
+        "description": "配置분류元数据",
         "properties": {
           "category": {
             "type": "string"
@@ -1336,7 +1336,7 @@
       },
       "SystemConfigUpdateItem": {
         "type": "object",
-        "description": "配置更新项",
+        "description": "配置업데이트项",
         "properties": {
           "key": {
             "type": "string",
@@ -1354,7 +1354,7 @@
       },
       "UpdateSystemConfigRequest": {
         "type": "object",
-        "description": "系统配置更新请求",
+        "description": "系统配置업데이트请求",
         "properties": {
           "config_version": {
             "type": "string"
@@ -1382,7 +1382,7 @@
       },
       "UpdateSystemConfigResponse": {
         "type": "object",
-        "description": "系统配置更新结果",
+        "description": "系统配置업데이트结果",
         "properties": {
           "success": {
             "type": "boolean"
@@ -1439,7 +1439,7 @@
       },
       "ConfigValidationIssue": {
         "type": "object",
-        "description": "配置校验问题",
+        "description": "配置校验문제",
         "properties": {
           "key": {
             "type": "string"
@@ -1493,7 +1493,7 @@
       },
       "SystemConfigValidationErrorResponse": {
         "type": "object",
-        "description": "配置更新校验失败响应",
+        "description": "配置업데이트校验失败响应",
         "properties": {
           "error": {
             "type": "string",
@@ -1541,15 +1541,15 @@
         "properties": {
           "error": {
             "type": "string",
-            "description": "错误类型"
+            "description": "잘못됨类型"
           },
           "message": {
             "type": "string",
-            "description": "错误详情"
+            "description": "잘못됨详情"
           },
           "detail": {
             "type": "object",
-            "description": "附加错误信息"
+            "description": "附加잘못됨信息"
           }
         },
         "required": [

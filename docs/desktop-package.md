@@ -1,8 +1,8 @@
-# 桌面端打包说明 (Electron + React UI)
+# 桌面端打包설명 (Electron + React UI)
 
 本项目可打包为桌面应用，使用 Electron 作为桌面壳，`apps/dsa-web` 的 React UI 作为界面。
 
-## 架构说明
+## 架构설명
 
 - React UI（Vite 构建）由本地 FastAPI 服务托管
 - Electron 启动时自动拉起后端服务，等待 `/api/health` 就绪后加载 UI
@@ -71,7 +71,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build-all.ps1
   - macOS Intel：`daily-stock-analysis-macos-x64-<tag>.dmg`
   - macOS Apple Silicon：`daily-stock-analysis-macos-arm64-<tag>.dmg`
 
-建议发布流程：
+권장 조치发布流程：
 
 1. 合并代码到 `main`
 2. 由自动打 tag 工作流生成版本（或手动创建 tag）
@@ -130,7 +130,7 @@ win-unpacked/
       stock_analysis.exe      <- 后端服务
 ```
 
-## 配置文件说明
+## 配置文件설명
 
 - `.env` 放在 exe 同目录下
 - 首次启动时自动从 `.env.example` 复制生成
@@ -139,12 +139,12 @@ win-unpacked/
   - `STOCK_LIST`：自选股列表（逗号分隔）
   - 其他可选配置参考 `.env.example`
 
-## 常见问题
+## 자주 묻는 질문
 
 ### 启动后一直显示 "Preparing backend..."
 
-1. 检查 `logs/desktop.log` 查看错误信息
-2. 确认 `.env` 文件存在且配置正确
+1. 检查 `logs/desktop.log` 查看잘못됨信息
+2. 确认 `.env` 文件存在且配置올바름
 3. 确认端口 8000-8100 未被占用
 
 ### 后端启动报 ModuleNotFoundError
