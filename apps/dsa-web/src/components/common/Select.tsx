@@ -16,15 +16,15 @@ interface SelectProps {
 }
 
 /**
- * 下拉选择器组件
- * 科技感样式
+ * Dropdown selector component
+ * Tech-style presentation
  */
 export const Select: React.FC<SelectProps> = ({
   value,
   onChange,
   options,
   label,
-  placeholder = '请选择',
+  placeholder = '선택해 주세요',
   disabled = false,
   className = '',
 }) => {
@@ -63,7 +63,7 @@ export const Select: React.FC<SelectProps> = ({
           ))}
         </select>
 
-        {/* 下拉箭头 */}
+        {/* Dropdown arrow */}
         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
           <svg
             className="w-4 h-4 text-cyan-400"

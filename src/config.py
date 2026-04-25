@@ -71,14 +71,6 @@ class Config:
     # === 관심 종목 설정 ===
     stock_list: List[str] = field(default_factory=list)
 
-    # === 비행 클라우드 문서 설정 ===
-    feishu_app_id: Optional[str] = None
-    feishu_app_secret: Optional[str] = None
-    feishu_folder_token: Optional[str] = None  # 대상 폴더 Token
-
-    # === 데이터 소스 API Token ===
-    tushare_token: Optional[str] = None
-
     # === AI 분석 설정 ===
     # LiteLLM unified model config (provider/model format, e.g. gemini/gemini-2.5-flash)
     litellm_model: str = ""  # Primary model; must include provider prefix when set explicitly
@@ -130,7 +122,7 @@ class Config:
     vision_provider_priority: str = "gemini,anthropic,openai"
 
     # === 검색 엔진 설정 (다중 Key 부하 분산 지원) ===
-    bocha_api_keys: List[str] = field(default_factory=list)  # Bocha API Keys
+    naver_api_keys: List[str] = field(default_factory=list)  # Naver API key pairs
     tavily_api_keys: List[str] = field(default_factory=list)  # Tavily API Keys
     brave_api_keys: List[str] = field(default_factory=list)  # Brave Search API Keys
     serpapi_keys: List[str] = field(default_factory=list)  # SerpAPI Keys
@@ -146,12 +138,6 @@ class Config:
     agent_strategy_dir: Optional[str] = None
 
     # === 알림 설정 (여러 개 동시 설정 가능, 전체 푸시) ===
-
-    # WeChat Webhook
-    wechat_webhook_url: Optional[str] = None
-
-    # 비행 Webhook
-    feishu_webhook_url: Optional[str] = None
 
     # Telegram 설정 (Bot Token과 Chat ID 동시 설정 필요)
     telegram_bot_token: Optional[str] = None  # Bot Token (@BotFather에서 조회)
@@ -196,13 +182,6 @@ class Config:
     # 분석 결과 요약만: true이면 요약만 푸시, 개별 종목 상세 없음 (Issue #262)
     report_summary_only: bool = False
 
-    # PushPlus 푸시 설정
-    pushplus_token: Optional[str] = None  # PushPlus Token
-    pushplus_topic: Optional[str] = None  # PushPlus 그룹 코드 (일대다 푸시)
-
-    # Server酱3 푸시 설정
-    serverchan3_sendkey: Optional[str] = None  # Server酱3 SendKey (서버 채널 3 SendKey)
-
     # 분석 간격 시간 (초) - API 제한 방지용
     analysis_delay: float = 0.0  # 개별 종목 분석과 시장 분석 사이의 지연
 
@@ -210,17 +189,14 @@ class Config:
     merge_email_notification: bool = False
 
     # 메시지 길이 제한 (바이트) - 초과 시 자동 분할 전송
-    feishu_max_bytes: int = 20000  # 비행 제한 약 20KB, 기본값 20000 바이트
-    wechat_max_bytes: int = 4000   # WeChat 제한 4096 바이트, 기본값 4000 바이트
     discord_max_words: int = 2000  # Discord 제한 2000자, 기본값 2000자
-    wechat_msg_type: str = "markdown"  # WeChat 메시지 유형, 기본값 markdown
 
     # Markdown 이미지 변환 (Issue #289): Markdown 미지원 채널에 이미지로 전송
-    markdown_to_image_channels: List[str] = field(default_factory=list)  # 쉼표 구분: telegram,wechat,custom,email
+    markdown_to_image_channels: List[str] = field(default_factory=list)  # 쉼표 구분: telegram,custom,email
     markdown_to_image_max_chars: int = 15000  # 이 길이 초과 시 변환 안 함, 초대형 이미지 방지
     md2img_engine: str = "wkhtmltoimage"  # wkhtmltoimage | markdown-to-file (Issue #455, better emoji support)
 
-    # 실시간 시세 프리페치 (Issue #455): false로 설정하면 비활성화, efinance/akshare_em 전시장 조회 방지
+    # Realtime quote prefetch toggle.
     prefetch_realtime_quotes: bool = True
 
     # === 데이터베이스 설정 ===
@@ -252,7 +228,7 @@ class Config:
     schedule_run_immediately: bool = True     # 시작 시 즉시 한 번 실행 여부
     run_immediately: bool = True              # 시작 시 즉시 한 번 실행 여부 (비예약 모드)
     market_review_enabled: bool = True        # 시장 전체 복기 활성화 여부
-    # 시장 전체 복기 지역: cn(A주), us(미국 주식), both(둘 다), us는 미국 주식만 관심 있는 사용자에게 적합
+    # Market review region: kr (Korean market), us (US market), or both.
     market_review_region: str = "kr"
     # 거래일 검사: 기본 활성화, 비거래일 실행 건너뜀; false 또는 --force-run으로 강제 실행 가능 (Issue #373)
     trading_day_check_enabled: bool = True
@@ -262,17 +238,10 @@ class Config:
     enable_realtime_quote: bool = True
     # 장중 실시간 기술면: 활성화 시 실시간 가격으로 MA/정배열 계산 (Issue #234); 비활성화 시 전일 종가 사용
     enable_realtime_technical_indicators: bool = True
-    # 수급 분포 스위치 (이 인터페이스는 불안정, 클라우드 배포 시 비활성화 권장)
-    enable_chip_distribution: bool = True
-    # 동방재부 인터페이스 패치 스위치
-    enable_eastmoney_patch: bool = False
-    # 실시간 시세 데이터 소스 우선순위 (쉼표 구분)
-    # 권장 순서: tencent > akshare_sina > efinance > akshare_em > tushare
-    # - tencent: 텐센트 파이낸스, 거래량비율/회전율/PER 등 포함, 단일 종목 조회 안정적 (권장)
-    # - akshare_sina: 신랑 파이낸스, 기본 시세 안정적이나 거래량비율 없음
-    # - efinance/akshare_em: 동방재부 전체 인터페이스, 데이터가 가장 많지만 차단되기 쉬움
-    # - tushare: Tushare Pro, 2000 포인트 필요, 데이터 포괄적 (유료 사용자 우선 사용 가능)
-    realtime_source_priority: str = "tencent,akshare_sina,efinance,akshare_em"
+    # Remaining provider set does not support chip distribution analysis.
+    enable_chip_distribution: bool = False
+    # Remaining KR/US realtime provider hint for logs and compatibility.
+    realtime_source_priority: str = "yfinance"
     # 실시간 시세 캐시 시간 (초)
     realtime_cache_ttl: int = 600
     # 서킷 브레이커 쿨다운 시간 (초)
@@ -280,14 +249,6 @@ class Config:
 
     # Discord 봇 상태
     discord_bot_status: str = "주식 지능 분석 | /help"
-
-    # === 유량 제어 설정 (차단 방지 핵심 파라미터) ===
-    # Akshare 요청 간격 범위 (초)
-    akshare_sleep_min: float = 2.0
-    akshare_sleep_max: float = 5.0
-
-    # Tushare 분당 최대 요청 수 (무료 할당량)
-    tushare_rate_limit_per_minute: int = 80
 
     # 재시도 설정
     max_retries: int = 3
@@ -305,22 +266,6 @@ class Config:
     bot_rate_limit_requests: int = 10     # 빈도 제한: 윈도우 내 최대 요청 수
     bot_rate_limit_window: int = 60       # 빈도 제한: 윈도우 시간 (초)
     bot_admin_users: List[str] = field(default_factory=list)  # 관리자 사용자 ID 목록
-
-    # 비행 봇 (이벤트 구독) - feishu_app_id, feishu_app_secret 이미 있음
-    feishu_verification_token: Optional[str] = None  # 이벤트 구독 검증 Token
-    feishu_encrypt_key: Optional[str] = None         # 메시지 암호화 키 (선택)
-    feishu_stream_enabled: bool = False              # Stream 장기 연결 모드 활성화 (공용 IP 불필요)
-
-    # 딩톡 봇
-    dingtalk_app_key: Optional[str] = None      # 앱 AppKey
-    dingtalk_app_secret: Optional[str] = None   # 앱 AppSecret
-    dingtalk_stream_enabled: bool = False       # Stream 모드 활성화 (공용 IP 불필요)
-
-    # WeChat 봇 (콜백 모드)
-    wecom_corpid: Optional[str] = None              # 기업 ID
-    wecom_token: Optional[str] = None               # 콜백 Token
-    wecom_encoding_aes_key: Optional[str] = None    # 메시지 암복호화 키
-    wecom_agent_id: Optional[str] = None            # 앱 AgentId
 
     # Telegram 봇 - telegram_bot_token, telegram_chat_id 이미 있음
     telegram_webhook_secret: Optional[str] = None   # Webhook 비밀 키
@@ -360,21 +305,16 @@ class Config:
         # 환경 변수가 로드되었는지 확인
         setup_env()
 
-        # === 스마트 프록시 설정 (핵심 수정) ===
-        # 프록시 설정 시, NO_PROXY를 자동으로 설정하여 국내 데이터 소스 제외, 시세 조회 실패 방지
+        # Configure NO_PROXY for direct market data access when HTTP_PROXY is set.
         http_proxy = os.getenv('HTTP_PROXY') or os.getenv('http_proxy')
         if http_proxy:
-            # 국내 금융 데이터 소스 도메인 목록
             domestic_domains = [
-                'eastmoney.com',   # 동방재부 (Efinance/Akshare)
-                'sina.com.cn',     # 시나 재경 (Akshare)
-                '163.com',         # 왕이 재경 (Akshare)
-                'tushare.pro',     # Tushare
-                'baostock.com',    # Baostock
-                'sse.com.cn',      # 상하이증권거래소
-                'szse.cn',         # 선전증권거래소
-                'csindex.com.cn',  # 중증지수
-                'cninfo.com.cn',   # 거조자신
+                'finance.naver.com',
+                'm.stock.naver.com',
+                'kind.krx.co.kr',
+                'data.krx.co.kr',
+                'query1.finance.yahoo.com',
+                'query2.finance.yahoo.com',
                 'localhost',
                 '127.0.0.1'
             ]
@@ -410,9 +350,9 @@ class Config:
             if (c or "").strip()
         ]
 
-        # 설정되지 않은 경우 기본 예시 종목 사용
+        # Use a Korean default example when no watchlist is configured.
         if not stock_list:
-            stock_list = ['600519', '000001', '300750']
+            stock_list = ['005930']
         
         # === LiteLLM multi-key parsing ===
         # GEMINI_API_KEYS (comma-separated) > GEMINI_API_KEY (single)
@@ -523,9 +463,9 @@ class Config:
                 if m not in _seen and not _seen.add(m)  # type: ignore[func-returns-value]
             ]
 
-        # 검색 엔진 API Key 파싱 (여러 key 지원, 쉼표 구분)
-        bocha_keys_str = os.getenv('BOCHA_API_KEYS', '')
-        bocha_api_keys = [k.strip() for k in bocha_keys_str.split(',') if k.strip()]
+        # Search engine API keys support comma-separated multi-key values.
+        naver_keys_str = os.getenv('NAVER_API_KEYS', '')
+        naver_api_keys = [k.strip() for k in naver_keys_str.split(',') if k.strip()]
         
         tavily_keys_str = os.getenv('TAVILY_API_KEYS', '')
         tavily_api_keys = [k.strip() for k in tavily_keys_str.split(',') if k.strip()]
@@ -536,22 +476,8 @@ class Config:
         brave_keys_str = os.getenv('BRAVE_API_KEYS', '')
         brave_api_keys = [k.strip() for k in brave_keys_str.split(',') if k.strip()]
 
-        # WeChat 메시지 유형 및 최대 바이트 수 로직
-        wechat_msg_type = os.getenv('WECHAT_MSG_TYPE', 'markdown')
-        wechat_msg_type_lower = wechat_msg_type.lower()
-        wechat_max_bytes_env = os.getenv('WECHAT_MAX_BYTES')
-        if wechat_max_bytes_env not in (None, ''):
-            wechat_max_bytes = int(wechat_max_bytes_env)
-        else:
-            # 명시적으로 설정되지 않은 경우, 메시지 유형에 따라 기본 바이트 수 선택
-            wechat_max_bytes = 2048 if wechat_msg_type_lower == 'text' else 4000
-        
         return cls(
             stock_list=stock_list,
-            feishu_app_id=os.getenv('FEISHU_APP_ID'),
-            feishu_app_secret=os.getenv('FEISHU_APP_SECRET'),
-            feishu_folder_token=os.getenv('FEISHU_FOLDER_TOKEN'),
-            tushare_token=os.getenv('TUSHARE_TOKEN'),
             litellm_model=litellm_model,
             litellm_fallback_models=litellm_fallback_models,
             litellm_config_path=litellm_config_path,
@@ -592,7 +518,7 @@ class Config:
                 or ""
             ),
             vision_provider_priority=os.getenv('VISION_PROVIDER_PRIORITY', 'gemini,anthropic,openai'),
-            bocha_api_keys=bocha_api_keys,
+            naver_api_keys=naver_api_keys,
             tavily_api_keys=tavily_api_keys,
             brave_api_keys=brave_api_keys,
             serpapi_keys=serpapi_keys,
@@ -602,8 +528,6 @@ class Config:
             agent_max_steps=int(os.getenv('AGENT_MAX_STEPS', '10')),
             agent_skills=[s.strip() for s in os.getenv('AGENT_SKILLS', '').split(',') if s.strip()],
             agent_strategy_dir=os.getenv('AGENT_STRATEGY_DIR'),
-            wechat_webhook_url=os.getenv('WECHAT_WEBHOOK_URL'),
-            feishu_webhook_url=os.getenv('FEISHU_WEBHOOK_URL'),
             telegram_bot_token=os.getenv('TELEGRAM_BOT_TOKEN'),
             telegram_chat_id=os.getenv('TELEGRAM_CHAT_ID'),
             telegram_message_thread_id=os.getenv('TELEGRAM_MESSAGE_THREAD_ID'),
@@ -614,9 +538,6 @@ class Config:
             stock_email_groups=cls._parse_stock_email_groups(),
             pushover_user_key=os.getenv('PUSHOVER_USER_KEY'),
             pushover_api_token=os.getenv('PUSHOVER_API_TOKEN'),
-            pushplus_token=os.getenv('PUSHPLUS_TOKEN'),
-            pushplus_topic=os.getenv('PUSHPLUS_TOPIC'),
-            serverchan3_sendkey=os.getenv('SERVERCHAN3_SENDKEY'),
             custom_webhook_urls=[u.strip() for u in os.getenv('CUSTOM_WEBHOOK_URLS', '').split(',') if u.strip()],
             custom_webhook_bearer_token=os.getenv('CUSTOM_WEBHOOK_BEARER_TOKEN'),
             webhook_verify_ssl=os.getenv('WEBHOOK_VERIFY_SSL', 'true').lower() == 'true',
@@ -630,9 +551,6 @@ class Config:
             report_summary_only=os.getenv('REPORT_SUMMARY_ONLY', 'false').lower() == 'true',
             analysis_delay=float(os.getenv('ANALYSIS_DELAY', '0')),
             merge_email_notification=os.getenv('MERGE_EMAIL_NOTIFICATION', 'false').lower() == 'true',
-            feishu_max_bytes=int(os.getenv('FEISHU_MAX_BYTES', '20000')),
-            wechat_max_bytes=wechat_max_bytes,
-            wechat_msg_type=wechat_msg_type_lower,
             discord_max_words=int(os.getenv('DISCORD_MAX_WORDS', '2000')),
             markdown_to_image_channels=[
                 c.strip().lower()
@@ -674,19 +592,6 @@ class Config:
             bot_rate_limit_requests=int(os.getenv('BOT_RATE_LIMIT_REQUESTS', '10')),
             bot_rate_limit_window=int(os.getenv('BOT_RATE_LIMIT_WINDOW', '60')),
             bot_admin_users=[u.strip() for u in os.getenv('BOT_ADMIN_USERS', '').split(',') if u.strip()],
-            # 비행 봇
-            feishu_verification_token=os.getenv('FEISHU_VERIFICATION_TOKEN'),
-            feishu_encrypt_key=os.getenv('FEISHU_ENCRYPT_KEY'),
-            feishu_stream_enabled=os.getenv('FEISHU_STREAM_ENABLED', 'false').lower() == 'true',
-            # 딩톡 봇
-            dingtalk_app_key=os.getenv('DINGTALK_APP_KEY'),
-            dingtalk_app_secret=os.getenv('DINGTALK_APP_SECRET'),
-            dingtalk_stream_enabled=os.getenv('DINGTALK_STREAM_ENABLED', 'false').lower() == 'true',
-            # WeChat 봇
-            wecom_corpid=os.getenv('WECOM_CORPID'),
-            wecom_token=os.getenv('WECOM_TOKEN'),
-            wecom_encoding_aes_key=os.getenv('WECOM_ENCODING_AES_KEY'),
-            wecom_agent_id=os.getenv('WECOM_AGENT_ID'),
             # Telegram
             telegram_webhook_secret=os.getenv('TELEGRAM_WEBHOOK_SECRET'),
             # Discord 봇 확장 설정
@@ -696,15 +601,8 @@ class Config:
             enable_realtime_technical_indicators=os.getenv(
                 'ENABLE_REALTIME_TECHNICAL_INDICATORS', 'true'
             ).lower() == 'true',
-            enable_chip_distribution=os.getenv('ENABLE_CHIP_DISTRIBUTION', 'true').lower() == 'true',
-            # 동방재부 인터페이스 패치 스위치
-            enable_eastmoney_patch=os.getenv('ENABLE_EASTMONEY_PATCH', 'false').lower() == 'true',
-            # 실시간 시세 데이터 소스 우선순위:
-            # - tencent: 텐센트 파이낸스, 거래량비율/회전율/PE/PB 등 포함, 단일 종목 조회 안정적 (권장)
-            # - akshare_sina: 신랑 파이낸스, 기본 시세 안정적이나 거래량비율 없음
-            # - efinance/akshare_em: 동방재부 전체 인터페이스, 데이터가 가장 많지만 차단되기 쉬움
-            # - tushare: Tushare Pro, 2000 포인트 필요, 데이터 포괄적
-            realtime_source_priority=cls._resolve_realtime_source_priority(),
+            enable_chip_distribution=False,
+            realtime_source_priority='yfinance',
             realtime_cache_ttl=int(os.getenv('REALTIME_CACHE_TTL', '600')),
             circuit_breaker_cooldown=int(os.getenv('CIRCUIT_BREAKER_COOLDOWN', '300'))
         )
@@ -961,36 +859,6 @@ class Config:
         return 'wkhtmltoimage'
 
     @classmethod
-    def _resolve_realtime_source_priority(cls) -> str:
-        """
-        Resolve realtime source priority with automatic tushare injection.
-
-        When TUSHARE_TOKEN is configured but REALTIME_SOURCE_PRIORITY is not
-        explicitly set, automatically prepend 'tushare' to the default priority
-        so that the paid data source is utilized for realtime quotes as well.
-        """
-        explicit = os.getenv('REALTIME_SOURCE_PRIORITY')
-        default_priority = 'tencent,akshare_sina,efinance,akshare_em'
-
-        if explicit:
-            # User explicitly set priority, respect it
-            return explicit
-
-        tushare_token = os.getenv('TUSHARE_TOKEN', '').strip()
-        if tushare_token:
-            # Token configured but no explicit priority override
-            # Prepend tushare so the paid source is tried first
-            import logging
-            logger = logging.getLogger(__name__)
-            resolved = f'tushare,{default_priority}'
-            logger.info(
-                f"TUSHARE_TOKEN detected, auto-injecting tushare into realtime priority: {resolved}"
-            )
-            return resolved
-
-        return default_priority
-
-    @classmethod
     def reset_instance(cls) -> None:
         """싱글톤 리셋 (주로 테스트용)"""
         cls._instance = None
@@ -1024,7 +892,7 @@ class Config:
         ]
 
         if not stock_list:
-            stock_list = ['000001']
+            stock_list = ['005930']
 
         self.stock_list = stock_list
     
@@ -1049,14 +917,6 @@ class Config:
                 severity="error",
                 message="관심 종목 목록 미설정 (STOCK_LIST)",
                 field="STOCK_LIST",
-            ))
-
-        # --- 데이터 소스 (정보 제공용) ---
-        if not self.tushare_token:
-            issues.append(ConfigIssue(
-                severity="info",
-                message="Tushare Token 미설정, 다른 데이터 소스 사용",
-                field="TUSHARE_TOKEN",
             ))
 
         # --- LLM availability ---
@@ -1084,13 +944,14 @@ class Config:
 
         # --- 검색 엔진 (정보 제공용) ---
         if not (
-            self.tavily_api_keys
+            self.naver_api_keys
+            or self.tavily_api_keys
             or self.brave_api_keys
             or self.serpapi_keys
         ):
             issues.append(ConfigIssue(
                 severity="info",
-                message="검색 엔진 API Key 미설정 (Tavily/Brave/SerpAPI), 뉴스 검색 기능 사용 불가",
+                message="검색 엔진 API Key 미설정 (Naver/Tavily/Brave/SerpAPI), 뉴스 검색 기능 사용 불가",
                 field="TAVILY_API_KEY",
             ))
 
@@ -1108,7 +969,7 @@ class Config:
             issues.append(ConfigIssue(
                 severity="warning",
                 message="알림 채널 미설정, 푸시 알림 전송 안 함",
-                field="WECHAT_WEBHOOK_URL",
+                field="TELEGRAM_BOT_TOKEN",
             ))
 
         # --- 폐기된 필드 마이그레이션 힌트 ---

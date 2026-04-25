@@ -9,19 +9,24 @@ from pydantic import BaseModel, Field
 
 
 class BacktestRunRequest(BaseModel):
-    code: Optional[str] = Field(None, description="仅回测指定股票")
-    force: bool = Field(False, description="强制重新计算")
-    eval_window_days: Optional[int] = Field(None, ge=1, le=120, description="评估窗口（交易日数）")
-    min_age_days: Optional[int] = Field(None, ge=0, le=365, description="分析记录最小天龄（0=不限）")
-    limit: int = Field(200, ge=1, le=2000, description="最多处理的分析记录数")
+    code: Optional[str] = Field(None, description="특정 종목만 백테스트합니다. 예: 005930 또는 AAPL")
+    force: bool = Field(False, description="기존 결과가 있어도 다시 계산합니다.")
+    eval_window_days: Optional[int] = Field(None, ge=1, le=120, description="평가 기간(거래일 기준)")
+    min_age_days: Optional[int] = Field(
+        None,
+        ge=0,
+        le=365,
+        description="분석 기록의 최소 경과일(0=제한 없음)",
+    )
+    limit: int = Field(200, ge=1, le=2000, description="처리할 분석 기록의 최대 개수")
 
 
 class BacktestRunResponse(BaseModel):
-    processed: int = Field(..., description="候选记录数")
-    saved: int = Field(..., description="写入回测结果数")
-    completed: int = Field(..., description="完成回测数")
-    insufficient: int = Field(..., description="数据不足数")
-    errors: int = Field(..., description="错误数")
+    processed: int = Field(..., description="후보 기록 수")
+    saved: int = Field(..., description="저장된 백테스트 결과 수")
+    completed: int = Field(..., description="완료된 백테스트 수")
+    insufficient: int = Field(..., description="데이터 부족 건수")
+    errors: int = Field(..., description="오류 건수")
 
 
 class BacktestResultItem(BaseModel):
@@ -91,4 +96,3 @@ class PerformanceMetrics(BaseModel):
 
     advice_breakdown: Dict[str, Any] = Field(default_factory=dict)
     diagnostics: Dict[str, Any] = Field(default_factory=dict)
-

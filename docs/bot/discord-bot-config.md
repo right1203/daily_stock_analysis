@@ -1,109 +1,79 @@
-# Discord机器人配置
+# Discord bot configuration
 
-## Discord机器人
-Discord机器人接收消息需要使用Discord Developer Portal创建机器人应用
-https://discord.com/developers/applications
+Discord는 분석 결과 전송 채널로 사용할 수 있습니다. 단순 전송만 필요하면 Webhook 방식을 사용하고, Bot API로 메시지를 보내야 하면 Bot Token과 Channel ID를 사용합니다.
 
-Discord机器人支持两种消息发送方式：
-1. **Webhook模式**：配置简单，权限低，适合只需要发送消息的场景
-2. **Bot API模式**：权限高，支持接收命令，需要配置Bot Token和频道ID
+## Configuration modes
 
-## 创建Discord机器人
+| Mode | Required values | Use case |
+| --- | --- | --- |
+| Webhook | `DISCORD_WEBHOOK_URL` | 설정이 가장 단순한 결과 전송 |
+| Bot API | `DISCORD_BOT_TOKEN`, `DISCORD_MAIN_CHANNEL_ID` | 봇 계정으로 채널에 메시지 전송 |
 
-### 1. 登录Discord Developer Portal
-访问 https://discord.com/developers/applications 并使用你的Discord账号登录
+Webhook URL이 설정되어 있으면 Discord 전송기는 Webhook을 우선 사용합니다.
 
-### 2. 创建应用
-点击"New Application"按钮，输入应用名称（例如：A股智能分析机器人），然后点击"Create"
+## Create a Discord application
 
-### 3. 配置机器人
-在左侧导航栏中点击"Bot"，然后点击"Add Bot"按钮，确认添加
+1. Open [Discord Developer Portal](https://discord.com/developers/applications).
+2. Create an application.
+3. Open the `Bot` section and create a bot user.
+4. Reset and store the bot token as `DISCORD_BOT_TOKEN`.
+5. In `OAuth2` > `URL Generator`, select `bot` and `applications.commands`.
+6. Grant the bot permissions to send messages, embed links, attach files, read message history, and use slash commands.
+7. Open the generated invite URL and add the bot to the target server.
 
-### 4. 获取Bot Token
-在Bot页面，点击"Reset Token"按钮，然后复制生成的Token（这是你的`DISCORD_BOT_TOKEN`）
+## Find the channel ID
 
-### 5. 配置权限
-在Bot页面的"Privileged Gateway Intents"部分，开启以下选项：
-- Presence Intent
-- Server Members Intent
-- Message Content Intent
+1. In Discord, enable developer mode.
+2. Right-click the target channel.
+3. Copy the channel ID and set it as `DISCORD_MAIN_CHANNEL_ID`.
 
-### 6. 添加到服务器
-1. 在左侧导航栏中点击"OAuth2" > "URL Generator"
-2. 在"Scopes"中选择：
-   - `bot`
-   - `applications.commands`
-3. 在"Bot Permissions"中选择：
-   - Send Messages
-   - Embed Links
-   - Attach Files
-   - Read Message History
-   - Use Slash Commands
-4. 复制生成的URL，在浏览器中打开，选择要添加机器人的服务器
+## Environment variables
 
-### 7. 获取频道ID
-1. 在Discord客户端中，开启开发者模式：设置 > 高级 > 开发者模式
-2. 右键点击你想要机器人发送消息的频道，选择"Copy ID"（这是你的`DISCORD_MAIN_CHANNEL_ID`）
-
-## 配置环境变量
-
-将以下配置添加到你的`.env`文件中：
+Webhook mode:
 
 ```env
-# Discord 机器人配置
-DISCORD_BOT_TOKEN=your-discord-bot-token
-DISCORD_MAIN_CHANNEL_ID=your-channel-id
-DISCORD_WEBHOOK_URL=your-webhook-url (可选)
-DISCORD_BOT_STATUS=A股智能分析 | /help
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_webhook_id/your_webhook_token
+DISCORD_MAX_WORDS=2000
 ```
 
-## Webhook模式配置（可选）
+Bot API mode:
 
-如果你只想使用Webhook模式发送消息，不需要Bot Token，可以按照以下步骤配置：
+```env
+DISCORD_BOT_TOKEN=your-discord-bot-token
+DISCORD_MAIN_CHANNEL_ID=123456789012345678
+DISCORD_MAX_WORDS=2000
+DISCORD_BOT_STATUS=Stock analysis | /help
+```
 
-1. 右键点击频道，选择"编辑频道"
-2. 点击"集成" > "Webhooks" > "新建Webhook"
-3. 配置Webhook名称和头像
-4. 复制Webhook URL（这是你的`DISCORD_WEBHOOK_URL`）
+## Command examples
 
-## 支持的命令
+Discord command handling uses the same command names as the common bot dispatcher.
 
-Discord机器人支持以下Slash命令：
+```text
+/help
+/status
+/market
+/analyze 005930
+/analyze AAPL full
+```
 
-1. `/analyze <stock_code> [full_report]` - 分析指定股票代码
-   - `stock_code`: 股票代码，如 600519
-   - `full_report`: 可选，是否生成完整报告（包含大盘）
+KR stock codes use six digits. US symbols use uppercase ticker symbols such as `AAPL` or `MSFT`.
 
-2. `/market_review` - 获取大盘复盘报告
+## Verification
 
-3. `/help` - 查看帮助信息
+1. Set either Webhook mode or Bot API mode values in `.env`.
+2. Restart the service so configuration is reloaded.
+3. Send `/help` to confirm the bot command surface.
+4. Send `/analyze 005930` or `/analyze AAPL` to confirm analysis submission.
+5. Check application logs if Discord accepts the request but no message appears in the channel.
 
-## 测试机器人
+## Troubleshooting
 
-1. 确保机器人已成功添加到你的服务器
-2. 在频道中输入`/help`，机器人会返回帮助信息
-3. 输入`/analyze 600519`测试股票分析功能
-4. 输入`/market_review`测试大盘复盘功能
+| Symptom | Check |
+| --- | --- |
+| No message is sent | Confirm `DISCORD_WEBHOOK_URL` or `DISCORD_BOT_TOKEN` + `DISCORD_MAIN_CHANNEL_ID` is set. |
+| Bot API message is rejected | Confirm the bot is installed in the server and can send messages in the target channel. |
+| Messages are truncated | Lower `DISCORD_MAX_WORDS` or use a channel that can receive longer chunks. |
+| Slash commands do not appear | Wait for Discord command sync or reinstall the bot with `applications.commands`. |
 
-## 주의 사항
-
-1. 确保你的机器人有足够的权限在频道中发送消息和使用Slash命令
-2. 定期업데이트你的Bot Token，确保安全性
-3. 不要将你的Bot Token分享给任何人
-4. 如果机器人没有响应，检查：
-   - Bot Token是否올바름
-   - 频道ID是否올바름
-   - 机器人是否在线
-   - 机器人是否有消息发送权限
-
-## 故障排除
-
-- **机器人不响应命令**：检查Bot Token和频道ID是否올바름，确保机器人已添加到服务器
-- **Slash命令不显示**：等待一段时间（Discord需要同步命令），或重新添加机器人
-- **消息发送失败**：检查频道权限，确保机器人有发送消息的权限
-
-## 相关链接
-
-- [Discord Developer Portal](https://discord.com/developers/applications)
-- [Discord Bot Documentation](https://discordpy.readthedocs.io/en/stable/)
-- [Discord Slash Commands](https://discord.com/developers/docs/interactions/application-commands)
+Keep tokens out of source control. Use `.env`, repository secrets, or deployment platform secrets.

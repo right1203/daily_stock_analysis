@@ -7,35 +7,15 @@ import { systemConfigApi } from '../../api/systemConfig';
 
 /** Well-known channel presets for quick-add dropdown. */
 const CHANNEL_PRESETS: Record<string, { label: string; baseUrl: string; placeholder: string }> = {
-  aihubmix: {
-    label: 'AIHubmix（聚合平台）',
-    baseUrl: 'https://aihubmix.com/v1',
-    placeholder: 'gpt-4o-mini,claude-3-5-sonnet,qwen-plus',
+  openai: {
+    label: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    placeholder: 'gpt-4o-mini,gpt-4.1-mini',
   },
-  deepseek: {
-    label: 'DeepSeek 官方',
-    baseUrl: 'https://api.deepseek.com/v1',
-    placeholder: 'deepseek-chat,deepseek-reasoner',
-  },
-  dashscope: {
-    label: '通义千问（Dashscope）',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    placeholder: 'qwen-plus,qwen-turbo',
-  },
-  zhipu: {
-    label: '智谱 GLM',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    placeholder: 'glm-4-flash,glm-4-plus',
-  },
-  moonshot: {
-    label: 'Moonshot（月之暗面）',
-    baseUrl: 'https://api.moonshot.cn/v1',
-    placeholder: 'moonshot-v1-8k',
-  },
-  siliconflow: {
-    label: '硅基流动（SiliconFlow）',
-    baseUrl: 'https://api.siliconflow.cn/v1',
-    placeholder: 'deepseek-ai/DeepSeek-V3',
+  anthropic: {
+    label: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    placeholder: 'claude-3-5-sonnet-latest,claude-3-5-haiku-latest',
   },
   openrouter: {
     label: 'OpenRouter',
@@ -43,12 +23,12 @@ const CHANNEL_PRESETS: Record<string, { label: string; baseUrl: string; placehol
     placeholder: 'gpt-4o,claude-3.5-sonnet',
   },
   gemini: {
-    label: 'Gemini（原生，无需 base_url）',
+    label: 'Gemini',
     baseUrl: '',
     placeholder: 'gemini/gemini-2.5-flash',
   },
   custom: {
-    label: '自定义渠道',
+    label: '사용자 지정 채널',
     baseUrl: '',
     placeholder: 'model-name-1,model-name-2',
   },
@@ -153,7 +133,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
   >(null);
   const [visibleKeys, setVisibleKeys] = useState<Record<number, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(initialChannels.length === 0);
-  const [addPreset, setAddPreset] = useState('aihubmix');
+  const [addPreset, setAddPreset] = useState('openrouter');
 
   // Detect if user has unsaved channel changes
   const hasChanges = useMemo(() => {
@@ -218,7 +198,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
         reloadNow: true,
         items: updateItems,
       });
-      setSaveMessage({ type: 'success', text: '渠道配置已保存' });
+      setSaveMessage({ type: 'success', text: '채널 설정이 저장되었습니다' });
       onSaved();
     } catch (error: unknown) {
       setSaveMessage({ type: 'error', error: getParsedApiError(error) });
@@ -241,14 +221,17 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
         onClick={() => setIsCollapsed((prev) => !prev)}
       >
         <div>
-          <h3 className="text-sm font-semibold text-white">LLM 渠道配置</h3>
+          <h3 className="text-sm font-semibold text-white">LLM 채널 설정</h3>
           <p className="mt-0.5 text-xs text-muted">
             {channels.length > 0
-              ? `已配置 ${channels.length} 个渠道：${channels.map((c) => c.name).join('、')}`
-              : '同时使用多个模型平台时启用；只用单个模型可跳过此项'}
+              ? `${channels.length}개 채널 설정됨: ${channels.map((c) => c.name).join(', ')}`
+              : (
+                '여러 모델 플랫폼을 함께 사용할 때 설정하세요. '
+                + '단일 모델만 사용하면 건너뛸 수 있습니다.'
+              )}
           </p>
         </div>
-        <span className="text-xs text-muted">{isCollapsed ? '▶ 展开' : '▼ 收起'}</span>
+        <span className="text-xs text-muted">{isCollapsed ? '▶ 펼치기' : '▼ 접기'}</span>
       </button>
 
       {!isCollapsed && (
@@ -270,39 +253,41 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                   disabled={busy}
                   onClick={() => removeChannel(index)}
                 >
-                  删除
+                  삭제
                 </button>
               </div>
 
               {/* Channel name */}
               <div>
-                <label className="mb-1 block text-xs text-secondary">渠道名称</label>
+                <label className="mb-1 block text-xs text-secondary">채널 이름</label>
                 <input
                   type="text"
                   className="input-terminal w-full"
                   value={channel.name}
                   disabled={busy}
-                  onChange={(e) => updateChannel(index, 'name', e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())}
-                  placeholder="如 aihubmix、deepseek"
+                  onChange={(e) => {
+                    updateChannel(index, 'name', e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase());
+                  }}
+                  placeholder="예: openrouter, openai"
                 />
               </div>
 
               {/* Base URL */}
               <div>
-                <label className="mb-1 block text-xs text-secondary">API 地址（Base URL）</label>
+                <label className="mb-1 block text-xs text-secondary">API 주소(Base URL)</label>
                 <input
                   type="text"
                   className="input-terminal w-full"
                   value={channel.baseUrl}
                   disabled={busy}
                   onChange={(e) => updateChannel(index, 'baseUrl', e.target.value)}
-                  placeholder="https://api.example.com/v1（Gemini 原生可留空）"
+                  placeholder="https://api.example.com/v1 (Gemini는 비워 둘 수 있음)"
                 />
               </div>
 
               {/* API Key */}
               <div>
-                <label className="mb-1 block text-xs text-secondary">API Key（多个用逗号分隔）</label>
+                <label className="mb-1 block text-xs text-secondary">API Key(여러 개는 쉼표로 구분)</label>
                 <div className="flex items-center gap-2">
                   <input
                     type={visibleKeys[index] ? 'text' : 'password'}
@@ -316,7 +301,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                     type="button"
                     className="btn-secondary !p-2"
                     onClick={() => toggleKeyVisibility(index)}
-                    title={visibleKeys[index] ? '隐藏' : '显示'}
+                    title={visibleKeys[index] ? '숨기기' : '표시'}
                   >
                     <EyeToggleIcon visible={!!visibleKeys[index]} />
                   </button>
@@ -325,7 +310,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
 
               {/* Models */}
               <div>
-                <label className="mb-1 block text-xs text-secondary">模型列表（逗号分隔）</label>
+                <label className="mb-1 block text-xs text-secondary">모델 목록(쉼표로 구분)</label>
                 <input
                   type="text"
                   className="input-terminal w-full"
@@ -335,7 +320,8 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                   placeholder={CHANNEL_PRESETS[channel.name]?.placeholder || 'model-1,model-2'}
                 />
                 <p className="mt-1 text-[11px] text-muted">
-                  有 Base URL 的渠道无需加 openai/ 前缀，系统自动补全
+                  Base URL이 있는 채널은 openai/ 접두사를 붙이지 않아도 됩니다.
+                  시스템이 자동 보정합니다.
                 </p>
               </div>
             </div>
@@ -361,7 +347,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
               disabled={busy}
               onClick={addChannel}
             >
-              + 添加渠道
+              + 채널 추가
             </button>
           </div>
 
@@ -374,7 +360,7 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                 disabled={busy}
                 onClick={() => void handleSave()}
               >
-                {isSaving ? '保存中...' : '保存渠道'}
+                {isSaving ? '저장 중...' : '채널 저장'}
               </button>
               <button
                 type="button"
@@ -382,9 +368,11 @@ export const LLMChannelEditor: React.FC<LLMChannelEditorProps> = ({
                 disabled={busy}
                 onClick={() => setChannels(initialChannels)}
               >
-                撤销
+                되돌리기
               </button>
-              <span className="text-[11px] text-muted">渠道配置独立保存，与下方字段互不影响</span>
+              <span className="text-[11px] text-muted">
+                채널 설정은 별도로 저장되며 아래 필드와 서로 영향을 주지 않습니다.
+              </span>
             </div>
           )}
 

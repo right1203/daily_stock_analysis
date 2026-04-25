@@ -1,113 +1,116 @@
 ---
-name: "stock_analyzer"
-description: "分析股票和市场。当用户想要分析单个或多个股票，或进行市场复盘时调用。"
+name: stock-analysis
+description: "개별 종목, 여러 종목, 또는 시장 리뷰가 필요할 때 사용하는 주식 분석 스킬입니다."
 ---
 
-# 股票分析器
+# 주식 분석기
 
-本技能基于 `analyzer_service.py` 的逻辑，提供分析股票和整体市场的功能。
+이 스킬은 `analyzer_service.py`의 분석 흐름을 기준으로 개별 종목, 종목 목록, 시장 리뷰를 실행하는 방법을 정리합니다.
 
-## 输出结构 (`AnalysisResult`)
+## 출력 구조 (`AnalysisResult`)
 
-分析函数返回一个 `AnalysisResult` 对象（或其列表），该对象具有丰富的结构。以下是其关键组件的简要概述，并附有真实的输出示例：
+분석 함수는 `AnalysisResult` 객체 또는 객체 목록을 반환합니다. 핵심 필드는 다음과 같습니다.
 
-`dashboard` 属性包含核心分析，分为四个主要部分：
-1.  **`core_conclusion`**: 一句话总结、信号类型和仓位建议。
-2.  **`data_perspective`**: 技术数据，包括趋势状态、价格位置、量能分析和筹码结构。
-3.  **`intelligence`**: 定性信息，如新闻、风险警报和积极催化剂。
-4.  **`battle_plan`**: 可操作的策略，包括狙击点（买/卖目标）、仓位策略和风险控制清单。
+`dashboard` 속성은 네 가지 주요 영역으로 구성됩니다.
 
-## 配置 (`Config`)
+1. **`core_conclusion`**: 한 문장 요약, 신호 유형, 포지션 제안.
+2. **`data_perspective`**: 추세, 가격 위치, 거래량, 수급 관련 데이터.
+3. **`intelligence`**: 뉴스, 위험 알림, 긍정 촉매.
+4. **`battle_plan`**: 매수 또는 매도 기준, 포지션 전략, 위험 관리 체크리스트.
 
-所有分析函数都可以接受一个可选的 `config` 对象。该对象包含应用程序的所有配置，例如 API 密钥、通知设置和分析参数。
+## 설정 (`Config`)
 
-如果未提供 `config` 对象，函数将自动使用从 `.env` 文件加载的全局单例实例。
+모든 분석 함수는 선택적 `config` 객체를 받을 수 있습니다. 이 객체는 API 키, 알림 설정, 분석 파라미터 같은 앱 설정을 포함합니다.
 
-**参考:** [`Config`](src/config.py)
+`config`를 전달하지 않으면 `.env`에서 로드한 전역 설정 인스턴스를 사용합니다.
 
-## 函数
+**참고:** [`Config`](src/config.py)
 
-### 1. 分析单只股票
+## 함수
 
-**描述:** 分析单只股票并返回分析结果。
+### 1. 개별 종목 분석
 
-**何时使用:** 当用户要求分析特定股票时。
+**설명:** 개별 종목을 분석하고 결과를 반환합니다.
 
-**输入:**
-- `stock_code` (str): 要分析的股票代码。
-- `config` (Config, 可选): 配置对象。默认为 `None`。
-- `full_report` (bool, 可选): 是否生成完整报告。默认为 `False`。
-- `notifier` (NotificationService, 可选): 通知服务对象。默认为 `None`。
+**사용 시점:** 사용자가 특정 종목 분석을 요청할 때 사용합니다.
 
-**输出:** `Optional[AnalysisResult]`
-一个包含分析结果的 `AnalysisResult` 对象，如果分析失败则为 `None`。
+**입력:**
 
-**示例:**
+- `stock_code` (str): 분석할 종목 코드.
+- `config` (Config, optional): 설정 객체. 기본값은 `None`.
+- `full_report` (bool, optional): 전체 리포트 생성 여부. 기본값은 `False`.
+- `notifier` (NotificationService, optional): 알림 서비스 객체. 기본값은 `None`.
+
+**출력:** `Optional[AnalysisResult]`
+
+분석 성공 시 `AnalysisResult` 객체를 반환하고, 실패 시 `None`을 반환합니다.
+
+**예시:**
 
 ```python
 from analyzer_service import analyze_stock
 
-# 分析单只股票
-result = analyze_stock("600989")
+result = analyze_stock("005930")
 if result:
-    print(f"股票: {result.name} ({result.code})")
-    print(f"情绪得分: {result.sentiment_score}")
-    print(f"操作建议: {result.operation_advice}")
+    print(f"종목: {result.name} ({result.code})")
+    print(f"심리 점수: {result.sentiment_score}")
+    print(f"투자 의견: {result.operation_advice}")
 ```
 
-**参考:** [`analyze_stock`](./analyzer_service.py)
+**참고:** [`analyze_stock`](./analyzer_service.py)
 
-### 2. 分析多只股票
+### 2. 여러 종목 분석
 
-**描述:** 分析一个股票列表并返回分析结果列表。
+**설명:** 종목 코드 목록을 분석하고 결과 목록을 반환합니다.
 
-**何时使用:** 当用户想要一次分析多只股票时。
+**사용 시점:** 사용자가 여러 종목을 한번에 분석하려고 할 때 사용합니다.
 
-**输入:**
-- `stock_codes` (List[str]): 要分析的股票代码列表。
-- `config` (Config, 可选): 配置对象。默认为 `None`。
-- `full_report` (bool, 可选): 是否为每只股票生成完整报告。默认为 `False`。
-- `notifier` (NotificationService, 可选): 通知服务对象。默认为 `None`。
+**입력:**
 
-**输出:** `List[AnalysisResult]`
-一个 `AnalysisResult` 对象列表。
+- `stock_codes` (List[str]): 분석할 종목 코드 목록.
+- `config` (Config, optional): 설정 객체. 기본값은 `None`.
+- `full_report` (bool, optional): 각 종목의 전체 리포트 생성 여부. 기본값은 `False`.
+- `notifier` (NotificationService, optional): 알림 서비스 객체. 기본값은 `None`.
 
-**示例:**
+**출력:** `List[AnalysisResult]`
+
+`AnalysisResult` 객체 목록을 반환합니다.
+
+**예시:**
 
 ```python
 from analyzer_service import analyze_stocks
 
-# 分析多只股票
-results = analyze_stocks(["600989", "000001"])
+results = analyze_stocks(["005930", "AAPL", "SPY"])
 for result in results:
-    print(f"股票: {result.name}, 操作建议: {result.operation_advice}")
+    print(f"종목: {result.name}, 투자 의견: {result.operation_advice}")
 ```
 
-**参考:** [`analyze_stocks`](./analyzer_service.py)
+**참고:** [`analyze_stocks`](./analyzer_service.py)
 
+### 3. 시장 리뷰 실행
 
-### 3. 执行大盘复盘
+**설명:** 전체 시장을 리뷰하고 리포트를 반환합니다.
 
-**描述:** 对整体市场进行复盘并返回一份报告。
+**사용 시점:** 사용자가 시장 개요, 요약, 또는 장 마감 리뷰를 요청할 때 사용합니다.
 
-**何时使用:** 当用户要求市场概览、摘要或复盘时。
+**입력:**
 
-**输入:**
-- `config` (Config, 可选): 配置对象。默认为 `None`。
-- `notifier` (NotificationService, 可选): 通知服务对象。默认为 `None`。
+- `config` (Config, optional): 설정 객체. 기본값은 `None`.
+- `notifier` (NotificationService, optional): 알림 서비스 객체. 기본값은 `None`.
 
-**输出:** `Optional[str]`
-一个包含市场复盘报告的字符串，如果失败则为 `None`。
+**출력:** `Optional[str]`
 
-**示例:**
+시장 리뷰 리포트 문자열을 반환하고, 실패 시 `None`을 반환합니다.
+
+**예시:**
 
 ```python
 from analyzer_service import perform_market_review
 
-# 执行大盘复盘
 report = perform_market_review()
 if report:
     print(report)
 ```
 
-**参考:** [`perform_market_review`](./analyzer_service.py)
+**참고:** [`perform_market_review`](./analyzer_service.py)

@@ -11,8 +11,8 @@ interface CardProps {
 }
 
 /**
- * 终端风格卡片组件
- * 支持渐变边框、悬浮效果
+ * Terminal-style card component
+ * Supports gradient borders and hover effects
  */
 export const Card: React.FC<CardProps> = ({
   title,

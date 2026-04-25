@@ -22,7 +22,7 @@ function resolveEnvExamplePath() {
 
 function resolveAppDir() {
   if (app.isPackaged) {
-    // exe 所在目录
+    // Directory containing the executable.
     return path.dirname(app.getPath('exe'));
   }
   return app.getPath('userData');
@@ -50,7 +50,7 @@ function initLogging() {
   const appDir = app.isPackaged ? path.dirname(app.getPath('exe')) : app.getPath('userData');
   logFilePath = path.join(appDir, 'logs', 'desktop.log');
   
-  // 确保日志目录存在
+  // Ensure the log directory exists.
   const logDir = path.dirname(logFilePath);
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
@@ -294,8 +294,6 @@ function startBackend({ port, envFile, dbPath, logDir }) {
     SCHEDULE_ENABLED: 'false',
     WEBUI_ENABLED: 'false',
     BOT_ENABLED: 'false',
-    DINGTALK_STREAM_ENABLED: 'false',
-    FEISHU_STREAM_ENABLED: 'false',
   };
 
   const args = ['--serve-only', '--host', '127.0.0.1', '--port', String(port)];
@@ -427,7 +425,8 @@ async function createWindow() {
     'did-fail-load',
     (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
       logStartup(
-        `WebContents did-fail-load code=${errorCode} mainFrame=${isMainFrame} url=${validatedURL} reason=${errorDescription}`
+        `WebContents did-fail-load code=${errorCode} mainFrame=${isMainFrame} `
+        + `url=${validatedURL} reason=${errorDescription}`
       );
     }
   );
@@ -499,7 +498,8 @@ async function createWindow() {
     }
 
     logStartup(
-      `Waiting for backend health... elapsed=${event.elapsedMs}ms attempts=${event.attempts}${detail ? ` ${detail}` : ''}`
+      `Waiting for backend health... elapsed=${event.elapsedMs}ms attempts=${event.attempts}`
+      + `${detail ? ` ${detail}` : ''}`
     );
   };
 

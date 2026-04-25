@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-服务层模块初始化
-===================================
-
-职责：
-1. 导出所有服务类
-"""
+"""Service layer exports."""
 
 from src.services.analysis_service import AnalysisService
 from src.services.backtest_service import BacktestService

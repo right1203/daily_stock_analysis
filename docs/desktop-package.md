@@ -1,164 +1,45 @@
-# 桌面端打包설명 (Electron + React UI)
+# 데스크톱 패키지 가이드
 
-本项目可打包为桌面应用，使用 Electron 作为桌面壳，`apps/dsa-web` 的 React UI 作为界面。
+이 문서는 데스크톱 패키징 작업에서 유지해야 할 현재 기준을 정리합니다. 앱의 분석 대상은 한국 및 미국 주식이며,
+예시는 `005930`, `000660`, `035420`, `AAPL`, `TSLA`, `NVDA`, `SPY`, `KOSPI`, `NASDAQ`을 사용합니다.
 
-## 架构설명
-
-- React UI（Vite 构建）由本地 FastAPI 服务托管
-- Electron 启动时自动拉起后端服务，等待 `/api/health` 就绪后加载 UI
-- 用户配置文件 `.env` 和数据库放在 exe 同级目录（便携模式）
-
-## 本地开发
-
-一键启动（开发模式）：
+## 패키징 전 확인
 
 ```bash
-powershell -ExecutionPolicy Bypass -File scripts\run-desktop.ps1
-```
-
-或手动执行：
-
-1) 构建 React UI（输出到 `static/`）
-
-```bash
-cd apps/dsa-web
-npm install
-npm run build
-```
-
-2) 启动 Electron 应用（自动拉起后端）
-
-```bash
-cd apps/dsa-desktop
-npm install
-npm run dev
-```
-
-首次运行时会自动从 `.env.example` 复制生成 `.env`。
-
-## 打包 (Windows)
-
-### 前置条件
-
-- Node.js 18+
-- Python 3.10+
-- 开启 Windows 开发者模式（electron-builder 需要创建符号链接）
-  - 设置 -> 隐私和安全性 -> 开发者选项 -> 开发者模式
-
-### 一键打包
-
-```bash
-powershell -ExecutionPolicy Bypass -File scripts\build-all.ps1
-```
-
-该脚本会依次执行：
-1. 构建 React UI
-2. 安装 Python 依赖
-3. PyInstaller 打包后端
-4. electron-builder 打包桌面应用
-
-## GitHub CI 自动打包并发布 Release
-
-仓库已支持通过 GitHub Actions 自动构建桌面端并上传到 GitHub Releases：
-
-- 工作流：`.github/workflows/desktop-release.yml`
-- 触发方式：
-  - 推送语义化 tag（如 `v3.2.12`）后自动触发
-  - 在 Actions 页面手动触发并指定 `release_tag`
-- 产物：
-  - Windows 安装包：`daily-stock-analysis-windows-installer-<tag>.exe`
-  - Windows 免安装包：`daily-stock-analysis-windows-noinstall-<tag>.zip`
-  - macOS Intel：`daily-stock-analysis-macos-x64-<tag>.dmg`
-  - macOS Apple Silicon：`daily-stock-analysis-macos-arm64-<tag>.dmg`
-
-권장 조치发布流程：
-
-1. 合并代码到 `main`
-2. 由自动打 tag 工作流生成版本（或手动创建 tag）
-3. `desktop-release` 工作流自动构建并把两个平台安装包附加到对应 GitHub Release
-
-### 分步打包
-
-1) 构建 React UI
-
-```bash
-cd apps/dsa-web
-npm install
-npm run build
-```
-
-2) 打包 Python 后端
-
-```bash
-pip install pyinstaller
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-python -m PyInstaller --name stock_analysis --onefile --noconsole --add-data "static;static" --hidden-import=multipart --hidden-import=multipart.multipart main.py
+python main.py --stocks 005930,AAPL
 ```
 
-将生成的 exe 复制到 `dist/backend/`：
+데스크톱 빌드에 포함되는 기본 설정은 `.env.example`과 동기화합니다. 민감한 키는 패키지에 포함하지 않습니다.
+
+## 필수 런타임 설정
+
+```env
+STOCK_LIST=005930,AAPL,NVDA
+TZ=Asia/Seoul
+DISCORD_WEBHOOK_URL=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+사용자는 Telegram, Discord, Email, Pushover, Custom Webhook, AstrBot 중 하나 이상을 설정해야 합니다.
+
+## 데이터 공급자
+
+- 한국 시장: `pykrx`
+- 미국 시장: `yfinance`
+- 한국 검색: Naver
+- 글로벌 검색: Tavily, Brave, SerpAPI
+
+패키지 설명, 화면 문구, 예시 설정은 위 범위만 언급합니다.
+
+## 릴리스 전 점검
 
 ```bash
-mkdir dist\backend
-copy dist\stock_analysis.exe dist\backend\stock_analysis.exe
+python -m py_compile main.py
+git diff --check
 ```
 
-3) 打包 Electron 桌面应用
-
-```bash
-cd apps/dsa-desktop
-npm install
-npm run build
-```
-
-打包产物位于 `apps/dsa-desktop/dist/`。
-
-## 目录结构
-
-打包后用户拿到的目录结构（便携模式）：
-
-```
-win-unpacked/
-  Daily Stock Analysis.exe    <- 双击启动
-  .env                        <- 用户配置文件（首次启动自动生成）
-  data/
-    stock_analysis.db         <- 数据库
-  logs/
-    desktop.log               <- 运行日志
-  resources/
-    .env.example              <- 配置模板
-    backend/
-      stock_analysis.exe      <- 后端服务
-```
-
-## 配置文件설명
-
-- `.env` 放在 exe 同目录下
-- 首次启动时自动从 `.env.example` 复制生成
-- 用户需要编辑 `.env` 配置以下内容：
-  - `GEMINI_API_KEY` 或 `OPENAI_API_KEY`：AI 分析必需
-  - `STOCK_LIST`：自选股列表（逗号分隔）
-  - 其他可选配置参考 `.env.example`
-
-## 자주 묻는 질문
-
-### 启动后一直显示 "Preparing backend..."
-
-1. 检查 `logs/desktop.log` 查看잘못됨信息
-2. 确认 `.env` 文件存在且配置올바름
-3. 确认端口 8000-8100 未被占用
-
-### 后端启动报 ModuleNotFoundError
-
-PyInstaller 打包时缺少模块，需要在 `scripts/build-backend.ps1` 中增加 `--hidden-import`。
-
-### UI 加载空白
-
-确认 `static/index.html` 存在，如不存在需重新构建 React UI。
-
-## 分发给用户
-
-将 `apps/dsa-desktop/dist/win-unpacked/` 整个文件夹打包发给用户即可。用户只需：
-
-1. 解压文件夹
-2. 编辑 `.env` 配置 API Key 和股票列表
-3. 双击 `Daily Stock Analysis.exe` 启动
+문서와 앱 내 도움말이 동일한 종목 예시와 알림 채널을 안내하는지 확인합니다.

@@ -2,14 +2,14 @@ import type React from 'react';
 import type { TaskInfo } from '../../types/analysis';
 
 /**
- * 任务项组件属性
+ * Task item component props
  */
 interface TaskItemProps {
   task: TaskInfo;
 }
 
 /**
- * 单个任务项
+ * Single task item
  */
 const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const isPending = task.status === 'pending';
@@ -17,10 +17,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
 
   return (
     <div className="flex items-center gap-3 px-3 py-2 bg-elevated rounded-lg border border-white/5">
-      {/* 状态图标 */}
+      {/* Status icon */}
       <div className="shrink-0">
         {isProcessing ? (
-          // 加载动画
+          // Loading animation
           <svg className="w-4 h-4 text-cyan animate-spin" fill="none" viewBox="0 0 24 24">
             <circle
               className="opacity-25"
@@ -37,7 +37,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
             />
           </svg>
         ) : isPending ? (
-          // 等待图标
+          // Waiting icon
           <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -49,7 +49,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
         ) : null}
       </div>
 
-      {/* 任务信息 */}
+      {/* Task information */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-white truncate">
@@ -66,7 +66,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
         )}
       </div>
 
-      {/* 状态标签 */}
+      {/* Status label */}
       <div className="flex-shrink-0">
         <span
           className={`text-xs px-1.5 py-0.5 rounded ${
@@ -75,7 +75,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
               : 'bg-white/10 text-muted'
           }`}
         >
-          {isProcessing ? '分析中' : '等待中'}
+          {isProcessing ? '분석 중' : '대기 중'}
         </span>
       </div>
     </div>
@@ -83,35 +83,35 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
 };
 
 /**
- * 任务面板属性
+ * Task panel props
  */
 interface TaskPanelProps {
-  /** 任务列表 */
+  /** Task list */
   tasks: TaskInfo[];
-  /** 是否显示 */
+  /** Whether visible */
   visible?: boolean;
-  /** 标题 */
+  /** Title */
   title?: string;
-  /** 自定义类名 */
+  /** Custom class name */
   className?: string;
 }
 
 /**
- * 任务面板组件
- * 显示进行中的分析任务列表
+ * Task panel component
+ * Displays the list of active analysis tasks
  */
 export const TaskPanel: React.FC<TaskPanelProps> = ({
   tasks,
   visible = true,
-  title = '分析任务',
+  title = '분석 작업',
   className = '',
 }) => {
-  // 筛选活跃任务（pending 和 processing）
+  // Filter active tasks (pending and processing)
   const activeTasks = tasks.filter(
     (t) => t.status === 'pending' || t.status === 'processing'
   );
 
-  // 无任务或不可见时不渲染
+  // Do not render when hidden or when there are no tasks
   if (!visible || activeTasks.length === 0) {
     return null;
   }
@@ -121,7 +121,7 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
 
   return (
     <div className={`bg-card rounded-xl border border-white/5 overflow-hidden ${className}`}>
-      {/* 标题栏 */}
+      {/* Title bar */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,16 +138,16 @@ export const TaskPanel: React.FC<TaskPanelProps> = ({
           {processingCount > 0 && (
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-cyan rounded-full animate-pulse" />
-              {processingCount} 进行中
+              {processingCount} 진행 중
             </span>
           )}
           {pendingCount > 0 && (
-            <span>{pendingCount} 等待中</span>
+            <span>{pendingCount} 대기 중</span>
           )}
         </div>
       </div>
 
-      {/* 任务列表 */}
+      {/* Task list */}
       <div className="p-2 space-y-2 max-h-64 overflow-y-auto">
         {activeTasks.map((task) => (
           <TaskItem key={task.taskId} task={task} />

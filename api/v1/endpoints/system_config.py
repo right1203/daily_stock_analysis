@@ -30,15 +30,15 @@ router = APIRouter()
     "/config",
     response_model=SystemConfigResponse,
     responses={
-        200: {"description": "Configuration loaded"},
-        401: {"description": "Unauthorized", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": ErrorResponse},
+        200: {"description": "설정을 불러왔습니다"},
+        401: {"description": "인증이 필요합니다", "model": ErrorResponse},
+        500: {"description": "서버 내부 오류", "model": ErrorResponse},
     },
-    summary="Get system configuration",
-    description="Read current configuration from .env and return raw values.",
+    summary="시스템 설정 조회",
+    description=".env에서 현재 설정을 읽어 원본 값을 반환합니다.",
 )
 def get_system_config(
-    include_schema: bool = Query(True, description="Whether to include schema metadata"),
+    include_schema: bool = Query(True, description="스키마 메타데이터를 포함할지 여부입니다."),
     service: SystemConfigService = Depends(get_system_config_service),
 ) -> SystemConfigResponse:
     """Load and return current system configuration."""
@@ -51,7 +51,7 @@ def get_system_config(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": "Failed to load system configuration",
+                "message": "시스템 설정을 불러오지 못했습니다",
             },
         )
 
@@ -60,13 +60,13 @@ def get_system_config(
     "/config",
     response_model=UpdateSystemConfigResponse,
     responses={
-        200: {"description": "Configuration updated"},
-        400: {"description": "Validation failed", "model": SystemConfigValidationErrorResponse},
-        409: {"description": "Version conflict", "model": SystemConfigConflictResponse},
-        500: {"description": "Internal server error", "model": ErrorResponse},
+        200: {"description": "설정이 업데이트되었습니다"},
+        400: {"description": "검증에 실패했습니다", "model": SystemConfigValidationErrorResponse},
+        409: {"description": "버전 충돌", "model": SystemConfigConflictResponse},
+        500: {"description": "서버 내부 오류", "model": ErrorResponse},
     },
-    summary="Update system configuration",
-    description="Update key-value pairs in .env. Mask token preserves existing secret values.",
+    summary="시스템 설정 업데이트",
+    description=".env의 키-값 설정을 업데이트합니다. 마스킹 토큰은 기존 비밀 값을 유지합니다.",
 )
 def update_system_config(
     request: UpdateSystemConfigRequest,
@@ -86,7 +86,7 @@ def update_system_config(
             status_code=400,
             detail={
                 "error": "validation_failed",
-                "message": "System configuration validation failed",
+                "message": "시스템 설정 검증에 실패했습니다",
                 "issues": exc.issues,
             },
         )
@@ -95,7 +95,7 @@ def update_system_config(
             status_code=409,
             detail={
                 "error": "config_version_conflict",
-                "message": "Configuration has changed, please reload and retry",
+                "message": "설정이 변경되었습니다. 다시 불러온 뒤 재시도하세요",
                 "current_config_version": exc.current_version,
             },
         )
@@ -105,7 +105,7 @@ def update_system_config(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": "Failed to update system configuration",
+                "message": "시스템 설정을 업데이트하지 못했습니다",
             },
         )
 
@@ -114,11 +114,11 @@ def update_system_config(
     "/config/validate",
     response_model=ValidateSystemConfigResponse,
     responses={
-        200: {"description": "Validation completed"},
-        500: {"description": "Internal server error", "model": ErrorResponse},
+        200: {"description": "검증이 완료되었습니다"},
+        500: {"description": "서버 내부 오류", "model": ErrorResponse},
     },
-    summary="Validate system configuration",
-    description="Validate submitted configuration values without writing to .env.",
+    summary="시스템 설정 검증",
+    description=".env에 기록하지 않고 제출된 설정 값을 검증합니다.",
 )
 def validate_system_config(
     request: ValidateSystemConfigRequest,
@@ -134,7 +134,7 @@ def validate_system_config(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": "Failed to validate system configuration",
+                "message": "시스템 설정을 검증하지 못했습니다",
             },
         )
 
@@ -143,11 +143,11 @@ def validate_system_config(
     "/config/schema",
     response_model=SystemConfigSchemaResponse,
     responses={
-        200: {"description": "Schema loaded"},
-        500: {"description": "Internal server error", "model": ErrorResponse},
+        200: {"description": "스키마를 불러왔습니다"},
+        500: {"description": "서버 내부 오류", "model": ErrorResponse},
     },
-    summary="Get system configuration schema",
-    description="Return categorized field metadata used for dynamic settings form rendering.",
+    summary="시스템 설정 스키마 조회",
+    description="동적 설정 폼 렌더링에 사용하는 분류별 필드 메타데이터를 반환합니다.",
 )
 def get_system_config_schema(
     service: SystemConfigService = Depends(get_system_config_service),
@@ -162,6 +162,6 @@ def get_system_config_schema(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": "Failed to load system configuration schema",
+                "message": "시스템 설정 스키마를 불러오지 못했습니다",
             },
         )

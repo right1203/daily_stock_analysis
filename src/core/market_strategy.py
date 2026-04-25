@@ -37,17 +37,17 @@ class MarketStrategyBlueprint:
         dimensions_text = "\n".join(dims)
 
         return (
-            f"## Strategy Blueprint: {self.title}\n"
+            f"## 전략 청사진: {self.title}\n"
             f"{self.positioning}\n\n"
-            f"### Strategy Principles\n{principles_text}\n\n"
-            f"### Analysis Dimensions\n{dimensions_text}\n\n"
-            f"### Action Framework\n{action_text}"
+            f"### 전략 원칙\n{principles_text}\n\n"
+            f"### 분석 차원\n{dimensions_text}\n\n"
+            f"### 실행 프레임워크\n{action_text}"
         )
 
     def to_markdown_block(self) -> str:
         """Render blueprint as markdown section for template fallback report."""
         dims = "\n".join([f"- **{dim.name}**: {dim.objective}" for dim in self.dimensions])
-        section_title = "### 6. 전략 프레임워크" if self.region == "kr" else "### VI. Strategy Framework"
+        section_title = "### 6. 전략 프레임워크" if self.region == "kr" else "### VI. 전략 프레임워크"
         return f"{section_title}\n{dims}\n"
 
 
@@ -98,46 +98,46 @@ KR_BLUEPRINT = MarketStrategyBlueprint(
 
 US_BLUEPRINT = MarketStrategyBlueprint(
     region="us",
-    title="US Market Regime Strategy",
-    positioning="Focus on index trend, macro narrative, and sector rotation to define next-session risk posture.",
+    title="미국 시장 국면 전략",
+    positioning="지수 추세, 매크로 내러티브, 섹터 순환을 중심으로 다음 세션의 리스크 포지션을 정의합니다.",
     principles=[
-        "Read market regime from S&P 500, Nasdaq, and Dow alignment first.",
-        "Separate beta move from theme-driven alpha rotation.",
-        "Translate recap into actionable risk-on/risk-off stance with clear invalidation points.",
+        "먼저 S&P 500, Nasdaq, Dow의 방향 일치 여부로 시장 국면을 읽습니다.",
+        "시장 베타 움직임과 테마 기반 알파 순환을 구분합니다.",
+        "복기 결과를 명확한 무효화 기준이 있는 실행 가능한 리스크온/리스크오프 관점으로 전환합니다.",
     ],
     dimensions=[
         StrategyDimension(
-            name="Trend Regime",
-            objective="Classify the market as momentum, range, or risk-off.",
+            name="추세 국면",
+            objective="시장을 모멘텀, 박스권, 리스크오프 중 하나로 분류합니다.",
             checkpoints=[
-                "Are SPX/NDX/DJI directionally aligned",
-                "Did volume confirm the move",
-                "Are key index levels reclaimed or lost",
+                "SPX/NDX/DJI의 방향이 일치하는지",
+                "거래량이 움직임을 확인해 주는지",
+                "주요 지수 레벨을 회복했는지 또는 이탈했는지",
             ],
         ),
         StrategyDimension(
-            name="Macro & Flows",
-            objective="Map policy/rates narrative into equity risk appetite.",
+            name="매크로와 자금 흐름",
+            objective="정책 및 금리 내러티브를 주식 위험 선호도로 연결합니다.",
             checkpoints=[
-                "Treasury yield and USD implications",
-                "Breadth and leadership concentration",
-                "Defensive vs growth factor rotation",
+                "미국 국채 금리와 달러 흐름의 시사점",
+                "시장 폭과 주도주 집중도",
+                "방어주와 성장주 팩터 순환",
             ],
         ),
         StrategyDimension(
-            name="Sector Themes",
-            objective="Identify persistent leaders and vulnerable laggards.",
+            name="섹터 테마",
+            objective="지속 가능한 주도 섹터와 취약한 후행 섹터를 식별합니다.",
             checkpoints=[
-                "AI/semiconductor/software trend persistence",
-                "Energy/financials sensitivity to macro data",
-                "Volatility signals from VIX and large-cap earnings",
+                "AI/반도체/소프트웨어 추세의 지속성",
+                "에너지/금융 섹터의 매크로 데이터 민감도",
+                "VIX와 대형주 실적에서 나타나는 변동성 신호",
             ],
         ),
     ],
     action_framework=[
-        "Risk-on: broad index breakout with expanding participation.",
-        "Neutral: mixed index signals; focus on selective relative strength.",
-        "Risk-off: failed breakouts and rising volatility; prioritize capital preservation.",
+        "리스크온: 주요 지수 돌파와 참여 종목 확산이 함께 나타나는 경우.",
+        "중립: 지수 신호가 엇갈릴 때는 선별적 상대 강도에 집중합니다.",
+        "리스크오프: 돌파 실패와 변동성 상승이 나타나면 자본 보존을 우선합니다.",
     ],
 )
 

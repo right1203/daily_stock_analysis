@@ -11,55 +11,51 @@ from src.storage import DatabaseManager
 class TestStorage(unittest.TestCase):
     
     def test_parse_sniper_value(self):
-        """测试解析狙击点位数值"""
+        """Parse sniper point values."""
         
-        # 1. 正常数值
+        # 1. Plain numeric values
         self.assertEqual(DatabaseManager._parse_sniper_value(100), 100.0)
         self.assertEqual(DatabaseManager._parse_sniper_value(100.5), 100.5)
         self.assertEqual(DatabaseManager._parse_sniper_value("100"), 100.0)
         self.assertEqual(DatabaseManager._parse_sniper_value("100.5"), 100.5)
         
-        # 2. 包含中文描述和"元"
-        self.assertEqual(DatabaseManager._parse_sniper_value("建议在 100 元附近买入"), 100.0)
-        self.assertEqual(DatabaseManager._parse_sniper_value("价格：100.5元"), 100.5)
+        # 2. KR/US price text with explicit currency markers
+        self.assertEqual(DatabaseManager._parse_sniper_value("100원 부근 매수 고려"), 100.0)
+        self.assertEqual(DatabaseManager._parse_sniper_value("price: $100.5"), 100.5)
         
-        # 3. 包含干扰数字（修复的Bug场景）
-        # 之前 "MA5" 会被错误提取为 5.0，现在应该提取 "元" 前面的 100
-        text_bug = "无法给出。需等待MA5数据恢复，在股价回踩MA5且乖离率<2%时考虑100元"
+        # 3. Regression: MA indicator numbers must not be extracted
+        text_bug = "MA5 데이터 회복 후 MA5 재돌파와 이격률 2% 미만 구간에서 100원 고려"
         self.assertEqual(DatabaseManager._parse_sniper_value(text_bug), 100.0)
         
-        # 4. 更多干扰场景
-        text_complex = "MA10为20.5，建议在30元买入"
+        # 4. More noisy input cases
+        text_complex = "MA10 is 20.5, consider buying near 30원"
         self.assertEqual(DatabaseManager._parse_sniper_value(text_complex), 30.0)
         
-        text_multiple = "支撑位10元，阻力位20元" # 应该提取最后一个"元"前面的数字，即20，或者更复杂的逻辑？
-        # 当前逻辑是找最后一个冒号，然后找之后的第一个"元"，提取中间的数字。
-        # 测试没有冒号的情况
-        self.assertEqual(DatabaseManager._parse_sniper_value("30元"), 30.0)
+        self.assertEqual(DatabaseManager._parse_sniper_value("30원"), 30.0)
         
-        # 测试多个数字在"元"之前
-        self.assertEqual(DatabaseManager._parse_sniper_value("MA5 10 20元"), 20.0)
+        # Multiple numbers before the currency marker should use the latest valid price.
+        self.assertEqual(DatabaseManager._parse_sniper_value("MA5 10 20원"), 20.0)
         
-        # 5. Fallback: no "元" character — extracts last non-MA number
-        self.assertEqual(DatabaseManager._parse_sniper_value("102.10-103.00（MA5附近）"), 103.0)
-        self.assertEqual(DatabaseManager._parse_sniper_value("97.62-98.50（MA10附近）"), 98.5)
-        self.assertEqual(DatabaseManager._parse_sniper_value("93.40下方（MA20支撑）"), 93.4)
-        self.assertEqual(DatabaseManager._parse_sniper_value("108.00-110.00（前期高点阻力）"), 110.0)
+        # 5. Fallback: no currency marker; extracts the last non-MA number.
+        self.assertEqual(DatabaseManager._parse_sniper_value("102.10-103.00(MA5 near)"), 103.0)
+        self.assertEqual(DatabaseManager._parse_sniper_value("97.62-98.50(MA10 near)"), 98.5)
+        self.assertEqual(DatabaseManager._parse_sniper_value("93.40 below(MA20 support)"), 93.4)
+        self.assertEqual(DatabaseManager._parse_sniper_value("108.00-110.00(previous resistance)"), 110.0)
 
-        # 6. 无效输入
+        # 6. Invalid input
         self.assertIsNone(DatabaseManager._parse_sniper_value(None))
         self.assertIsNone(DatabaseManager._parse_sniper_value(""))
-        self.assertIsNone(DatabaseManager._parse_sniper_value("没有数字"))
-        self.assertIsNone(DatabaseManager._parse_sniper_value("MA5但没有元"))
+        self.assertIsNone(DatabaseManager._parse_sniper_value("no numbers"))
+        self.assertIsNone(DatabaseManager._parse_sniper_value("MA5 without price"))
 
-        # 7. 回归：括号内技术指标数字不应被提取
-        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.52-1.53 (回踩MA5/10附近)"), 10.0)
-        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.55-1.56(MA5/M20支撑)"), 20.0)
-        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.49-1.50(MA60附近企稳)"), 60.0)
-        # 验证正确值在区间内
-        self.assertIn(DatabaseManager._parse_sniper_value("1.52-1.53 (回踩MA5/10附近)"), [1.52, 1.53])
-        self.assertIn(DatabaseManager._parse_sniper_value("1.55-1.56(MA5/M20支撑)"), [1.55, 1.56])
-        self.assertIn(DatabaseManager._parse_sniper_value("1.49-1.50(MA60附近企稳)"), [1.49, 1.50])
+        # 7. Regression: technical indicator numbers inside parentheses are ignored.
+        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.52-1.53 (MA5/10 pullback area)"), 10.0)
+        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.55-1.56(MA5/M20 support)"), 20.0)
+        self.assertNotEqual(DatabaseManager._parse_sniper_value("1.49-1.50(MA60 stabilization)"), 60.0)
+        # Verify that the parsed value remains inside the price range.
+        self.assertIn(DatabaseManager._parse_sniper_value("1.52-1.53 (MA5/10 pullback area)"), [1.52, 1.53])
+        self.assertIn(DatabaseManager._parse_sniper_value("1.55-1.56(MA5/M20 support)"), [1.55, 1.56])
+        self.assertIn(DatabaseManager._parse_sniper_value("1.49-1.50(MA60 stabilization)"), [1.49, 1.50])
 
 if __name__ == '__main__':
     unittest.main()

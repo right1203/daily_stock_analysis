@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-股票数据访问层
-===================================
-
-职责：
-1. 封装股票数据的数据库操作
-2. 提供日线数据查询接口
-"""
+"""Stock data repository for daily price queries."""
 
 import logging
 from datetime import date
@@ -22,36 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 class StockRepository:
-    """
-    股票数据访问层
-    
-    封装 StockDaily 表的数据库操作
-    """
+    """Database access layer for StockDaily rows."""
     
     def __init__(self, db_manager: Optional[DatabaseManager] = None):
-        """
-        初始化数据访问层
-        
-        Args:
-            db_manager: 数据库管理器（可选，默认使用单例）
-        """
+        """Initialize the repository."""
         self.db = db_manager or DatabaseManager.get_instance()
     
     def get_latest(self, code: str, days: int = 2) -> List[StockDaily]:
-        """
-        获取最近 N 天的数据
-        
-        Args:
-            code: 股票代码
-            days: 获取天数
-            
-        Returns:
-            StockDaily 对象列表（按日期降序）
-        """
+        """Return the latest N daily rows in descending date order."""
         try:
             return self.db.get_latest_data(code, days)
         except Exception as e:
-            logger.error(f"获取最新数据失败: {e}")
+            logger.error("Failed to get latest data: %s", e)
             return []
     
     def get_range(
@@ -60,21 +34,11 @@ class StockRepository:
         start_date: date,
         end_date: date
     ) -> List[StockDaily]:
-        """
-        获取指定日期范围的数据
-        
-        Args:
-            code: 股票代码
-            start_date: 开始日期
-            end_date: 结束日期
-            
-        Returns:
-            StockDaily 对象列表
-        """
+        """Return daily rows for a date range."""
         try:
             return self.db.get_data_range(code, start_date, end_date)
         except Exception as e:
-            logger.error(f"获取日期范围数据失败: {e}")
+            logger.error("Failed to get date range data: %s", e)
             return []
     
     def save_dataframe(
@@ -83,38 +47,19 @@ class StockRepository:
         code: str,
         data_source: str = "Unknown"
     ) -> int:
-        """
-        保存 DataFrame 到数据库
-        
-        Args:
-            df: 包含日线数据的 DataFrame
-            code: 股票代码
-            data_source: 数据来源
-            
-        Returns:
-            保存的记录数
-        """
+        """Save daily rows from a DataFrame and return saved count."""
         try:
             return self.db.save_daily_data(df, code, data_source)
         except Exception as e:
-            logger.error(f"保存日线数据失败: {e}")
+            logger.error("Failed to save daily data: %s", e)
             return 0
     
     def has_today_data(self, code: str, target_date: Optional[date] = None) -> bool:
-        """
-        检查是否有指定日期的数据
-        
-        Args:
-            code: 股票代码
-            target_date: 目标日期（默认今天）
-            
-        Returns:
-            是否存在数据
-        """
+        """Return whether data exists for the target date."""
         try:
             return self.db.has_today_data(code, target_date)
         except Exception as e:
-            logger.error(f"检查数据存在失败: {e}")
+            logger.error("Failed to check data existence: %s", e)
             return False
     
     def get_analysis_context(
@@ -122,20 +67,11 @@ class StockRepository:
         code: str, 
         target_date: Optional[date] = None
     ) -> Optional[Dict[str, Any]]:
-        """
-        获取分析上下文
-        
-        Args:
-            code: 股票代码
-            target_date: 目标日期
-            
-        Returns:
-            分析上下文字典
-        """
+        """Return analysis context for a stock and optional target date."""
         try:
             return self.db.get_analysis_context(code, target_date)
         except Exception as e:
-            logger.error(f"获取分析上下文失败: {e}")
+            logger.error("Failed to get analysis context: %s", e)
             return None
 
     def get_start_daily(self, *, code: str, analysis_date: date) -> Optional[StockDaily]:

@@ -46,15 +46,15 @@ class TestPipelineEmailGroupImageRouting(unittest.TestCase):
         pipeline.notifier = _FakeNotifier()
         pipeline.config = SimpleNamespace(
             stock_email_groups=[
-                (["000001"], ["group@example.com"]),
+                (["035720"], ["group@example.com"]),
             ]
         )
         return pipeline
 
     def _make_results(self):
         return [
-            SimpleNamespace(code="000001"),
-            SimpleNamespace(code="600519"),
+            SimpleNamespace(code="035720"),
+            SimpleNamespace(code="005930"),
         ]
 
     @patch("src.md2img.markdown_to_image", return_value=b"png-bytes")

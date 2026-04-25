@@ -11,16 +11,16 @@ interface ReportSummaryProps {
 }
 
 /**
- * 完整报告展示组件
- * 整合概览、策略、资讯、详情四个区域
+ * Full report display component
+ * Combines the overview, strategy, news, and details sections
  */
 export const ReportSummary: React.FC<ReportSummaryProps> = ({
   data,
   isHistory = false,
 }) => {
-  // 兼容 AnalysisResult 和 AnalysisReport 两种数据格式
+  // Support both AnalysisResult and AnalysisReport data shapes
   const report: AnalysisReport = 'report' in data ? data.report : data;
-  // 使用 report id，因为 queryId 在批量分析时可能重复，且历史报告详情接口需要 recordId 来获取关联资讯和详情数据
+  // Use report id because queryId may repeat in batch analysis, and the history detail API needs recordId to fetch related news and detail data
   const recordId = report.meta.id;
 
   const { meta, summary, strategy, details } = report;
@@ -31,26 +31,26 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
 
   return (
     <div className="space-y-3 animate-fade-in">
-      {/* 概览区（首屏） */}
+      {/* Overview section (first screen) */}
       <ReportOverview
         meta={meta}
         summary={summary}
         isHistory={isHistory}
       />
 
-      {/* 策略点位区 */}
+      {/* Strategy price levels section */}
       <ReportStrategy strategy={strategy} />
 
-      {/* 资讯区 */}
+      {/* News section */}
       <ReportNews recordId={recordId} />
 
-      {/* 透明度与追溯区 */}
+      {/* Transparency and traceability section */}
       <ReportDetails details={details} recordId={recordId} />
 
-      {/* 分析模型标记（Issue #528）— 报告末尾 */}
+      {/* Analysis model marker (Issue #528), shown at the end of the report */}
       {shouldShowModel && (
         <p className="text-xs text-gray-500 mt-3">
-          分析模型: {modelUsed}
+          분석 모델: {modelUsed}
         </p>
       )}
     </div>

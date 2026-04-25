@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-图片股票代码提取 (Vision LLM)
+Image stock code extraction (Vision LLM)
 ===================================
 
-从截图/图片中提取股票代码，使用 Vision LLM。
-优先级：Gemini -> Anthropic -> OpenAI（首个可用）。
+Extract stock codes from screenshots or images using a Vision LLM.
+Priority: Gemini -> Anthropic -> OpenAI (first available).
 """
 
 from __future__ import annotations
@@ -22,17 +22,17 @@ from src.config import Config, get_config
 
 logger = logging.getLogger(__name__)
 
-EXTRACT_PROMPT = """请分析这张股票市场截图或图片，提取其中所有可见的股票代码。
+EXTRACT_PROMPT = """이 주식 시장 스크린샷 또는 이미지를 분석하세요.
+보이는 모든 주식 코드를 추출하세요.
 
-输出格式：仅返回有效的 JSON 数组字符串，不要 markdown、不要解释。
-示例：
-- A股（6位数字）：600519, 300750, 002594
-- 港股（5位数字，可有前导零）：00700, 09988
-- 美股（1-5字母）：AAPL, TSLA, MSFT
+출력 형식: 유효한 JSON 배열 문자열만 반환하고 markdown이나 설명은 포함하지 마세요.
+예시:
+- 한국 주식(6자리 숫자): 005930, 035720
+- 미국 주식(1-5자 영문): AAPL, TSLA, MSFT
 
-输出示例：["600519", "300750", "00700"]
+출력 예시: ["005930", "035720", "AAPL"]
 
-若未找到任何股票代码，返回：[]"""
+주식 코드를 찾지 못하면 []를 반환하세요."""
 
 ALLOWED_MIME = frozenset({"image/jpeg", "image/png", "image/webp", "image/gif"})
 MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB
@@ -50,45 +50,45 @@ _IMAGE_SIGNATURES = {
 def _verify_image_magic_bytes(image_bytes: bytes, mime_type: str) -> None:
     """Verify actual file content matches declared MIME type (rejects forged Content-Type)."""
     if len(image_bytes) < 12:
-        raise ValueError("图片文件过小或损坏")
+        raise ValueError("이미지 파일이 너무 작거나 손상되었습니다")
     if mime_type not in _IMAGE_SIGNATURES:
-        raise ValueError(f"无法验证类型: {mime_type}")
+        raise ValueError(f"검증할 수 없는 이미지 유형입니다: {mime_type}")
     if mime_type == "image/webp":
         if image_bytes[:4] != b"RIFF" or image_bytes[8:12] != b"WEBP":
-            raise ValueError("文件内容与声明的类型 image/webp 不匹配，可能被篡改")
+            raise ValueError("파일 내용이 선언된 image/webp 유형과 일치하지 않습니다")
         return
     for sig in _IMAGE_SIGNATURES[mime_type]:
         if image_bytes.startswith(sig):
             return
-    raise ValueError(f"文件内容与声明的类型 {mime_type} 不匹配，可能被篡改")
+    raise ValueError(f"파일 내용이 선언된 {mime_type} 유형과 일치하지 않습니다")
 
 
 def _normalize_code(raw: str) -> Optional[str]:
-    """Normalize and validate a single stock code. A-shares & HK: 5-6 digits; US: 1-5 letters."""
+    """Normalize and validate a single stock code. KR: 6 digits; US: 1-5 letters."""
     s = raw.strip().upper()
     if not s:
         return None
-    # A-shares & HK: 5-6 digit codes (600519, 00700, 09988)
-    if s.isdigit() and len(s) in (5, 6):
+    # KR stocks: 6-digit KRX codes.
+    if s.isdigit() and len(s) == 6:
         return s
     # US stocks: 1-5 letters, optionally with . (e.g. BRK.B)
     if re.match(r"^[A-Z]{1,5}(\.[A-Z])?$", s):
         return s
-    # 尝试去除 SH/SZ 后缀
-    for suffix in (".SH", ".SZ", ".SS"):
+    # Strip Korean exchange suffixes when present.
+    for suffix in (".KS", ".KQ"):
         if s.endswith(suffix):
             base = s[: -len(suffix)].strip()
-            if base.isdigit() and len(base) in (5, 6):
+            if base.isdigit() and len(base) == 6:
                 return base
     return None
 
 
 def _parse_codes_from_text(text: str) -> List[str]:
-    """从 LLM 响应文本解析股票代码。"""
+    """Parse stock codes from LLM response text."""
     seen: set[str] = set()
     result: List[str] = []
 
-    # 优先尝试 JSON 数组
+    # Prefer a JSON array when the model follows the prompt.
     cleaned = text.strip()
     for start in ("```json", "```"):
         if start in cleaned:
@@ -111,8 +111,8 @@ def _parse_codes_from_text(text: str) -> List[str]:
     except json.JSONDecodeError:
         pass
 
-    # 兜底：查找 5-6 位数字及美股代码
-    for m in re.finditer(r"\b([0-9]{5,6}|[A-Z]{1,5}(\.[A-Z])?)\b", text, re.IGNORECASE):
+    # Fallback: find 6-digit KR codes and US ticker symbols.
+    for m in re.finditer(r"\b([0-9]{6}|[A-Z]{1,5}(\.[A-Z])?)\b", text, re.IGNORECASE):
         c = _normalize_code(m.group(1))
         if c and c not in seen:
             seen.add(c)
@@ -158,7 +158,10 @@ def _call_litellm_vision(image_b64: str, mime_type: str) -> str:
     cfg = get_config()
     model = _resolve_vision_model()
     if not model:
-        raise ValueError("未配置 Vision API。请设置 LITELLM_MODEL 或相关 API Key。")
+        raise ValueError(
+            "Vision API가 설정되지 않았습니다. "
+            "LITELLM_MODEL 또는 관련 API Key를 설정하세요."
+        )
 
     api_key = _get_api_key_for_model(model, cfg)
     if not api_key:
@@ -198,26 +201,28 @@ def extract_stock_codes_from_image(
     mime_type: str,
 ) -> Tuple[List[str], str]:
     """
-    从图片中提取股票代码（使用 Vision LLM）。
+    Extract stock codes from an image using a Vision LLM.
 
-    优先级：Gemini -> Anthropic -> OpenAI（首个可用）。
+    Provider priority is Gemini, Anthropic, then OpenAI using the first
+    configured model.
 
     Args:
-        image_bytes: 原始图片字节
-        mime_type: MIME 类型（如 image/jpeg, image/png）
+        image_bytes: Raw image bytes.
+        mime_type: MIME type, such as image/jpeg or image/png.
 
     Returns:
-        (codes, raw_text) - 去重后的股票代码列表及原始 LLM 响应。
+        Deduplicated stock code list and raw LLM response text.
 
     Raises:
-        ValueError: 图片无效、未配置 Vision API 或提取失败时。
+        ValueError: Raised when the image is invalid, Vision API is not
+        configured, or extraction fails.
     """
     mime_type = (mime_type or "image/jpeg").strip().lower().split(";")[0].strip()
     if mime_type not in ALLOWED_MIME:
-        raise ValueError(f"不支持的图片类型: {mime_type}。允许: {list(ALLOWED_MIME)}")
+        raise ValueError(f"지원하지 않는 이미지 유형입니다: {mime_type}. 허용: {list(ALLOWED_MIME)}")
 
     if not image_bytes:
-        raise ValueError("图片内容为空")
+        raise ValueError("이미지 내용이 비어 있습니다")
 
     if len(image_bytes) > MAX_SIZE_BYTES:
         raise ValueError(f"Image too large (max {MAX_SIZE_BYTES // (1024 * 1024)}MB)")
@@ -231,11 +236,11 @@ def extract_stock_codes_from_image(
         codes = _parse_codes_from_text(raw)
         model = _resolve_vision_model()
         logger.info(
-            f"[ImageExtractor] {model} 提取 {len(codes)} 个代码: "
+            f"[ImageExtractor] {model} extracted {len(codes)} codes: "
             f"{codes[:10]}{'...' if len(codes) > 10 else ''}"
         )
         return codes, raw
     except Exception as e:
         raise ValueError(
-            f"Vision API 调用失败，请检查 API Key 与网络: {e}"
+            f"Vision API 호출에 실패했습니다. API Key와 네트워크를 확인하세요: {e}"
         ) from e

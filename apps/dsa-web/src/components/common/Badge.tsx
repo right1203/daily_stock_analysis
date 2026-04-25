@@ -29,8 +29,8 @@ const glowStyles: Record<BadgeVariant, string> = {
 };
 
 /**
- * 标签徽章组件
- * 支持多种变体和发光效果
+ * Label badge component
+ * Supports multiple variants and glow effects
  */
 export const Badge: React.FC<BadgeProps> = ({
   children,

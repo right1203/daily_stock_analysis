@@ -21,7 +21,7 @@ def _get_search_service():
     from src.config import get_config
     config = get_config()
     return SearchService(
-        bocha_keys=config.bocha_api_keys,
+        naver_keys=config.naver_api_keys,
         tavily_keys=config.tavily_api_keys,
         brave_keys=config.brave_api_keys,
         serpapi_keys=config.serpapi_keys,
@@ -72,12 +72,12 @@ search_stock_news_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="Stock code, e.g., '600519'",
+            description="Stock code or symbol, e.g., '005930' or 'AAPL'",
         ),
         ToolParameter(
             name="stock_name",
             type="string",
-            description="Stock name in Chinese, e.g., '贵州茅台'",
+            description="Stock name, e.g., '삼성전자' or 'Apple'",
         ),
     ],
     handler=_handle_search_stock_news,
@@ -140,12 +140,12 @@ search_comprehensive_intel_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="Stock code, e.g., '600519'",
+            description="Stock code or symbol, e.g., '005930' or 'AAPL'",
         ),
         ToolParameter(
             name="stock_name",
             type="string",
-            description="Stock name in Chinese, e.g., '贵州茅台'",
+            description="Stock name, e.g., '삼성전자' or 'Apple'",
         ),
     ],
     handler=_handle_search_comprehensive_intel,

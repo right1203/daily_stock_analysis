@@ -1,7 +1,7 @@
 # ===================================
-# A股自选股智能分析系统 - Docker 镜像
+# Daily stock analysis system - Docker image
 # ===================================
-# 多阶段构建：前端打包 + 后端运行
+# Multi-stage build: frontend bundle plus backend runtime
 
 FROM node:20-slim AS web-builder
 
@@ -19,14 +19,14 @@ FROM python:3.11-slim-bookworm
 # uv 설치
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# 设置工作目录
+# Set work directory
 WORKDIR /app
 
-# 设置时区为上海
-ENV TZ=Asia/Shanghai
+# Set default timezone
+ENV TZ=Asia/Seoul
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 안스팀 의존성 설치（wkhtmltopdf 含 wkhtmltoimage，用于 Markdown 转图片 Issue #289）
+# Install system dependencies, including wkhtmltoimage for Markdown image rendering (#289)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
@@ -37,11 +37,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# 의존성 파일 복사 및 설치
+# Copy dependency files and install
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-# 复制应用代码
+# Copy application code
 COPY *.py ./
 COPY api/ ./api/
 COPY data_provider/ ./data_provider/
@@ -51,10 +51,10 @@ COPY src/ ./src/
 COPY strategies/ ./strategies/
 COPY --from=web-builder /app/static ./static/
 
-# 创建数据目录
+# Create data directories
 RUN mkdir -p /app/data /app/logs /app/reports
 
-# 设置环境变量默认值
+# Set default environment variables
 ENV PYTHONUNBUFFERED=1
 ENV LOG_DIR=/app/logs
 ENV DATABASE_PATH=/app/data/stock_analysis.db
@@ -62,16 +62,16 @@ ENV DATABASE_PATH=/app/data/stock_analysis.db
 ENV WEBUI_HOST=0.0.0.0
 ENV API_PORT=8000
 
-# 暴露 API 端口
+# Expose API port
 EXPOSE 8000
 
-# 数据卷（持久化数据）
+# Data volumes for persistent storage
 VOLUME ["/app/data", "/app/logs", "/app/reports"]
 
-# 健康检查（FastAPI 模式）
+# Health check for FastAPI mode
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || curl -f http://localhost:8000/health \
     || python -c "import sys; sys.exit(0)"
 
-# 默认命令（可被覆盖）
+# Default command, can be overridden
 CMD ["uv", "run", "python", "main.py", "--schedule"]

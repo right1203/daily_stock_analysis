@@ -1,320 +1,70 @@
-# ❓ 자주 묻는 질문解答 (FAQ)
+# 자주 묻는 질문
 
-本문서整理了用户在使用过程中遇到的자주 묻는 질문及해결 방법。
+## 어떤 시장을 지원하나요?
 
----
+현재 문서는 한국 및 미국 주식 분석 기준입니다. 한국 종목은 `005930`, `000660`, `035420` 같은 숫자 코드를 사용하고,
+미국 종목은 `AAPL`, `TSLA`, `NVDA`, `SPY` 같은 티커를 사용합니다. 지수 키워드는 `KOSPI`, `NASDAQ` 예시를 사용합니다.
 
-## 📊 数据相关
+## 데이터 공급자는 무엇인가요?
 
-### Q1: 美股代码（如 AMD, AAPL）分析时价格显示不올바름？
+한국 시장 데이터는 `pykrx`, 미국 시장 데이터는 `yfinance`를 사용합니다. 한국 뉴스 검색은 Naver, 미국 및 글로벌 검색은
+Tavily, Brave, SerpAPI 설정을 사용합니다.
 
-**现象**：输入美股代码后，显示的价格明显不对（如 AMD 显示 7.33 元），或被误识别为 A 股。
+## 알림 채널은 무엇을 지원하나요?
 
-**原因**：早期版本代码匹配逻辑优先尝试国内 A 股规则，导致代码冲突。
+지원 채널은 Telegram, Discord, Email, Pushover, Custom Webhook, AstrBot입니다. 하나 이상을 `.env`에 설정해야 분석
+결과를 받을 수 있습니다.
 
-**해결 방법**：
-1. 已在 v2.3.0 수정，系统现在支持美股代码自动识别
-2. 如仍有문제，可在 `.env` 中设置：
-   ```bash
-   YFINANCE_PRIORITY=0
-   ```
-   这将优先使用 Yahoo Finance 数据源获取美股数据
+## 최소 설정 예시는 무엇인가요?
 
-> 📌 相关 Issue: [#153](https://github.com/ZhuLinsen/daily_stock_analysis/issues/153)
-
----
-
-### Q2: 报告中"量比"字段显示为空或 N/A？
-
-**现象**：分析报告中量比数据缺失，影响 AI 对缩放量的判断。
-
-**原因**：默认的某些实时行情源（如新浪接口）不提供量比字段。
-
-**해결 방법**：
-1. 已在 v2.3.0 수정，腾讯接口现已支持量比解析
-2. 推荐配置实时行情源우선순위：
-   ```bash
-   REALTIME_SOURCE_PRIORITY=tencent,akshare_sina,efinance,akshare_em
-   ```
-3. 系统已内置 5 日均量计算作为兜底逻辑
-
-> 📌 相关 Issue: [#155](https://github.com/ZhuLinsen/daily_stock_analysis/issues/155)
-
----
-
-### Q3: Tushare 获取数据失败，提示 Token 不对？
-
-**现象**：日志显示 `Tushare 获取数据失败: 您的token不对，请确认`
-
-**해결 방법**：
-1. **无 Tushare 账号**：无需配置 `TUSHARE_TOKEN`，系统会自动使用免费数据源（AkShare、Efinance）
-2. **有 Tushare 账号**：确认 Token 是否올바름，可在 [Tushare Pro](https://tushare.pro/weborder/#/login?reg=834638 ) 个人中心查看
-3. 本项目所有核心功能均可在无 Tushare 的情况下正常运行
-
----
-
-### Q4: 数据获取被限流或返回为空？
-
-**现象**：日志显示 `熔断器触发` 或数据返回 `None`，或出现 `RemoteDisconnected`、`push2his.eastmoney.com` 连接被닫기等
-
-**原因**：免费数据源（东方财富、新浪等）有反爬机制，短时间大量请求会被限流。
-
-**해결 방법**：
-1. 系统已内置多数据源自动切换和熔断保护
-2. 减少自选股数量，或增加请求间隔
-3. 避免频繁手动触发分析
-4. 若东财接口频繁失败，可设置 `ENABLE_EASTMONEY_PATCH=true` 启用东财补丁（注入 NID 令牌与随机 User-Agent，降低被限流概率）
-5. 将 `MAX_WORKERS=1` 改为串行获取，减少对东财的并发压力
-
----
-
-## ⚙️ 配置相关
-
-### Q5: GitHub Actions 运行失败，提示找不到环境变量？
-
-**现象**：Actions 日志显示 `GEMINI_API_KEY` 或 `STOCK_LIST` 未定义
-
-**原因**：GitHub 区分 `Secrets`（加密）和 `Variables`（普通变量），配置位置不对会导致读取失败。
-
-**해결 방법**：
-1. 进入仓库 `Settings` → `Secrets and variables` → `Actions`
-2. **Secrets**（点击 `New repository secret`）：存放敏感信息
-   - `GEMINI_API_KEY`
-   - `OPENAI_API_KEY`
-   - `TELEGRAM_BOT_TOKEN`
-   - 各类 Webhook URL
-3. **Variables**（点击 `Variables` 标签）：存放非敏感配置
-   - `STOCK_LIST`
-   - `GEMINI_MODEL`
-   - `REPORT_TYPE`
-
----
-
-### Q6: 修改 .env 文件后配置没有生效？
-
-**해결 방법**：
-1. 确保 `.env` 文件位于项目根目录
-2. **Docker 배포**：修改后需重启容器
-   ```bash
-   docker-compose down && docker-compose up -d
-   ```
-3. **GitHub Actions**：`.env` 文件不生效，必须在 Secrets/Variables 中配置
-4. 检查是否有多个 `.env` 文件（如 `.env.local`）导致覆盖
-
----
-
-### Q7: 如何配置代理访问 Gemini/OpenAI API？
-
-**해결 방법**：
-
-在 `.env` 中配置：
-```bash
-USE_PROXY=true
-PROXY_HOST=127.0.0.1
-PROXY_PORT=10809
+```env
+STOCK_LIST=005930,AAPL,NVDA
+TZ=Asia/Seoul
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
 ```
 
-> ⚠️ 注意：代理配置仅对本地运行生效，GitHub Actions 环境无需配置代理。
+Telegram 대신 Discord, Email, Pushover, Custom Webhook, AstrBot 중 하나를 설정해도 됩니다.
 
----
+## 한국 종목 가격이 비어 있으면 어떻게 하나요?
 
-### LLM 配置자주 묻는 질문
+1. 종목 코드가 여섯 자리인지 확인합니다.
+2. 장 휴장일 또는 비거래 시간인지 확인합니다.
+3. `pykrx` 관련 의존성이 설치되어 있는지 확인합니다.
+4. 네트워크 제한이 있으면 재시도 간격을 늘립니다.
 
-> 完整설명见 [LLM 配置指南](LLM_CONFIG_GUIDE.md)。
+## 미국 종목 가격이 비어 있으면 어떻게 하나요?
 
-**Q: 配置了 GEMINI_API_KEY 和 LLM_CHANNELS，为什么只用渠道？**
+1. 티커가 올바른지 확인합니다.
+2. `yfinance`가 설치되어 있는지 확인합니다.
+3. 일시적인 요청 제한일 수 있으므로 잠시 후 다시 실행합니다.
+4. 프록시 또는 방화벽이 외부 요청을 막고 있는지 확인합니다.
 
-系统按우선순위只取一种：`LITELLM_CONFIG` (YAML) > `LLM_CHANNELS` > legacy keys。一旦配置了渠道或 YAML，legacy 区域（`GEMINI_API_KEY` 等）不参与解析。
+## 뉴스 검색 결과가 부족한 이유는 무엇인가요?
 
-**Q: test_env 输出 ✗ 未配置任何 LLM 怎么办？**
+검색 API 키가 없거나 요청 제한에 걸렸을 수 있습니다. 한국 뉴스는 `NAVER_API_KEYS`
+(`client_id:client_secret` 형식), 글로벌 검색은 `TAVILY_API_KEYS`, `BRAVE_API_KEYS`,
+`SERPAPI_API_KEYS` 중 사용 가능한 키를 설정합니다.
 
-配置 `LITELLM_CONFIG` / `LLM_CHANNELS` 或至少一个 `*_API_KEY`（如 `GEMINI_API_KEY`、`DEEPSEEK_API_KEY`、`AIHUBMIX_KEY`）。运行 `python test_env.py --config` 校验配置，`python test_env.py --llm` 实际调用 API 测试。
+## 분석 결과가 너무 길면 어떻게 하나요?
 
-**Q: 如何同时使用多个模型（如 AIHubmix + DeepSeek + Gemini）？**
+알림 채널별 메시지 길이 제한이 다릅니다. 긴 결과는 Email 또는 Custom Webhook을 우선 사용하거나, 보고서 길이 관련
+설정을 줄여 전송 실패를 줄입니다.
 
-使用渠道模式：设置 `LLM_CHANNELS=aihubmix,deepseek,gemini`，并配置各渠道的 `LLM_{NAME}_BASE_URL`、`LLM_{NAME}_API_KEY`、`LLM_{NAME}_MODELS`。也可在 Web 设置页 → AI 模型 → 渠道编辑器中可视化配置。
+## Docker에서 시간대가 맞지 않으면 어떻게 하나요?
 
----
+컨테이너 환경 변수에 `TZ=Asia/Seoul`을 설정합니다.
 
-## 📱 推送相关
-
-### Q8: 机器人推送失败，提示消息过长？
-
-**现象**：分析成功但未收到推送，日志显示 400 잘못됨或 `Message too long`
-
-**原因**：不同平台消息长度限制不同：
-- 企业微信：4KB
-- 飞书：20KB
-- 钉钉：20KB
-
-**해결 방법**：
-1. **自动分块**：最新版本已实现长消息自动切割
-2. **单股推送模式**：设置 `SINGLE_STOCK_NOTIFY=true`，每分析完一只股票立即推送
-3. **精简报告**：设置 `REPORT_TYPE=simple` 使用精简格式
-
----
-
-### Q9: Telegram 推送收不到消息？
-
-**해결 방법**：
-1. 确认 `TELEGRAM_BOT_TOKEN` 和 `TELEGRAM_CHAT_ID` 都已配置
-2. 获取 Chat ID 方法：
-   - 给 Bot 发送任意消息
-   - 访问 `https://api.telegram.org/bot<TOKEN>/getUpdates`
-   - 在返回的 JSON 中找到 `chat.id`
-3. 确保 Bot 已被添加到目标群组（如果是群聊）
-4. 本地运行时需要能访问 Telegram API（可能需要代理）
-
----
-
-### Q10: 企业微信 Markdown 格式显示不正常？
-
-**해결 방법**：
-1. 企业微信对 Markdown 支持有限，可尝试设置：
-   ```bash
-   WECHAT_MSG_TYPE=text
-   ```
-2. 这将发送纯文本格式的消息
-
----
-
-## 🤖 AI 模型相关
-
-### Q11: Gemini API 返回 429 잘못됨（请求过多）？
-
-**现象**：日志显示 `Resource has been exhausted` 或 `429 Too Many Requests`
-
-**해결 방법**：
-1. Gemini 免费版有速率限制（约 15 RPM）
-2. 减少同时分析的股票数量
-3. 增加请求延迟：
-   ```bash
-   GEMINI_REQUEST_DELAY=5
-   ANALYSIS_DELAY=10
-   ```
-4. 或切换到 OpenAI 兼容 API 作为备选
-
----
-
-### Q12: 如何使用 DeepSeek 等国产模型？
-
-**配置方法**：
-
-```bash
-# 不需要配置 GEMINI_API_KEY
-OPENAI_API_KEY=sk-xxxxxxxx
-OPENAI_BASE_URL=https://api.deepseek.com/v1
-OPENAI_MODEL=deepseek-chat
-# 思考模式：deepseek-reasoner、deepseek-r1、qwq 等自动识别；deepseek-chat 系统按模型名自动启用
+```yaml
+environment:
+  - TZ=Asia/Seoul
 ```
 
-支持的模型服务：
-- DeepSeek: `https://api.deepseek.com/v1`
-- 通义千问: `https://dashscope.aliyuncs.com/compatible-mode/v1`
-- Moonshot: `https://api.moonshot.cn/v1`
+## 문제를 보고할 때 무엇을 포함해야 하나요?
 
----
-
-## 🐳 Docker 相关
-
-### Q13: Docker 容器启动后立即退出？
-
-**해결 방법**：
-1. 查看容器日志：
-   ```bash
-   docker logs <container_id>
-   ```
-2. 常见原因：
-   - 环境变量未올바름配置
-   - `.env` 文件格式잘못됨（如有多余空格）
-   - 依赖包版本冲突
-
----
-
-### Q14: Docker 中 API 服务无法访问？
-
-**해결 방법**：
-1. 确保启动命令包含 `--host 0.0.0.0`（不能是 127.0.0.1）
-2. 检查端口映射是否올바름：
-   ```yaml
-   ports:
-     - "8000:8000"
-   ```
-
----
-
-### Q14.1: Docker 中网络/DNS 解析失败（如 api.tushare.pro、searchapi.eastmoney.com 无法解析）？
-
-**现象**：日志显示 `Temporary failure in name resolution` 或 `NameResolutionError`，股票数据 API 和大模型 API 均无法访问。
-
-**原因**：自定义 bridge 网络下，容器使用 Docker 内置 DNS，在旁路由、特定网络环境时可能解析失败。
-
-**해결 방법**（按우선순위尝试）：
-
-1. **显式配置 DNS**：在 `docker/docker-compose.yml` 的 `x-common` 下添加：
-   ```yaml
-   dns:
-     - 223.5.5.5
-     - 119.29.29.29
-     - 8.8.8.8
-   ```
-   然后执行 `docker-compose down` 和 `docker-compose up -d --force-recreate` 重新创建容器。
-
-2. **改用 host 网络模式**：若上述仍无效，可在 `server` 服务下添加 `network_mode: host`，并제거 `ports` 映射。使用 host 模式时，`ports` 无效，**端口由 `command` 中的 `--port` 指定**。若宿主机默认端口已占用，可修改为其他端口（如 `.env` 中设置 `API_PORT=8080`），访问对应 `http://localhost:8080`。
-
-> 📌 相关 Issue: [#372](https://github.com/ZhuLinsen/daily_stock_analysis/issues/372)
-
----
-
-## 🔧 其他문제
-
-### Q15: 如何只运行大盘复盘，不分析个股？
-
-**方法**：
-```bash
-# 本地运行
-python main.py --market-only
-
-# GitHub Actions
-# 手动触发时选择 mode: market-only
-```
-
----
-
-### Q16: 分析结果中买入/观望/卖出数量统计不对？
-
-**原因**：早期版本使用正则匹配统计，可能与实际권장 조치不一致。
-
-**해결 방법**：已在最新版本中수정，AI 模型现在会直接输出 `decision_type` 字段用于准确统计。
-
----
-
-### Q17: 为什么周末在 GitHub Actions 手动触发仍显示“非交易日跳过”？
-
-**现象**：已经配置了 `TRADING_DAY_CHECK_ENABLED` 或希望手动运行，但日志仍提示“今日所有相关市场均为非交易日，跳过执行”。
-
-**해결 방법**：
-1. 打开 `Actions → 每日股票分析 → Run workflow`
-2. 手动触发时将 `force_run` 设为 `true`（单次强制运行）
-3. 如果希望长期닫기交易日检查，在 `Settings → Secrets and variables → Actions` 中设置：
-   ```bash
-   TRADING_DAY_CHECK_ENABLED=false
-   ```
-
-**规则설명**：
-- `TRADING_DAY_CHECK_ENABLED=true` 且 `force_run=false`：非交易日跳过（默认）
-- `force_run=true`：本次即使非交易日也执行
-- `TRADING_DAY_CHECK_ENABLED=false`：定时和手动都不做交易日检查
-
----
-
-## 💬 还有문제？
-
-如果以上内容没有解决你的문제，欢迎：
-1. 查看 [完整配置指南](full-guide.md)
-2. 搜索或提交 [GitHub Issue](https://github.com/ZhuLinsen/daily_stock_analysis/issues)
-3. 查看 [업데이트日志](CHANGELOG.md) 了解最新수정
-
----
-
-*最后업데이트：2026-02-28*
+- 실행 명령
+- `.env`에서 민감 값을 제거한 관련 설정
+- 종목 예시
+- 오류 로그
+- 기대 결과와 실제 결과
+- 재현 가능한 최소 절차

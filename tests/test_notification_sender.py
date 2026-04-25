@@ -6,6 +6,8 @@ Tests sender classes in isolation (config, request shape, error handling).
 Does not duplicate test_notification.py which tests NotificationService.send() flow.
 """
 import os
+from pathlib import Path
+import re
 import sys
 import unittest
 from unittest import mock
@@ -19,14 +21,18 @@ from src.notification_sender import (
     CustomWebhookSender,
     DiscordSender,
     EmailSender,
-    FeishuSender,
     PushoverSender,
-    PushplusSender,
-    Serverchan3Sender,
     TelegramSender,
-    WechatSender,
-    WECHAT_IMAGE_MAX_BYTES,
 )
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+NOTIFICATION_SENDER_FILES = [
+    PROJECT_ROOT / "src/notification_sender/telegram_sender.py",
+    PROJECT_ROOT / "src/notification_sender/pushover_sender.py",
+    PROJECT_ROOT / "src/notification_sender/custom_webhook_sender.py",
+]
+HAN_PATTERN = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")
 
 
 def _config(**overrides):
@@ -44,6 +50,22 @@ def _response(status_code: int, json_body: Optional[dict] = None):
     if json_body is not None:
         resp.json.return_value = json_body
     return resp
+
+
+class TestNotificationSenderSourceText(unittest.TestCase):
+    """Source text regression tests for notification senders."""
+
+    def test_sender_files_do_not_contain_han_text(self):
+        """Notification sender source should not contain Han text."""
+        offenders = []
+        for path in NOTIFICATION_SENDER_FILES:
+            lines = path.read_text(encoding="utf-8").splitlines()
+            for line_number, line in enumerate(lines, start=1):
+                if HAN_PATTERN.search(line):
+                    relative_path = path.relative_to(PROJECT_ROOT)
+                    offenders.append(f"{relative_path}:{line_number}:{line.strip()}")
+
+        self.assertEqual([], offenders)
 
 
 class TestDiscordSender(unittest.TestCase):
@@ -102,53 +124,6 @@ class TestDiscordSender(unittest.TestCase):
         self.assertEqual(call_kw["headers"]["Authorization"], "Bot TOKEN")
 
 
-class TestWechatSender(unittest.TestCase):
-    """Unit tests for WechatSender."""
-
-    def test_send_returns_false_when_no_webhook_url(self):
-        cfg = _config()
-        sender = WechatSender(cfg)
-        result = sender.send_to_wechat("hello")
-        self.assertFalse(result)
-
-    @mock.patch("requests.post")
-    def test_send_returns_false_with_legacy_webhook_url(self, mock_post):
-        cfg = _config(wechat_webhook_url="https://wechat.example/hook")
-        sender = WechatSender(cfg)
-        result = sender.send_to_wechat("hello")
-        self.assertFalse(result)
-        self.assertTrue(sender._removed)
-        mock_post.assert_not_called()
-
-    @mock.patch("requests.post")
-    def test_send_wechat_image_returns_false_and_does_not_call_network(self, mock_post):
-        cfg = _config(wechat_webhook_url="https://wechat.example/hook")
-        sender = WechatSender(cfg)
-        big = b"x" * (WECHAT_IMAGE_MAX_BYTES + 1)
-        result = sender._send_wechat_image(big)
-        self.assertFalse(result)
-        mock_post.assert_not_called()
-
-
-class TestFeishuSender(unittest.TestCase):
-    """Unit tests for FeishuSender."""
-
-    def test_send_returns_false_when_no_webhook_url(self):
-        cfg = _config()
-        sender = FeishuSender(cfg)
-        result = sender.send_to_feishu("hello")
-        self.assertFalse(result)
-
-    @mock.patch("requests.post")
-    def test_send_returns_false_with_legacy_webhook_url(self, mock_post):
-        cfg = _config(feishu_webhook_url="https://feishu.example/hook")
-        sender = FeishuSender(cfg)
-        result = sender.send_to_feishu("hello")
-        self.assertFalse(result)
-        self.assertTrue(sender._removed)
-        mock_post.assert_not_called()
-
-
 class TestEmailSender(unittest.TestCase):
     """Unit tests for EmailSender (config and receiver logic; send path covered via service)."""
 
@@ -166,7 +141,7 @@ class TestEmailSender(unittest.TestCase):
         )
         sender = EmailSender(cfg)
         self.assertEqual(
-            sender.get_receivers_for_stocks(["000001"]),
+            sender.get_receivers_for_stocks(["035720"]),
             ["b@qq.com", "c@qq.com"],
         )
 
@@ -175,11 +150,11 @@ class TestEmailSender(unittest.TestCase):
             email_sender="a@qq.com",
             email_password="p",
             email_receivers=["default@qq.com"],
-            stock_email_groups=[(["000001", "600519"], ["group1@qq.com"])],
+            stock_email_groups=[(["035720", "005930"], ["group1@qq.com"])],
         )
         sender = EmailSender(cfg)
         self.assertEqual(
-            sender.get_receivers_for_stocks(["000001"]),
+            sender.get_receivers_for_stocks(["035720"]),
             ["group1@qq.com"],
         )
 
@@ -188,7 +163,7 @@ class TestEmailSender(unittest.TestCase):
             email_sender="a@qq.com",
             email_password="p",
             email_receivers=["default@qq.com"],
-            stock_email_groups=[(["000001"], ["group@qq.com"])],
+            stock_email_groups=[(["035720"], ["group@qq.com"])],
         )
         sender = EmailSender(cfg)
         self.assertEqual(
@@ -202,8 +177,8 @@ class TestEmailSender(unittest.TestCase):
             email_password="p",
             email_receivers=["default@qq.com"],
             stock_email_groups=[
-                (["000001"], ["g1@qq.com"]),
-                (["600519"], ["g2@qq.com"]),
+                (["035720"], ["g1@qq.com"]),
+                (["005930"], ["g2@qq.com"]),
             ],
         )
         sender = EmailSender(cfg)
@@ -271,44 +246,6 @@ class TestPushoverSender(unittest.TestCase):
         call_data = mock_post.call_args[1]["data"]
         self.assertEqual(call_data["user"], "U")
         self.assertEqual(call_data["token"], "T")
-
-
-class TestPushplusSender(unittest.TestCase):
-    """Unit tests for PushplusSender."""
-
-    def test_send_returns_false_when_no_token(self):
-        cfg = _config()
-        sender = PushplusSender(cfg)
-        result = sender.send_to_pushplus("hello")
-        self.assertFalse(result)
-
-    @mock.patch("requests.post")
-    def test_send_returns_false_with_legacy_token(self, mock_post):
-        cfg = _config(pushplus_token="TOKEN")
-        sender = PushplusSender(cfg)
-        result = sender.send_to_pushplus("hello")
-        self.assertFalse(result)
-        self.assertTrue(sender._removed)
-        mock_post.assert_not_called()
-
-
-class TestServerchan3Sender(unittest.TestCase):
-    """Unit tests for Serverchan3Sender."""
-
-    def test_send_returns_false_when_no_sendkey(self):
-        cfg = _config()
-        sender = Serverchan3Sender(cfg)
-        result = sender.send_to_serverchan3("hello")
-        self.assertFalse(result)
-
-    @mock.patch("requests.post")
-    def test_send_returns_false_with_legacy_sendkey(self, mock_post):
-        cfg = _config(serverchan3_sendkey="SCT123")
-        sender = Serverchan3Sender(cfg)
-        result = sender.send_to_serverchan3("hello")
-        self.assertFalse(result)
-        self.assertTrue(sender._removed)
-        mock_post.assert_not_called()
 
 
 class TestTelegramSender(unittest.TestCase):

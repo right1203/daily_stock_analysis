@@ -8,12 +8,12 @@ import { historyApi } from '../../api/history';
 import type { NewsIntelItem } from '../../types/analysis';
 
 interface ReportNewsProps {
-  recordId?: number;  // 分析历史记录主键 ID
+  recordId?: number;  // Analysis history record primary key ID
   limit?: number;
 }
 
 /**
- * 资讯区组件 - 终端风格
+ * News section component - terminal style
  */
 export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +53,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) 
       <div className="flex items-center justify-between mb-3">
         <div className="mb-3 flex items-baseline gap-2">
           <span className="label-uppercase">NEWS FEED</span>
-          <h3 className="text-base font-semibold text-white">相关资讯</h3>
+          <h3 className="text-base font-semibold text-white">관련 뉴스</h3>
         </div>
         <div className="flex items-center gap-2">
           {isLoading && (
@@ -64,7 +64,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) 
             onClick={fetchNews}
             className="text-xs text-cyan hover:text-white transition-colors"
           >
-            刷新
+            새로고침
           </button>
         </div>
       </div>
@@ -72,7 +72,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) 
       {error && !isLoading && (
         <ApiErrorAlert
           error={error}
-          actionLabel="重试"
+          actionLabel="다시 시도"
           onAction={() => void fetchNews()}
         />
       )}
@@ -80,12 +80,12 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) 
       {isLoading && !error && (
         <div className="flex items-center gap-2 text-xs text-secondary">
           <div className="w-4 h-4 border-2 border-cyan/20 border-t-cyan rounded-full animate-spin" />
-          加载资讯中...
+          뉴스를 불러오는 중...
         </div>
       )}
 
       {!isLoading && !error && items.length === 0 && (
-        <div className="text-xs text-muted">暂无相关资讯</div>
+        <div className="text-xs text-muted">관련 뉴스가 없습니다</div>
       )}
 
       {!isLoading && !error && items.length > 0 && (
@@ -113,7 +113,7 @@ export const ReportNews: React.FC<ReportNewsProps> = ({ recordId, limit = 20 }) 
                     rel="noopener noreferrer"
                     className="text-xs text-cyan hover:text-white transition-colors inline-flex items-center gap-1 whitespace-nowrap"
                   >
-                    跳转
+                    열기
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"

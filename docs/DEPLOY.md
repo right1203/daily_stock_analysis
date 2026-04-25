@@ -1,440 +1,143 @@
-# 🚀 배포指南
+# 배포 가이드
 
-本문서介绍如何将 A股自选股智能分析系统배포到服务器。
+이 문서는 한국 및 미국 주식 분석 기준의 서버 배포 절차를 정리합니다. 예시는 `005930`, `000660`, `035420`,
+`AAPL`, `TSLA`, `NVDA`, `SPY`, `KOSPI`, `NASDAQ`을 사용합니다.
 
-## 📋 배포方案对比
+## 사전 준비
 
-| 方案 | 优点 | 缺点 | 推荐场景 |
-|------|------|------|----------|
-| **Docker Compose** ⭐ | 一键배포、环境隔离、易迁移、易升级 | 需要安装 Docker | **推荐**：大多数场景 |
-| **直接배포** | 简单直接、无额外依赖 | 环境依赖、迁移麻烦 | 临时测试 |
-| **Systemd 服务** | 系统级管理、开机自启 | 配置繁琐 | 长期稳定运行 |
-| **Supervisor** | 进程管理、自动重启 | 需要额外安装 | 多进程管理 |
+- Python 3.10 이상
+- Git
+- `.env` 설정 파일
+- 최소 하나의 알림 채널
+- 서버 시간대: `Asia/Seoul` 권장
 
-**결론：推荐使用 Docker Compose，迁移最快最方便！**
-
----
-
-## 🐳 方案一：Docker Compose 배포（推荐）
-
-### 1. 安装 Docker
+## 기본 서버 배포
 
 ```bash
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-
-# CentOS
-sudo yum install -y docker docker-compose
-sudo systemctl start docker
-sudo systemctl enable docker
-```
-
-### 2. 准备配置文件
-
-```bash
-# 克隆代码（或上传代码到服务器）
-git clone <your-repo-url> /opt/stock-analyzer
-cd /opt/stock-analyzer
-
-# 复制并编辑配置文件
+git clone <repo-url>
+cd daily_stock_analysis
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 cp .env.example .env
-vim .env  # 填入真实的 API Key 等配置
 ```
 
-### 3. 一键启动
+`.env` 예시:
 
-```bash
-# 构建并启动
-docker-compose -f ./docker/docker-compose.yml up -d
-
-# 查看日志
-docker-compose -f ./docker/docker-compose.yml logs -f
-
-# 查看运行状态
-docker-compose -f ./docker/docker-compose.yml ps
+```env
+STOCK_LIST=005930,AAPL,NVDA,SPY
+TZ=Asia/Seoul
+DISCORD_WEBHOOK_URL=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+EMAIL_SENDER=
+EMAIL_PASSWORD=
+EMAIL_RECEIVERS=
 ```
 
-### 4. 常用管理命令
+실행:
 
 ```bash
-# 停止服务
-docker-compose -f ./docker/docker-compose.yml down
-
-# 重启服务
-docker-compose -f ./docker/docker-compose.yml restart
-
-# 업데이트代码后重新배포
-git pull
-docker-compose -f ./docker/docker-compose.yml build --no-cache
-docker-compose -f ./docker/docker-compose.yml up -d
-
-# 进入容器调试
-docker-compose -f ./docker/docker-compose.yml exec stock-analyzer bash
-
-# 手动执行一次分析
-docker-compose -f ./docker/docker-compose.yml exec stock-analyzer python main.py --no-notify
-```
-
-### 5. 数据持久化
-
-数据自动保存在宿主机目录：
-- `./data/` - 数据库文件
-- `./logs/` - 日志文件
-- `./reports/` - 分析报告
-
----
-
-## 🖥️ 方案二：直接배포
-
-### 1. 安装 Python 环境
-
-```bash
-# 安装 Python 3.10+
-sudo apt update
-sudo apt install -y python3.10 python3.10-venv python3-pip
-
-# 创建虚拟环境
-python3.10 -m venv /opt/stock-analyzer/venv
-source /opt/stock-analyzer/venv/bin/activate
-```
-
-### 2. 安装依赖
-
-```bash
-cd /opt/stock-analyzer
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-### 3. 配置环境变量
-
-```bash
-cp .env.example .env
-vim .env  # 填入配置
-```
-
-### 4. 运行
-
-```bash
-# 单次运行
 python main.py
-
-# 定时任务模式（前台运行）
-python main.py --schedule
-
-# 后台运行（使用 nohup）
-nohup python main.py --schedule > /dev/null 2>&1 &
 ```
 
----
-
-## 🔧 方案三：Systemd 服务
-
-创建 systemd 服务文件实现开机自启和自动重启：
-
-### 1. 创建服务文件
+## WebUI 실행
 
 ```bash
-sudo vim /etc/systemd/system/stock-analyzer.service
+uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
-内容：
+방화벽 또는 보안 그룹에서 `8000` 포트를 열어야 외부 접속이 가능합니다.
+
+## systemd 예시
+
 ```ini
 [Unit]
-Description=A股自选股智能分析系统
+Description=Daily Stock Analysis
 After=network.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=/opt/stock-analyzer
-Environment="PATH=/opt/stock-analyzer/venv/bin"
-ExecStart=/opt/stock-analyzer/venv/bin/python main.py --schedule
-Restart=always
+WorkingDirectory=/opt/daily_stock_analysis
+EnvironmentFile=/opt/daily_stock_analysis/.env
+ExecStart=/opt/daily_stock_analysis/.venv/bin/python main.py
+Restart=on-failure
 RestartSec=30
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### 2. 启动服务
-
 ```bash
-# 重载配置
 sudo systemctl daemon-reload
-
-# 启动服务
-sudo systemctl start stock-analyzer
-
-# 开机自启
-sudo systemctl enable stock-analyzer
-
-# 查看状态
-sudo systemctl status stock-analyzer
-
-# 查看日志
-journalctl -u stock-analyzer -f
+sudo systemctl enable daily-stock-analysis
+sudo systemctl start daily-stock-analysis
+sudo systemctl status daily-stock-analysis
 ```
 
----
-
-## ⚙️ 配置설명
-
-### 必须配置项
-
-| 配置项 | 설명 | 获取方式 |
-|--------|------|----------|
-| `GEMINI_API_KEY` | AI 分析必需 | [Google AI Studio](https://aistudio.google.com/) |
-| `STOCK_LIST` | 自选股列表 | 逗号分隔的股票代码 |
-| `WECHAT_WEBHOOK_URL` | 微信推送 | 企业微信群机器人 |
-
-### 可选配置项
-
-| 配置项 | 기본값 | 설명 |
-|--------|--------|------|
-| `SCHEDULE_ENABLED` | `false` | 是否启用定时任务 |
-| `SCHEDULE_TIME` | `18:00` | 每日执行时间 |
-| `MARKET_REVIEW_ENABLED` | `true` | 是否启用大盘复盘 |
-| `TAVILY_API_KEYS` | - | 新闻搜索（可选） |
-
----
-
-## 🌐 代理配置
-
-如果服务器在国内，访问 Gemini API 需要代理：
-
-### Docker 方式
-
-编辑 `docker-compose.yml`：
-```yaml
-environment:
-  - http_proxy=http://your-proxy:port
-  - https_proxy=http://your-proxy:port
-```
-
-### 直接배포方式
-
-编辑 `main.py` 顶部：
-```python
-os.environ["http_proxy"] = "http://your-proxy:port"
-os.environ["https_proxy"] = "http://your-proxy:port"
-```
-
----
-
-## 📊 监控与维护
-
-### 日志查看
+## Docker 배포
 
 ```bash
-# Docker 方式
-docker-compose -f ./docker/docker-compose.yml logs -f --tail=100
-
-# 直接배포
-tail -f /opt/stock-analyzer/logs/stock_analysis_*.log
+docker build -f docker/Dockerfile -t daily-stock-analysis .
+docker run --env-file .env -e TZ=Asia/Seoul daily-stock-analysis
 ```
 
-### 健康检查
+WebUI를 함께 노출할 때:
 
 ```bash
-# 检查进程
-ps aux | grep main.py
-
-# 检查最近的报告
-ls -la /opt/stock-analyzer/reports/
+docker run --env-file .env -e TZ=Asia/Seoul -p 8000:8000 daily-stock-analysis \
+  uv run python main.py --serve-only --host 0.0.0.0 --port 8000
 ```
 
-### 定期维护
+## Docker Compose 예시
+
+저장소의 Compose 파일은 `docker/docker-compose.yml`에 있습니다.
 
 ```bash
-# 清理旧日志（保留7天）
-find /opt/stock-analyzer/logs -mtime +7 -delete
-
-# 清理旧报告（保留30天）
-find /opt/stock-analyzer/reports -mtime +30 -delete
+docker compose -f docker/docker-compose.yml up -d --build server
+docker compose -f docker/docker-compose.yml logs -f server
 ```
 
----
+## 알림 설정
 
-## ❓ 자주 묻는 질문
+지원 채널은 Telegram, Discord, Email, Pushover, Custom Webhook, AstrBot입니다. 배포 전에 하나 이상을 설정하고 테스트
+실행으로 메시지가 도착하는지 확인합니다.
 
-### 1. Docker 构建失败
+```env
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+DISCORD_WEBHOOK_URL=
+EMAIL_SENDER=
+EMAIL_PASSWORD=
+EMAIL_RECEIVERS=
+PUSHOVER_USER_KEY=
+PUSHOVER_API_TOKEN=
+CUSTOM_WEBHOOK_URLS=
+ASTRBOT_URL=
+ASTRBOT_TOKEN=
+```
+
+## 데이터 및 검색 설정
+
+```env
+NAVER_API_KEYS=
+TAVILY_API_KEYS=
+BRAVE_API_KEYS=
+SERPAPI_API_KEYS=
+```
+
+한국 시장은 `pykrx`, 미국 시장은 `yfinance`를 사용합니다. 검색 키가 없으면 뉴스 요약 범위가 제한될 수 있습니다.
+
+## 배포 후 점검
 
 ```bash
-# 清理缓存重新构建
-docker-compose -f ./docker/docker-compose.yml build --no-cache
+python main.py --stocks 005930,AAPL
+curl http://127.0.0.1:8000/api/health
+docker compose -f docker/docker-compose.yml ps
+docker compose -f docker/docker-compose.yml logs --tail=100 server
 ```
 
-### 2. API 访问超时
+## 롤백
 
-检查代理配置，确保服务器能访问 Gemini API。
-
-### 3. 数据库锁定
-
-```bash
-# 停止服务后删除 lock 文件
-rm /opt/stock-analyzer/data/*.lock
-```
-
-### 4. 内存不足
-
-调整 `docker-compose.yml` 中的内存限制：
-```yaml
-deploy:
-  resources:
-    limits:
-      memory: 1G
-```
-
----
-
-## 🔄 快速迁移
-
-从一台服务器迁移到另一台：
-
-```bash
-# 源服务器：打包
-cd /opt/stock-analyzer
-tar -czvf stock-analyzer-backup.tar.gz .env data/ logs/ reports/
-
-# 目标服务器：배포
-mkdir -p /opt/stock-analyzer
-cd /opt/stock-analyzer
-git clone <your-repo-url> .
-tar -xzvf stock-analyzer-backup.tar.gz
-docker-compose -f ./docker/docker-compose.yml up -d
-```
-
----
-
-## ☁️ 方案四：GitHub Actions 배포（免服务器）
-
-**最简单的方案！** 无需服务器，利用 GitHub 免费计算资源。
-
-### 优势
-- ✅ **完全免费**（每月 2000 分钟）
-- ✅ **无需服务器**
-- ✅ **自动定时执行**
-- ✅ **零维护成本**
-
-### 限制
-- ⚠️ 无状态（每次运行是新环境）
-- ⚠️ 定时可能有几分钟延迟
-- ⚠️ 无法提供 HTTP API
-
-### 배포步骤
-
-#### 1. 创建 GitHub 仓库
-
-```bash
-# 初始化 git（如果还没有）
-cd /path/to/daily_stock_analysis
-git init
-git add .
-git commit -m "Initial commit"
-
-# 创建 GitHub 仓库并推送
-# 在 GitHub 网页上创建新仓库后：
-git remote add origin https://github.com/你的用户名/daily_stock_analysis.git
-git branch -M main
-git push -u origin main
-```
-
-#### 2. 配置 Secrets（重要！）
-
-打开仓库页面 → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-
-添加以下 Secrets：
-
-| Secret 名称 | 설명 | 필수 |
-|------------|------|------|
-| `GEMINI_API_KEY` | Gemini AI API Key | ✅ |
-| `WECHAT_WEBHOOK_URL` | 企业微信机器人 Webhook | 可选* |
-| `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook | 可选* |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token | 可选* |
-| `TELEGRAM_CHAT_ID` | Telegram Chat ID | 可选* |
-| `TELEGRAM_MESSAGE_THREAD_ID` | Telegram Topic ID | 可选* |
-| `EMAIL_SENDER` | 发件人邮箱 | 可选* |
-| `EMAIL_PASSWORD` | 邮箱授权码 | 可选* |
-| `SERVERCHAN3_SENDKEY` | Server酱³ Sendkey | 可选* |
-| `CUSTOM_WEBHOOK_URLS` | 自定义 Webhook（多个逗号分隔） | 可选* |
-| `STOCK_LIST` | 自选股列表，如 `600519,300750` | ✅ |
-| `TAVILY_API_KEYS` | Tavily 搜索 API Key | 推荐 |
-| `SERPAPI_API_KEYS` | SerpAPI Key | 可选 |
-| `TUSHARE_TOKEN` | Tushare Token | 可选 |
-| `GEMINI_MODEL` | 模型名称（默认 gemini-2.0-flash） | 可选 |
-
-> *注：通知渠道至少配置一个，支持多渠道同时推送
-
-#### 3. 验证 Workflow 文件
-
-确保 `.github/workflows/daily_analysis.yml` 文件存在且已提交：
-
-```bash
-git add .github/workflows/daily_analysis.yml
-git commit -m "Add GitHub Actions workflow"
-git push
-```
-
-#### 4. 手动测试运行
-
-1. 打开仓库页面 → **Actions** 标签
-2. 选择 **"每日股票分析"** workflow
-3. 点击 **"Run workflow"** 按钮
-4. 选择运行模式：
-   - `full` - 完整分析（股票+大盘）
-   - `market-only` - 仅大盘复盘
-   - `stocks-only` - 仅股票分析
-5. 点击绿色 **"Run workflow"** 按钮
-
-#### 5. 查看执行日志
-
-- Actions 页面可以看到运行历史
-- 点击具体的运行记录查看详细日志
-- 分析报告会作为 Artifact 保存 30 天
-
-### 定时설명
-
-默认配置：**周一到周五，北京时间 18:00** 自动执行
-
-修改时间：编辑 `.github/workflows/daily_analysis.yml` 中的 cron 表达式：
-
-```yaml
-schedule:
-  - cron: '0 10 * * 1-5'  # UTC 时间，+8 = 北京时间
-```
-
-常用 cron 示例：
-| 表达式 | 설명 |
-|--------|------|
-| `'0 10 * * 1-5'` | 周一到周五 18:00（北京时间） |
-| `'30 7 * * 1-5'` | 周一到周五 15:30（北京时间） |
-| `'0 10 * * *'` | 每天 18:00（北京时间） |
-| `'0 2 * * 1-5'` | 周一到周五 10:00（北京时间） |
-
-### 修改自选股
-
-方法一：修改仓库 Secret `STOCK_LIST`
-
-方法二：直接修改代码后推送：
-```bash
-# 修改 .env.example 或在代码中设置기본값
-git commit -am "Update stock list"
-git push
-```
-
-### 자주 묻는 질문
-
-**Q: 为什么定时任务没有执行？**
-A: GitHub Actions 定时任务可能有 5-15 分钟延迟，且仅在仓库有活动时才触发。长时间无 commit 可能导致 workflow 被禁用。
-
-**Q: 如何查看历史报告？**
-A: Actions → 选择运行记录 → Artifacts → 下载 `analysis-reports-xxx`
-
-**Q: 免费额度够用吗？**
-A: 每次运行约 2-5 分钟，一个月 22 个工作日 = 44-110 分钟，远低于 2000 分钟限制。
-
----
-
-**祝배포顺利！🎉**
-
+문제가 발생하면 이전 이미지 또는 이전 Git ref로 되돌리고 서비스를 재시작합니다. `.env` 변경이 원인일 수 있으므로 배포
+전 설정 파일 백업을 남깁니다.

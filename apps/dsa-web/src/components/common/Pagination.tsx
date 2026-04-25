@@ -41,7 +41,7 @@ interface PaginationProps {
 }
 
 /**
- * 分页组件 - 终端风格
+ * Pagination component - terminal style
  */
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
@@ -51,7 +51,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 }) => {
   if (totalPages <= 1) return null;
 
-  // 生成页码数组
+  // Generate the page number array
   const getPageNumbers = (): (number | string)[] => {
     const pages: (number | string)[] = [];
     const delta = 2;
@@ -73,7 +73,7 @@ export const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className={`flex items-center justify-center gap-2 ${className}`}>
-      {/* 上一页 */}
+      {/* Previous page */}
       <PageButton
         page="prev"
         disabled={currentPage === 1}
@@ -84,7 +84,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         </svg>
       </PageButton>
 
-      {/* 页码 */}
+      {/* Page numbers */}
       {getPageNumbers().map((page, index) => (
         <PageButton
           key={`${page}-${index}`}
@@ -94,7 +94,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         />
       ))}
 
-      {/* 下一页 */}
+      {/* Next page */}
       <PageButton
         page="next"
         disabled={currentPage === totalPages}

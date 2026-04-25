@@ -19,7 +19,7 @@ class FakeRow:
     hit_take_profit: bool | None = False
     first_hit: str | None = "neither"
     first_hit_trading_days: int | None = None
-    operation_advice: str | None = "买入"
+    operation_advice: str | None = "매수"
 
 
 class BacktestSummaryTestCase(unittest.TestCase):
@@ -33,7 +33,7 @@ class BacktestSummaryTestCase(unittest.TestCase):
         summary = BacktestEngine.compute_summary(
             results=rows,
             scope="stock",
-            code="600519",
+            code="005930",
             eval_window_days=3,
             engine_version="v1",
         )
@@ -50,4 +50,3 @@ class BacktestSummaryTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

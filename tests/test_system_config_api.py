@@ -23,11 +23,16 @@ class SystemConfigApiTestCase(unittest.TestCase):
         self.env_path.write_text(
             "\n".join(
                 [
-                    "STOCK_LIST=600519,000001",
+                    "STOCK_LIST=005930,035720",
                     "GEMINI_API_KEY=secret-key-value",
                     "SCHEDULE_TIME=18:00",
                     "LOG_LEVEL=INFO",
                     "ADMIN_AUTH_ENABLED=false",
+                    "TUSHARE_TOKEN=legacy-token",  # kr-us-static-allow: removed-service
+                    "WECHAT_WEBHOOK_URL=https://example.com/wechat",  # kr-us-static-allow: removed-service
+                    "WECOM_CORPID=legacy-corpid",  # kr-us-static-allow: removed-service
+                    "WECOM_TOKEN=legacy-token",  # kr-us-static-allow: removed-service
+                    "WECOM_AES_KEY=legacy-aes-key",  # kr-us-static-allow: removed-service
                 ]
             )
             + "\n",
@@ -58,6 +63,69 @@ class SystemConfigApiTestCase(unittest.TestCase):
         self.assertEqual(item_map["GEMINI_API_KEY"]["value"], "secret-key-value")
         self.assertFalse(item_map["GEMINI_API_KEY"]["is_masked"])
 
+    def test_get_config_excludes_removed_china_service_fields(self) -> None:
+        response = self.client.get("/api/v1/system/config")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        item_keys = {item["key"] for item in payload["items"]}
+        self.assertNotIn("TUSHARE_TOKEN", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECHAT_WEBHOOK_URL", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_CORPID", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_TOKEN", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_AES_KEY", item_keys)  # kr-us-static-allow: removed-service
+
+    def test_get_config_exposes_retained_astrbot_fields_by_default(self) -> None:
+        response = self.client.get("/api/v1/system/config")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        item_map = {item["key"]: item for item in payload["items"]}
+        self.assertIn("ASTRBOT_URL", item_map)
+        self.assertIn("ASTRBOT_TOKEN", item_map)
+        self.assertEqual(item_map["ASTRBOT_URL"]["schema"]["category"], "notification")
+        self.assertEqual(item_map["ASTRBOT_TOKEN"]["schema"]["ui_control"], "password")
+
+    def test_validate_config_rejects_removed_prefixed_fields(self) -> None:
+        response = self.client.post(
+            "/api/v1/system/config/validate",
+            json={"items": [{"key": "WECOM_TOKEN", "value": "legacy-token"}]},  # kr-us-static-allow: removed-service
+        )
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        self.assertFalse(payload["valid"])
+        self.assertTrue(
+            any(
+                issue["key"] == "WECOM_TOKEN"  # kr-us-static-allow: removed-service
+                and issue["code"] == "removed_field"
+                for issue in payload["issues"]
+            )
+        )
+
+    def test_validate_config_rejects_removed_exact_field_but_allows_similar_unknown_prefix(self) -> None:
+        removed = self.client.post(
+            "/api/v1/system/config/validate",
+            json={
+                "items": [
+                    {"key": "SERVERCHAN3_SENDKEY", "value": "legacy-sendkey"}  # kr-us-static-allow: removed-service
+                ]
+            },
+        )
+        benign = self.client.post(
+            "/api/v1/system/config/validate",
+            json={"items": [{"key": "SERVERCHANNEL_INTERNAL_NOTE", "value": "keep"}]},
+        )
+
+        self.assertEqual(removed.status_code, 200)
+        self.assertEqual(benign.status_code, 200)
+        removed_payload = removed.json()
+        benign_payload = benign.json()
+        self.assertFalse(removed_payload["valid"])
+        self.assertTrue(any(issue["code"] == "removed_field" for issue in removed_payload["issues"]))
+        self.assertTrue(benign_payload["valid"])
+        self.assertEqual([], benign_payload["issues"])
+
     def test_put_config_updates_secret_and_plain_field(self) -> None:
         current = self.client.get("/api/v1/system/config").json()
 
@@ -69,7 +137,7 @@ class SystemConfigApiTestCase(unittest.TestCase):
                 "reload_now": False,
                 "items": [
                     {"key": "GEMINI_API_KEY", "value": "new-secret-value"},
-                    {"key": "STOCK_LIST", "value": "600519,300750"},
+                    {"key": "STOCK_LIST", "value": "005930,MSFT"},
                 ],
             },
         )
@@ -79,7 +147,7 @@ class SystemConfigApiTestCase(unittest.TestCase):
         self.assertEqual(payload["skipped_masked_count"], 0)
 
         env_content = self.env_path.read_text(encoding="utf-8")
-        self.assertIn("STOCK_LIST=600519,300750", env_content)
+        self.assertIn("STOCK_LIST=005930,MSFT", env_content)
         self.assertIn("GEMINI_API_KEY=new-secret-value", env_content)
 
     def test_put_config_returns_conflict_when_version_is_stale(self) -> None:
@@ -87,7 +155,7 @@ class SystemConfigApiTestCase(unittest.TestCase):
             "/api/v1/system/config",
             json={
                 "config_version": "stale-version",
-                "items": [{"key": "STOCK_LIST", "value": "600519"}],
+                "items": [{"key": "STOCK_LIST", "value": "005930"}],
             },
         )
         self.assertEqual(response.status_code, 409)

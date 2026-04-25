@@ -1,48 +1,24 @@
-<div align="center">
-
 # KR+US Stock AI Analysis
 
-AI 기반 한국(KOSPI/KOSDAQ) + 미국 주식 분석 자동화 프로젝트입니다.
-
-[**빠른 시작**](#빠른-시작) · [**핵심 기능**](#핵심-기능) · [**상세 가이드**](docs/full-guide.md) · [**영문 문서**](docs/README_EN.md) · [**FAQ**](docs/FAQ.md)
-
-</div>
+AI 기반 한국(KOSPI/KOSDAQ) 및 미국 주식 분석 자동화 프로젝트입니다.
 
 ## 핵심 기능
 
-- 한국 + 미국 시장 동시 분석
-- 일일 자동 분석 및 시장 복기
-- Agent 전략 대화(Web/Bot/API)
-- 백테스트 기반 성능 점검
-- 다중 채널 알림: Telegram, Discord, Email, Pushover, Custom Webhook
+- 한국 및 미국 주식 일일 분석
+- 시장 복기와 개별 종목 리포트 생성
+- Web, Bot, API 기반 Agent 전략 대화
+- 분석 기록 저장과 백테스트 점검
+- Telegram, Discord, Email, Pushover, Custom Webhook, AstrBot 알림
 
-## 데이터 및 검색 정책
+## 지원 범위
 
-- 시세 데이터: `pykrx`(KR), `yfinance`(US)
-- 뉴스 검색:
-  - 한국 시장: 네이버 검색 API
-  - 미국 시장: 글로벌 검색(Tavily, SerpAPI, Brave)
-- 중국 시장/중국 전용 검색/중국 전용 데이터 공급자는 지원하지 않습니다.
+- 주가 데이터: `pykrx`(한국), `yfinance`(미국)
+- 뉴스 검색: Naver Search, Tavily, Brave Search, SerpAPI
+- 기본 종목 예시: `005930`, `000660`, `035420`, `AAPL`, `TSLA`, `NVDA`
 
 ## 빠른 시작
 
-### 1) GitHub Actions (권장)
-
-1. 저장소를 Fork합니다.
-2. `Settings -> Secrets and variables -> Actions`에서 필수 값을 설정합니다.
-
-필수 항목:
-- LLM API Key(`GEMINI_API_KEY` 또는 `OPENAI_API_KEY` 등)
-- `STOCK_LIST` (예: `005930,000660,AAPL,MSFT`)
-- 알림 채널 최소 1개
-
-권장 검색 키:
-- 한국 검색: 네이버 검색 API 인증 정보
-- 미국 검색: `TAVILY_API_KEYS` 또는 `BRAVE_API_KEYS` 또는 `SERPAPI_API_KEYS`
-
-3. `Actions` 탭에서 워크플로를 실행합니다.
-
-### 2) 로컬 실행
+### 1. 로컬 실행
 
 ```bash
 git clone https://github.com/ZhuLinsen/daily_stock_analysis.git
@@ -52,31 +28,45 @@ cp .env.example .env
 uv run python main.py
 ```
 
-## 알림 채널
+### 2. GitHub Actions 실행
 
-지원 채널:
-- Telegram
-- Discord(Webhook 또는 Bot)
-- Email
-- Pushover
-- Custom Webhook
+1. 저장소를 Fork합니다.
+2. `Settings -> Secrets and variables -> Actions`에서 환경 변수를 설정합니다.
+3. `Actions` 탭에서 워크플로를 실행합니다.
 
-제거된 채널:
-- WeChat
-- Feishu
-- DingTalk
-- PushPlus
-- ServerChan
+필수 설정:
 
-## 시장 코드 예시
+- LLM API Key: `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` 등
+- 분석 종목: `STOCK_LIST=005930,000660,035420,AAPL,TSLA,NVDA`
+- 알림 채널: 지원 알림 중 최소 1개
 
-- 한국: `005930`, `000660`, `035420`
-- 미국: `AAPL`, `TSLA`, `NVDA`
+권장 검색 설정:
+
+- 한국 뉴스: `NAVER_API_KEYS` (`client_id:client_secret` 형식)
+- 미국 뉴스: `TAVILY_API_KEYS`, `BRAVE_API_KEYS`, `SERPAPI_API_KEYS` 중 하나 이상
+
+## 주요 설정 파일
+
+- 환경 변수 예시: [.env.example](.env.example)
+- LLM 설정 가이드: [docs/LLM_CONFIG_GUIDE.md](docs/LLM_CONFIG_GUIDE.md)
+- 변경 기록: [docs/CHANGELOG.md](docs/CHANGELOG.md)
+
+## 실행 예시
+
+```bash
+uv run python main.py
+```
+
+WebUI를 사용할 때는 `.env`에서 다음 값을 설정합니다.
+
+```bash
+WEBUI_ENABLED=true
+WEBUI_HOST=127.0.0.1
+WEBUI_PORT=8000
+```
 
 ## 문서
 
-- 한국어 상세 가이드: [docs/full-guide.md](docs/full-guide.md)
-- 영문 상세 가이드: [docs/full-guide_EN.md](docs/full-guide_EN.md)
-- 한국어 FAQ: [docs/FAQ.md](docs/FAQ.md)
-- 영문 FAQ: [docs/FAQ_EN.md](docs/FAQ_EN.md)
-- 배포 가이드: [docs/DEPLOY.md](docs/DEPLOY.md), [docs/DEPLOY_EN.md](docs/DEPLOY_EN.md)
+- 전체 가이드: [docs/full-guide.md](docs/full-guide.md)
+- FAQ: [docs/FAQ.md](docs/FAQ.md)
+- 배포 가이드: [docs/DEPLOY.md](docs/DEPLOY.md)

@@ -63,7 +63,7 @@ function renderFieldControl(
           onChange={onChange}
           options={schema.options.map((option) => ({ value: option, label: option }))}
           disabled={disabled || !schema.isEditable}
-          placeholder="请选择"
+          placeholder="선택"
         />
       );
   }
@@ -78,7 +78,7 @@ function renderFieldControl(
           disabled={disabled || !schema?.isEditable}
           onChange={(event) => onChange(event.target.checked ? 'true' : 'false')}
         />
-        <span className="text-sm text-secondary">{checked ? '已启用' : '未启用'}</span>
+        <span className="text-sm text-secondary">{checked ? '사용 중' : '사용 안 함'}</span>
       </label>
     );
   }
@@ -109,8 +109,8 @@ function renderFieldControl(
                 className="btn-secondary !p-2"
                 disabled={disabled || !schema?.isEditable}
                 onClick={onToggleSecretVisible}
-                title={isSecretVisible ? '隐藏' : '显示'}
-                aria-label={isSecretVisible ? '隐藏密码' : '显示密码'}
+                title={isSecretVisible ? '숨기기' : '보기'}
+                aria-label={isSecretVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
               >
                 <EyeToggleIcon visible={isSecretVisible} />
               </button>
@@ -123,7 +123,7 @@ function renderFieldControl(
                   onChange(serializeMultiValues(nextValues.length ? nextValues : ['']));
                 }}
               >
-                删除
+                삭제
               </button>
             </div>
           ))}
@@ -135,7 +135,7 @@ function renderFieldControl(
               disabled={disabled || !schema?.isEditable}
               onClick={() => onChange(serializeMultiValues([...values, '']))}
             >
-              添加 Key
+              Key 추가
             </button>
           </div>
         </div>
@@ -158,8 +158,8 @@ function renderFieldControl(
           className="btn-secondary !p-2"
           disabled={disabled || !schema?.isEditable}
           onClick={onToggleSecretVisible}
-          title={isSecretVisible ? '隐藏' : '显示'}
-          aria-label={isSecretVisible ? '隐藏密码' : '显示密码'}
+          title={isSecretVisible ? '숨기기' : '보기'}
+          aria-label={isSecretVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
         >
           <EyeToggleIcon visible={isSecretVisible} />
         </button>
@@ -202,7 +202,7 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
           {title}
         </label>
         {schema?.isSensitive ? (
-          <span className="badge badge-purple text-[10px]">敏感</span>
+          <span className="badge badge-purple text-[10px]">민감</span>
         ) : null}
       </div>
 
@@ -227,8 +227,8 @@ export const SettingsField: React.FC<SettingsFieldProps> = ({
 
       {schema?.isSensitive ? (
         <p className="mt-2 text-[11px] text-secondary">
-          密钥默认隐藏，可点击眼睛图标查看明文。
-          {isMultiValue ? ' 支持添加多个输入框进行增删。' : ''}
+          키는 기본적으로 숨겨집니다. 눈 아이콘을 눌러 원문을 볼 수 있습니다.
+          {isMultiValue ? ' 여러 입력칸을 추가하거나 삭제할 수 있습니다.' : ''}
         </p>
       ) : null}
 

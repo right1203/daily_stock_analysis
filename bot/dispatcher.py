@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-命令分发器
-===================================
-
-负责解析命令、匹配处理器、分发执行。
-"""
+"""Command dispatcher that parses, matches, and executes bot commands."""
 
 import logging
 import time
@@ -19,55 +13,43 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
-    """
-    简单的频率限制器
-    
-    基于滑动窗口算法，限制每个用户的请求频率。
-    """
+    """Simple sliding-window rate limiter per user."""
     
     def __init__(self, max_requests: int = 10, window_seconds: int = 60):
         """
         Args:
-            max_requests: 窗口内最大请求数
-            window_seconds: 窗口时间（秒）
+            max_requests: Maximum request count within the window.
+            window_seconds: Window size in seconds.
         """
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._requests: Dict[str, List[float]] = defaultdict(list)
     
     def is_allowed(self, user_id: str) -> bool:
-        """
-        检查用户是否允许请求
-        
-        Args:
-            user_id: 用户标识
-            
-        Returns:
-            是否允许
-        """
+        """Return whether the user is allowed to send a request."""
         now = time.time()
         window_start = now - self.window_seconds
         
-        # 清理过期记录
+        # Remove expired records.
         self._requests[user_id] = [
             t for t in self._requests[user_id] 
             if t > window_start
         ]
         
-        # 检查是否超限
+        # Check rate limit.
         if len(self._requests[user_id]) >= self.max_requests:
             return False
         
-        # 记录本次请求
+        # Record this request.
         self._requests[user_id].append(now)
         return True
     
     def get_remaining(self, user_id: str) -> int:
-        """获取剩余可用请求数"""
+        """Return remaining allowed requests."""
         now = time.time()
         window_start = now - self.window_seconds
         
-        # 清理过期记录
+        # Remove expired records.
         self._requests[user_id] = [
             t for t in self._requests[user_id] 
             if t > window_start
@@ -78,15 +60,15 @@ class RateLimiter:
 
 class CommandDispatcher:
     """
-    命令分发器
-    
-    职责：
-    1. 注册和管理命令处理器
-    2. 解析消息中的命令和参数
-    3. 分发命令到对应处理器
-    4. 处理未知命令和错误
-    
-    使用示例：
+    Command dispatcher.
+
+    Responsibilities:
+    1. Register and manage command handlers.
+    2. Parse commands and arguments from messages.
+    3. Dispatch commands to matching handlers.
+    4. Handle unknown commands and errors.
+
+    Example:
         dispatcher = CommandDispatcher()
         dispatcher.register(AnalyzeCommand())
         dispatcher.register(HelpCommand())
@@ -103,10 +85,10 @@ class CommandDispatcher:
     ):
         """
         Args:
-            command_prefix: 命令前缀，默认 "/"
-            rate_limit_requests: 频率限制：窗口内最大请求数
-            rate_limit_window: 频率限制：窗口时间（秒）
-            admin_users: 管理员用户 ID 列表
+            command_prefix: Command prefix, default "/".
+            rate_limit_requests: Maximum request count within the rate-limit window.
+            rate_limit_window: Rate-limit window size in seconds.
+            admin_users: Admin user ID list.
         """
         self.command_prefix = command_prefix
         self.admin_users = set(admin_users or [])
@@ -115,51 +97,33 @@ class CommandDispatcher:
         self._aliases: Dict[str, str] = {}
         self._rate_limiter = RateLimiter(rate_limit_requests, rate_limit_window)
         
-        # 回调函数：获取帮助命令的命令列表
+        # Callback used by HelpCommand to get the command list.
         self._help_command_getter: Optional[Callable] = None
     
     def register(self, command: BotCommand) -> None:
-        """
-        注册命令
-        
-        Args:
-            command: 命令实例
-        """
+        """Register a command instance."""
         name = command.name.lower()
         
         if name in self._commands:
-            logger.warning(f"[Dispatcher] 命令 '{name}' 已存在，将被覆盖")
+            logger.warning("[Dispatcher] Command '%s' already exists and will be overwritten", name)
         
         self._commands[name] = command
-        logger.debug(f"[Dispatcher] 注册命令: {name}")
+        logger.debug("[Dispatcher] Registered command: %s", name)
         
-        # 注册别名
+        # Register aliases.
         for alias in command.aliases:
             alias_lower = alias.lower()
             if alias_lower in self._aliases:
-                logger.warning(f"[Dispatcher] 别名 '{alias_lower}' 已存在，将被覆盖")
+                logger.warning("[Dispatcher] Alias '%s' already exists and will be overwritten", alias_lower)
             self._aliases[alias_lower] = name
-            logger.debug(f"[Dispatcher] 注册别名: {alias_lower} -> {name}")
+            logger.debug("[Dispatcher] Registered alias: %s -> %s", alias_lower, name)
     
     def register_class(self, command_class: Type[BotCommand]) -> None:
-        """
-        注册命令类（自动实例化）
-        
-        Args:
-            command_class: 命令类
-        """
+        """Register a command class by instantiating it."""
         self.register(command_class())
     
     def unregister(self, name: str) -> bool:
-        """
-        注销命令
-        
-        Args:
-            name: 命令名称
-            
-        Returns:
-            是否成功注销
-        """
+        """Unregister a command by name."""
         name = name.lower()
         
         if name not in self._commands:
@@ -167,47 +131,29 @@ class CommandDispatcher:
         
         command = self._commands.pop(name)
         
-        # 移除别名
+        # Remove aliases.
         for alias in command.aliases:
             self._aliases.pop(alias.lower(), None)
         
-        logger.debug(f"[Dispatcher] 注销命令: {name}")
+        logger.debug("[Dispatcher] Unregistered command: %s", name)
         return True
     
     def get_command(self, name: str) -> Optional[BotCommand]:
-        """
-        获取命令
-        
-        支持命令名和别名查询。
-        
-        Args:
-            name: 命令名或别名
-            
-        Returns:
-            命令实例，或 None
-        """
+        """Return a command by name or alias."""
         name = name.lower()
         
-        # 先查命令名
+        # Check command name first.
         if name in self._commands:
             return self._commands[name]
         
-        # 再查别名
+        # Then check aliases.
         if name in self._aliases:
             return self._commands.get(self._aliases[name])
         
         return None
     
     def list_commands(self, include_hidden: bool = False) -> List[BotCommand]:
-        """
-        列出所有命令
-        
-        Args:
-            include_hidden: 是否包含隐藏命令
-            
-        Returns:
-            命令列表
-        """
+        """List registered commands."""
         commands = list(self._commands.values())
         
         if not include_hidden:
@@ -216,101 +162,82 @@ class CommandDispatcher:
         return sorted(commands, key=lambda c: c.name)
     
     def is_admin(self, user_id: str) -> bool:
-        """检查用户是否是管理员"""
+        """Return whether the user is an admin."""
         return user_id in self.admin_users
     
     def add_admin(self, user_id: str) -> None:
-        """添加管理员"""
+        """Add an admin user."""
         self.admin_users.add(user_id)
     
     def remove_admin(self, user_id: str) -> None:
-        """移除管理员"""
+        """Remove an admin user."""
         self.admin_users.discard(user_id)
     
     def dispatch(self, message: BotMessage) -> BotResponse:
-        """
-        分发消息到对应命令
-        
-        Args:
-            message: 消息对象
-            
-        Returns:
-            响应对象
-        """
-        # 1. 检查频率限制
+        """Dispatch a message to its matching command."""
+        # 1. Check rate limit.
         if not self._rate_limiter.is_allowed(message.user_id):
             remaining_time = self._rate_limiter.window_seconds
             return BotResponse.error_response(
-                f"请求过于频繁，请 {remaining_time} 秒后再试"
+                f"요청이 너무 많습니다. {remaining_time}초 후 다시 시도해 주세요"
             )
         
-        # 2. 解析命令和参数
+        # 2. Parse command and arguments.
         cmd_name, args = message.get_command_and_args(self.command_prefix)
         
         if cmd_name is None:
-            # 不是命令，检查是否 @了机器人
+            # Not a command; respond only when the bot was mentioned.
             if message.mentioned:
                 return BotResponse.text_response(
-                    "你好！我是股票分析助手。\n"
-                    f"发送 `{self.command_prefix}help` 查看可用命令。"
+                    "안녕하세요. 주식 분석 도우미입니다.\n"
+                    f"`{self.command_prefix}help`를 보내 사용 가능한 명령을 확인하세요."
                 )
-            # 非命令消息，不处理
+            # Ignore non-command messages.
             return BotResponse.text_response("")
         
-        logger.info(f"[Dispatcher] 收到命令: {cmd_name}, 参数: {args}, 用户: {message.user_name}")
+        logger.info("[Dispatcher] Received command: %s, args: %s, user: %s", cmd_name, args, message.user_name)
         
-        # 3. 查找命令处理器
+        # 3. Find command handler.
         command = self.get_command(cmd_name)
         
         if command is None:
             return BotResponse.error_response(
-                f"未知命令: {cmd_name}\n"
-                f"发送 `{self.command_prefix}help` 查看可用命令。"
+                f"알 수 없는 명령: {cmd_name}\n"
+                f"`{self.command_prefix}help`를 보내 사용 가능한 명령을 확인하세요."
             )
         
-        # 4. 检查权限
+        # 4. Check permissions.
         if command.admin_only and not self.is_admin(message.user_id):
-            return BotResponse.error_response("此命令需要管理员权限")
+            return BotResponse.error_response("이 명령은 관리자 권한이 필요합니다")
         
-        # 5. 验证参数
+        # 5. Validate arguments.
         error_msg = command.validate_args(args)
         if error_msg:
             return BotResponse.error_response(
-                f"{error_msg}\n用法: `{command.usage}`"
+                f"{error_msg}\n사용법: `{command.usage}`"
             )
         
-        # 6. 执行命令
+        # 6. Execute command.
         try:
             response = command.execute(message, args)
-            logger.info(f"[Dispatcher] 命令 {cmd_name} 执行成功")
+            logger.info("[Dispatcher] Command %s executed successfully", cmd_name)
             return response
         except Exception as e:
-            logger.error(f"[Dispatcher] 命令 {cmd_name} 执行失败: {e}")
+            logger.error("[Dispatcher] Command %s execution failed: %s", cmd_name, e)
             logger.exception(e)
-            return BotResponse.error_response(f"命令执行失败: {str(e)[:100]}")
+            return BotResponse.error_response(f"명령 실행에 실패했습니다: {str(e)[:100]}")
     
     def set_help_command_getter(self, getter: Callable) -> None:
-        """
-        设置帮助命令的命令列表获取器
-        
-        用于让 HelpCommand 获取命令列表。
-        
-        Args:
-            getter: 回调函数，返回命令列表
-        """
+        """Set the command-list callback used by HelpCommand."""
         self._help_command_getter = getter
 
 
-# 全局分发器实例
+# Global dispatcher instance.
 _dispatcher: Optional[CommandDispatcher] = None
 
 
 def get_dispatcher() -> CommandDispatcher:
-    """
-    获取全局分发器实例
-    
-    使用单例模式，首次调用时自动初始化并注册所有命令。
-    """
+    """Return the global dispatcher, initializing and registering commands on first use."""
     global _dispatcher
     
     if _dispatcher is None:
@@ -318,7 +245,7 @@ def get_dispatcher() -> CommandDispatcher:
         
         config = get_config()
         
-        # 创建分发器
+        # Create dispatcher.
         _dispatcher = CommandDispatcher(
             command_prefix=getattr(config, 'bot_command_prefix', '/'),
             rate_limit_requests=getattr(config, 'bot_rate_limit_requests', 10),
@@ -326,17 +253,17 @@ def get_dispatcher() -> CommandDispatcher:
             admin_users=getattr(config, 'bot_admin_users', []),
         )
         
-        # 自动注册所有命令
+        # Register all commands automatically.
         from bot.commands import ALL_COMMANDS
         for command_class in ALL_COMMANDS:
             _dispatcher.register_class(command_class)
         
-        logger.info(f"[Dispatcher] 初始化完成，已注册 {len(_dispatcher._commands)} 个命令")
+        logger.info("[Dispatcher] Initialized with %d registered commands", len(_dispatcher._commands))
     
     return _dispatcher
 
 
 def reset_dispatcher() -> None:
-    """重置全局分发器（主要用于测试）"""
+    """Reset the global dispatcher, mainly for tests."""
     global _dispatcher
     _dispatcher = None

@@ -92,7 +92,7 @@ class StatusCommand(BotCommand):
         lines = [
             "📊 **주식 분석 도우미 - 시스템 상태**",
             "",
-            f"🕐 时间: {status['timestamp']}",
+            f"🕐 시간: {status['timestamp']}",
             f"🐍 Python: {status['python_version']}",
             f"💻 Platform: {status['platform']}",
             "",
@@ -105,7 +105,7 @@ class StatusCommand(BotCommand):
         if status['stock_list']:
             stocks_preview = ", ".join(status['stock_list'])
             if status['stock_count'] > 5:
-                stocks_preview += f" ... 等 {status['stock_count']} 只"
+                stocks_preview += f" ... 총 {status['stock_count']}개"
             lines.append(f"• 종목 목록: {stocks_preview}")
         
         lines.extend([

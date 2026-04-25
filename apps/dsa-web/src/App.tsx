@@ -10,7 +10,7 @@ import { ApiErrorAlert } from './components/common';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
-// 侧边导航图标
+// Side navigation icons
 const HomeIcon: React.FC<{ active?: boolean }> = ({active}) => (
     <svg className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -57,44 +57,44 @@ type DockItem = {
 const NAV_ITEMS: DockItem[] = [
     {
         key: 'home',
-        label: '首页',
+        label: '홈',
         to: '/',
         icon: HomeIcon,
     },
     {
         key: 'chat',
-        label: '问股',
+        label: '종목 상담',
         to: '/chat',
         icon: ChatIcon,
     },
     {
         key: 'backtest',
-        label: '回测',
+        label: '백테스트',
         to: '/backtest',
         icon: BacktestIcon,
     },
     {
         key: 'settings',
-        label: '设置',
+        label: '설정',
         to: '/settings',
         icon: SettingsIcon,
     },
 ];
 
-// Dock 导航栏
+// Dock navigation
 const DockNav: React.FC = () => {
     const {authEnabled, logout} = useAuth();
     return (
-        <aside className="dock-nav" aria-label="主导航">
+        <aside className="dock-nav" aria-label="주요 내비게이션">
             <div className="dock-surface">
-                <NavLink to="/" className="dock-logo" title="首页" aria-label="首页">
+                <NavLink to="/" className="dock-logo" title="홈" aria-label="홈">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                     </svg>
                 </NavLink>
 
-                <nav className="dock-items" aria-label="页面">
+                <nav className="dock-items" aria-label="페이지">
                     {NAV_ITEMS.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -116,8 +116,8 @@ const DockNav: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => logout()}
-                        title="退出登录"
-                        aria-label="退出登录"
+                        title="로그아웃"
+                        aria-label="로그아웃"
                         className="dock-item"
                     >
                         <LogoutIcon/>
@@ -153,7 +153,7 @@ const AppContent: React.FC = () => {
                     className="btn-primary"
                     onClick={() => void refreshStatus()}
                 >
-                    重试
+                    다시 시도
                 </button>
             </div>
         );

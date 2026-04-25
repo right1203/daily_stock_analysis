@@ -4,9 +4,18 @@
 
 import pytest
 import pandas as pd
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from data_provider.pykrx_fetcher import PykrxFetcher, STANDARD_COLUMNS
+
+
+def test_requirements_pin_setuptools_for_pykrx_compatibility():
+    """requirements.txt must mirror the setuptools pin used by pyproject.toml."""
+    project_root = Path(__file__).resolve().parents[1]
+    requirements = (project_root / "requirements.txt").read_text(encoding="utf-8")
+
+    assert "setuptools>=70.0.0,<81" in requirements
 
 
 class TestPykrxFetcherInit:

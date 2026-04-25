@@ -9,8 +9,8 @@ interface CollapsibleProps {
 }
 
 /**
- * 可折叠面板组件
- * 支持动画展开/收起
+ * Collapsible panel component
+ * Supports animated expand and collapse
  */
 export const Collapsible: React.FC<CollapsibleProps> = ({
   title,
@@ -31,7 +31,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
         ${className}
       `}
     >
-      {/* 标题栏 */}
+      {/* Title bar */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-4 py-3 text-left
@@ -53,7 +53,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
         </svg>
       </button>
 
-      {/* 内容区 */}
+      {/* Content area */}
       <div
         className={`
           overflow-hidden transition-all duration-300 ease-in-out

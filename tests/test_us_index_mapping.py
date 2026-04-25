@@ -52,17 +52,17 @@ class TestIsUsIndexCode(unittest.TestCase):
             with self.subTest(code=code):
                 self.assertFalse(is_us_index_code(code), f"{code} should NOT be a US index")
 
-    def test_a_shares_not_indices(self):
-        """A-share codes should NOT be recognized as indices"""
-        a_shares = ['600519', '000001', '300750', 'SH600519', 'SZ000001']
-        for code in a_shares:
+    def test_legacy_cn_codes_not_indices(self):
+        """Legacy China stock codes should NOT be recognized as indices."""
+        legacy_cn_codes = ['600518', '000001', '300750', 'SH600518', 'SZ000001']  # kr-us-static-allow: removed-market
+        for code in legacy_cn_codes:
             with self.subTest(code=code):
                 self.assertFalse(is_us_index_code(code), f"{code} should NOT be a US index")
 
-    def test_hk_stocks_not_indices(self):
-        """HK stock codes should NOT be recognized as indices"""
-        hk_stocks = ['00700', 'HK00700', '01810']
-        for code in hk_stocks:
+    def test_legacy_hk_stocks_not_indices(self):
+        """Legacy HK stock codes should NOT be recognized as indices."""  # kr-us-static-allow: removed-market
+        legacy_hk_codes = ['00700', 'HK00700', '01810']  # kr-us-static-allow: removed-market
+        for code in legacy_hk_codes:
             with self.subTest(code=code):
                 self.assertFalse(is_us_index_code(code), f"{code} should NOT be a US index")
 
@@ -106,17 +106,17 @@ class TestIsUsStockCode(unittest.TestCase):
             with self.subTest(code=code):
                 self.assertFalse(is_us_stock_code(code), f"{code} should NOT be a US stock")
 
-    def test_a_shares_not_us_stocks(self):
-        """A-share codes should NOT be recognized as US stocks"""
-        a_shares = ['600519', '000001', '300750']
-        for code in a_shares:
+    def test_legacy_cn_codes_not_us_stocks(self):
+        """Legacy China stock codes should NOT be recognized as US stocks."""
+        legacy_cn_codes = ['600518', '000001', '300750']
+        for code in legacy_cn_codes:
             with self.subTest(code=code):
                 self.assertFalse(is_us_stock_code(code), f"{code} should NOT be a US stock")
 
-    def test_hk_stocks_not_us_stocks(self):
-        """HK stock codes should NOT be recognized as US stocks"""
-        hk_stocks = ['00700', 'HK00700', '01810']
-        for code in hk_stocks:
+    def test_legacy_hk_stocks_not_us_stocks(self):
+        """Legacy HK stock codes should NOT be recognized as US stocks."""  # kr-us-static-allow: removed-market
+        legacy_hk_codes = ['00700', 'HK00700', '01810']  # kr-us-static-allow: removed-market
+        for code in legacy_hk_codes:
             with self.subTest(code=code):
                 self.assertFalse(is_us_stock_code(code), f"{code} should NOT be a US stock")
 

@@ -10,7 +10,7 @@ Responsibilities:
 3. Register routers and exception handlers
 4. Serve frontend static files (production mode)
 
-使用方式：
+Usage:
     from api.app import create_app
     app = create_app()
 """
@@ -121,11 +121,11 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
     if has_frontend:
         @app.get("/", include_in_schema=False)
         async def root():
-            """根路由 - 返回前端页面"""
+            """Return the frontend entry page."""
             return FileResponse(static_dir / "index.html")
     else:
         _FRONTEND_NOT_BUILT_HTML = """<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DSA - Frontend Not Built</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -135,7 +135,8 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
   h1{font-size:1.25rem;color:#38bdf8;margin-bottom:.75rem}
   p{font-size:.9rem;line-height:1.7;color:#94a3b8;margin-bottom:.5rem}
   code{background:#1e293b;padding:2px 8px;border-radius:4px;font-size:.85rem;color:#67e8f9}
-  .hint{margin-top:1.25rem;padding:.75rem 1rem;border-left:3px solid #f59e0b;background:#1c1917;border-radius:0 6px 6px 0}
+  .hint{margin-top:1.25rem;padding:.75rem 1rem;border-left:3px solid #f59e0b;
+        background:#1c1917;border-radius:0 6px 6px 0}
   .hint p{color:#fbbf24;margin:0}
   a{color:#38bdf8;text-decoration:none}
   a:hover{text-decoration:underline}
@@ -147,13 +148,14 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
 <p><code>cd apps/dsa-web &amp;&amp; npm install &amp;&amp; npm run build</code></p>
 <p>Or start with auto-build:</p>
 <p><code>python main.py --serve-only</code></p>
-<div class="hint"><p>If you only need the API, visit <a href="/docs">/docs</a> for the interactive API documentation.</p></div>
+<div class="hint"><p>If you only need the API, visit <a href="/docs">/docs</a>
+for the interactive API documentation.</p></div>
 <p class="status">API Version 1.0.0 &bull; <a href="/api/health">/api/health</a></p>
 </div></body></html>"""
 
         @app.get("/", include_in_schema=False)
         async def root():
-            """根路由 - 前端未构建时返回引导页面"""
+            """Return the fallback page when the frontend has not been built."""
             return HTMLResponse(content=_FRONTEND_NOT_BUILT_HTML)
     
     @app.get(
@@ -183,7 +185,7 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
         # SPA fallback route
         @app.get("/{full_path:path}", include_in_schema=False)
         async def serve_spa(request: Request, full_path: str):
-            """SPA 路由回退 - 非 API 路由返回 index.html"""
+            """Return index.html for non-API SPA routes."""
             if full_path.startswith("api/"):
                 return None
             
@@ -199,5 +201,5 @@ def create_app(static_dir: Optional[Path] = None) -> FastAPI:
     return app
 
 
-# 默认应用实例（供 uvicorn 直接使用）
+# Default app instance for direct uvicorn usage
 app = create_app()

@@ -38,7 +38,7 @@ class AuthApiTestCase(unittest.TestCase):
         self.data_dir = Path(self.temp_dir.name)
         self.env_path = self.data_dir / ".env"
         self.env_path.write_text(
-            "STOCK_LIST=600519\nGEMINI_API_KEY=test\nADMIN_AUTH_ENABLED=true\n",
+            "STOCK_LIST=005930\nGEMINI_API_KEY=test\nADMIN_AUTH_ENABLED=true\n",
             encoding="utf-8",
         )
         os.environ["ENV_FILE"] = str(self.env_path)

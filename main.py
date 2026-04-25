@@ -40,7 +40,7 @@ import logging
 import sys
 import time
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from typing import List, Optional, Tuple
 
 from data_provider.base import canonical_stock_code
@@ -64,7 +64,7 @@ def parse_arguments() -> argparse.Namespace:
   python main.py                    # 정상 실행
   python main.py --debug            # 디버그 모드
   python main.py --dry-run          # 데이터만 조회, AI 분석 없음
-  python main.py --stocks 600519,000001  # 특정 종목 지정 분석
+  python main.py --stocks 005930,AAPL  # 특정 종목 지정 분석
   python main.py --no-notify        # 푸시 알림 전송 안 함
   python main.py --single-notify    # 단일 종목 푸시 모드 활성화 (분석 완료 즉시 푸시)
   python main.py --schedule         # 예약 작업 모드 활성화
@@ -344,7 +344,7 @@ def run_full_analysis(
                 merge_notification=merge_notification,
                 override_region=effective_region,
             )
-            # 결과가 있으면 market_report에 할당 (이후 비행 문서 생성용)
+            # Keep market review content available for merged notification output.
             if review_result:
                 market_report = review_result
 
@@ -375,42 +375,6 @@ def run_full_analysis(
                 )
 
         logger.info("\n작업 실행 완료")
-
-        # === 비행 클라우드 문서 생성 ===
-        try:
-            from src.feishu_doc import FeishuDocManager
-
-            feishu_doc = FeishuDocManager()
-            if feishu_doc.is_configured() and (results or market_report):
-                logger.info("비행 클라우드 문서 생성 중...")
-
-                # 1. 제목 준비 "01-01 13:01 시장 전체 복기"
-                tz_cn = timezone(timedelta(hours=8))
-                now = datetime.now(tz_cn)
-                doc_title = f"{now.strftime('%Y-%m-%d %H:%M')} 시장 전체 복기"
-
-                # 2. 내용 준비 (개별 종목 분석과 시장 전체 복기 연결)
-                full_content = ""
-
-                # 시장 전체 복기 내용 추가 (있는 경우)
-                if market_report:
-                    full_content += f"# 📈 시장 전체 복기\n\n{market_report}\n\n---\n\n"
-
-                # 개별 종목 의사결정 대시보드 추가 (NotificationService로 생성)
-                if results:
-                    dashboard_content = pipeline.notifier.generate_dashboard_report(results)
-                    full_content += f"# 🚀 개별 종목 의사결정 대시보드\n\n{dashboard_content}"
-
-                # 3. 문서 생성
-                doc_url = feishu_doc.create_daily_doc(doc_title, full_content)
-                if doc_url:
-                    logger.info(f"비행 클라우드 문서 생성 성공: {doc_url}")
-                    # 선택 사항: 문서 링크를 그룹에도 푸시
-                    if not args.no_notify:
-                        pipeline.notifier.send(f"[{now.strftime('%Y-%m-%d %H:%M')}] 복기 문서 생성 성공: {doc_url}")
-
-        except Exception as e:
-            logger.error(f"비행 문서 생성 실패: {e}")
 
         # === 자동 백테스트 ===
         try:
@@ -470,35 +434,7 @@ def _is_truthy_env(var_name: str, default: str = "true") -> bool:
 
 def start_bot_stream_clients(config: Config) -> None:
     """Start bot stream clients when enabled in config."""
-    # 딩톡 Stream 클라이언트 시작
-    if config.dingtalk_stream_enabled:
-        try:
-            from bot.platforms import start_dingtalk_stream_background, DINGTALK_STREAM_AVAILABLE
-            if DINGTALK_STREAM_AVAILABLE:
-                if start_dingtalk_stream_background():
-                    logger.info("[Main] Dingtalk Stream client started in background.")
-                else:
-                    logger.warning("[Main] Dingtalk Stream client failed to start.")
-            else:
-                logger.warning("[Main] Dingtalk Stream enabled but SDK is missing.")
-                logger.warning("[Main] Run: pip install dingtalk-stream")
-        except Exception as exc:
-            logger.error(f"[Main] Failed to start Dingtalk Stream client: {exc}")
-
-    # 비행 Stream 클라이언트 시작
-    if getattr(config, 'feishu_stream_enabled', False):
-        try:
-            from bot.platforms import start_feishu_stream_background, FEISHU_SDK_AVAILABLE
-            if FEISHU_SDK_AVAILABLE:
-                if start_feishu_stream_background():
-                    logger.info("[Main] Feishu Stream client started in background.")
-                else:
-                    logger.warning("[Main] Feishu Stream client failed to start.")
-            else:
-                logger.warning("[Main] Feishu Stream enabled but SDK is missing.")
-                logger.warning("[Main] Run: pip install lark-oapi")
-        except Exception as exc:
-            logger.error(f"[Main] Failed to start Feishu Stream client: {exc}")
+    return None
 
 
 def main() -> int:
@@ -627,9 +563,9 @@ def main() -> int:
             search_service = None
             analyzer = None
 
-            if config.bocha_api_keys or config.tavily_api_keys or config.brave_api_keys or config.serpapi_keys:
+            if config.naver_api_keys or config.tavily_api_keys or config.brave_api_keys or config.serpapi_keys:
                 search_service = SearchService(
-                    bocha_keys=config.bocha_api_keys,
+                    naver_keys=config.naver_api_keys,
                     tavily_keys=config.tavily_api_keys,
                     brave_keys=config.brave_api_keys,
                     serpapi_keys=config.serpapi_keys,

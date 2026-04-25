@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-股票数据接口
-===================================
-
-职责：
-1. POST /api/v1/stocks/extract-from-image 从图片提取股票代码
-2. GET /api/v1/stocks/{code}/quote 实时行情接口
-3. GET /api/v1/stocks/{code}/history 历史行情接口
-"""
+"""Stock data API endpoints."""
 
 import logging
 from typing import Optional
@@ -33,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# 须在 /{stock_code} 路由之前定义
+# Define before the /{stock_code} routes.
 ALLOWED_MIME_STR = ", ".join(ALLOWED_MIME)
 
 
@@ -41,26 +32,22 @@ ALLOWED_MIME_STR = ", ".join(ALLOWED_MIME)
     "/extract-from-image",
     response_model=ExtractFromImageResponse,
     responses={
-        200: {"description": "提取的股票代码"},
-        400: {"description": "图片无效", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        200: {"description": "추출된 종목 코드"},
+        400: {"description": "이미지가 올바르지 않습니다", "model": ErrorResponse},
+        500: {"description": "서버 오류", "model": ErrorResponse},
     },
-    summary="从图片提取股票代码",
-    description="上传截图/图片，通过 Vision LLM 提取股票代码。支持 JPEG、PNG、WebP、GIF，最大 5MB。",
+    summary="이미지에서 종목 코드 추출",
+    description="스크린샷이나 이미지를 업로드하면 Vision LLM으로 종목 코드를 추출합니다. JPEG, PNG, WebP, GIF를 지원하며 최대 5MB입니다.",
 )
 def extract_from_image(
-    file: Optional[UploadFile] = File(None, description="图片文件（表单字段名 file）"),
-    include_raw: bool = Query(False, description="是否在结果中包含原始 LLM 响应"),
+    file: Optional[UploadFile] = File(None, description="이미지 파일(form field name: file)"),
+    include_raw: bool = Query(False, description="원본 LLM 응답 포함 여부"),
 ) -> ExtractFromImageResponse:
-    """
-    从上传的图片中提取股票代码（使用 Vision LLM）。
-
-    表单字段请使用 file 上传图片。优先级：Gemini / Anthropic / OpenAI（首个可用）。
-    """
+    """Extract stock codes from an uploaded image with a Vision LLM."""
     if not file or not file.filename:
         raise HTTPException(
             status_code=400,
-            detail={"error": "bad_request", "message": "未提供文件，请使用表单字段 file 上传图片"},
+            detail={"error": "bad_request", "message": "파일이 없습니다. form field file로 이미지를 업로드하세요"},
         )
 
     content_type = (file.content_type or "").split(";")[0].strip().lower()
@@ -69,28 +56,28 @@ def extract_from_image(
             status_code=400,
             detail={
                 "error": "unsupported_type",
-                "message": f"不支持的类型: {content_type}。允许: {ALLOWED_MIME_STR}",
+                "message": f"지원하지 않는 유형입니다: {content_type}. 허용: {ALLOWED_MIME_STR}",
             },
         )
 
     try:
-        # 先读取限定大小，再检查是否还有剩余（语义清晰：超出则拒绝）
+        # Read up to the size limit, then reject if more bytes remain.
         data = file.file.read(MAX_SIZE_BYTES)
         if file.file.read(1):
             raise HTTPException(
                 status_code=400,
                 detail={
                     "error": "file_too_large",
-                    "message": f"图片超过 {MAX_SIZE_BYTES // (1024 * 1024)}MB 限制",
+                    "message": f"이미지가 {MAX_SIZE_BYTES // (1024 * 1024)}MB 제한을 초과했습니다",
                 },
             )
     except HTTPException:
         raise
     except Exception as e:
-        logger.warning(f"读取上传文件失败: {e}")
+        logger.warning(f"Failed to read uploaded file: {e}")
         raise HTTPException(
             status_code=400,
-            detail={"error": "read_failed", "message": "读取上传文件失败"},
+            detail={"error": "read_failed", "message": "업로드 파일을 읽지 못했습니다"},
         )
 
     try:
@@ -102,10 +89,10 @@ def extract_from_image(
     except ValueError as e:
         raise HTTPException(status_code=400, detail={"error": "extract_failed", "message": str(e)})
     except Exception as e:
-        logger.error(f"图片提取失败: {e}", exc_info=True)
+        logger.error(f"Image extraction failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"error": "internal_error", "message": "图片提取失败"},
+            detail={"error": "internal_error", "message": "이미지 추출에 실패했습니다"},
         )
 
 
@@ -113,32 +100,19 @@ def extract_from_image(
     "/{stock_code}/quote",
     response_model=StockQuote,
     responses={
-        200: {"description": "行情数据"},
-        404: {"description": "股票不存在", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        200: {"description": "시세 데이터"},
+        404: {"description": "종목을 찾을 수 없습니다", "model": ErrorResponse},
+        500: {"description": "서버 오류", "model": ErrorResponse},
     },
-    summary="获取股票实时行情",
-    description="获取指定股票的最新行情数据"
+    summary="종목 실시간 시세 조회",
+    description="지정한 종목의 최신 시세 데이터를 조회합니다"
 )
 def get_stock_quote(stock_code: str) -> StockQuote:
-    """
-    获取股票实时行情
-    
-    获取指定股票的最新行情数据
-    
-    Args:
-        stock_code: 股票代码（如 600519、00700、AAPL）
-        
-    Returns:
-        StockQuote: 实时行情数据
-        
-    Raises:
-        HTTPException: 404 - 股票不存在
-    """
+    """Get the latest quote for a stock."""
     try:
         service = StockService()
         
-        # 使用 def 而非 async def，FastAPI 自动在线程池中执行
+        # FastAPI runs regular def endpoints in a thread pool.
         result = service.get_realtime_quote(stock_code)
         
         if result is None:
@@ -146,7 +120,7 @@ def get_stock_quote(stock_code: str) -> StockQuote:
                 status_code=404,
                 detail={
                     "error": "not_found",
-                    "message": f"未找到股票 {stock_code} 的行情数据"
+                    "message": f"{stock_code} 시세 데이터를 찾을 수 없습니다"
                 }
             )
         
@@ -168,12 +142,12 @@ def get_stock_quote(stock_code: str) -> StockQuote:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"获取实时行情失败: {e}", exc_info=True)
+        logger.error(f"Failed to get realtime quote: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"获取实时行情失败: {str(e)}"
+                "message": f"실시간 시세 조회에 실패했습니다: {str(e)}"
             }
         )
 
@@ -182,42 +156,30 @@ def get_stock_quote(stock_code: str) -> StockQuote:
     "/{stock_code}/history",
     response_model=StockHistoryResponse,
     responses={
-        200: {"description": "历史行情数据"},
-        422: {"description": "不支持的周期参数", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        200: {"description": "과거 시세 데이터"},
+        422: {"description": "지원하지 않는 기간 파라미터", "model": ErrorResponse},
+        500: {"description": "서버 오류", "model": ErrorResponse},
     },
-    summary="获取股票历史行情",
-    description="获取指定股票的历史 K 线数据"
+    summary="종목 과거 시세 조회",
+    description="지정한 종목의 과거 OHLCV 데이터를 조회합니다"
 )
 def get_stock_history(
     stock_code: str,
-    period: str = Query("daily", description="K 线周期", pattern="^(daily|weekly|monthly)$"),
-    days: int = Query(30, ge=1, le=365, description="获取天数")
+    period: str = Query("daily", description="가격 주기", pattern="^(daily|weekly|monthly)$"),
+    days: int = Query(30, ge=1, le=365, description="조회 일수")
 ) -> StockHistoryResponse:
-    """
-    获取股票历史行情
-    
-    获取指定股票的历史 K 线数据
-    
-    Args:
-        stock_code: 股票代码
-        period: K 线周期 (daily/weekly/monthly)
-        days: 获取天数
-        
-    Returns:
-        StockHistoryResponse: 历史行情数据
-    """
+    """Get historical OHLCV data for a stock."""
     try:
         service = StockService()
         
-        # 使用 def 而非 async def，FastAPI 自动在线程池中执行
+        # FastAPI runs regular def endpoints in a thread pool.
         result = service.get_history_data(
             stock_code=stock_code,
             period=period,
             days=days
         )
         
-        # 转换为响应模型
+        # Convert service data into the response model.
         data = [
             KLineData(
                 date=item.get("date"),
@@ -240,7 +202,7 @@ def get_stock_history(
         )
     
     except ValueError as e:
-        # period 参数不支持的错误（如 weekly/monthly）
+        # Unsupported period errors, such as weekly/monthly.
         raise HTTPException(
             status_code=422,
             detail={
@@ -249,11 +211,11 @@ def get_stock_history(
             }
         )
     except Exception as e:
-        logger.error(f"获取历史行情失败: {e}", exc_info=True)
+        logger.error(f"Failed to get historical prices: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"获取历史行情失败: {str(e)}"
+                "message": f"과거 시세 조회에 실패했습니다: {str(e)}"
             }
         )

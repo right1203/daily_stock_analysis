@@ -9,7 +9,6 @@ Tools:
 - get_analysis_context: historical analysis context from DB
 """
 
-import json
 import logging
 from typing import Optional
 
@@ -222,47 +221,6 @@ get_analysis_context_tool = ToolDefinition(
 
 def _handle_get_stock_info(stock_code: str) -> dict:
     """Get stock fundamental information including industry, financials, and valuation."""
-    # Try EfinanceFetcher.get_base_info first (most complete)
-    try:
-        from data_provider.efinance_fetcher import EfinanceFetcher
-        fetcher = EfinanceFetcher()
-        info = fetcher.get_base_info(stock_code)
-        if info:
-            # Sanitise: convert non-serialisable types and remove NaN
-            import math
-            clean: dict = {}
-            for k, v in info.items():
-                if isinstance(v, float) and math.isnan(v):
-                    clean[k] = None
-                else:
-                    try:
-                        import json as _json
-                        _json.dumps(v)       # test serialisability
-                        clean[k] = v
-                    except (TypeError, ValueError):
-                        clean[k] = str(v)
-
-            # Also try to get board/sector membership
-            try:
-                board_df = fetcher.get_belong_board(stock_code)
-                if board_df is not None and not board_df.empty:
-                    # Typically columns: 섹터명, 섹터코드, 등락률, …
-                    boards = board_df.to_dict(orient="records")
-                    # Keep only name + change columns to limit token usage
-                    clean["belong_boards"] = [
-                        {k2: (str(v2) if not isinstance(v2, (int, float, str, type(None))) else v2)
-                         for k2, v2 in row.items()
-                         if any(kw in str(k2) for kw in ["이름", "코드", "涨跌", "板块"])}
-                        for row in boards[:10]
-                    ]
-            except Exception:
-                pass
-
-            return clean
-    except Exception as e:
-        logger.warning(f"get_stock_info via EfinanceFetcher failed for {stock_code}: {e}")
-
-    # Fallback: derive from realtime quote (valuation metrics only)
     manager = _get_fetcher_manager()
     quote = manager.get_realtime_quote(stock_code)
     if quote:
@@ -273,9 +231,9 @@ def _handle_get_stock_info(stock_code: str) -> dict:
             "pb_ratio": quote.pb_ratio,
             "total_mv": quote.total_mv,
             "circ_mv": quote.circ_mv,
-            "note": "Basic info only — EfinanceFetcher unavailable",
+            "note": "Basic quote-derived info only; detailed KR/US fundamentals are not available.",
         }
-    return {"error": f"Unable to fetch stock info for {stock_code}"}
+    return {"error": f"Detailed stock info is not supported by the remaining KR/US providers for {stock_code}"}
 
 
 get_stock_info_tool = ToolDefinition(

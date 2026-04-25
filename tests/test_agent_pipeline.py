@@ -105,7 +105,7 @@ class TestAgentResultConversion(unittest.TestCase):
             mock_cfg.agent_mode = True
             mock_cfg.agent_max_steps = 10
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -128,13 +128,13 @@ class TestAgentResultConversion(unittest.TestCase):
         from src.enums import ReportType
 
         dashboard = {
-            "stock_name": "贵州茅台",
+            "stock_name": "삼성전자",
             "sentiment_score": 80,
-            "trend_prediction": "看多",
-            "operation_advice": "持有",
+            "trend_prediction": "상승",
+            "operation_advice": "보유",
             "decision_type": "hold",
-            "confidence_level": "高",
-            "dashboard": {"core_conclusion": {"one_sentence": "看好"}},
+            "confidence_level": "높음",
+            "dashboard": {"core_conclusion": {"one_sentence": "긍정적"}},
             "analysis_summary": "Testing",
             "key_points": "Strong",
             "risk_warning": "High valuation",
@@ -165,15 +165,15 @@ class TestAgentResultConversion(unittest.TestCase):
         )
 
         result = pipeline._agent_result_to_analysis_result(
-            agent_result, "600519", "贵州茅台", ReportType.SIMPLE, "q123"
+            agent_result, "005930", "삼성전자", ReportType.SIMPLE, "q123"
         )
 
         self.assertIsNotNone(result)
         self.assertTrue(result.success)
-        self.assertEqual(result.code, "600519")
-        self.assertEqual(result.name, "贵州茅台")
+        self.assertEqual(result.code, "005930")
+        self.assertEqual(result.name, "삼성전자")
         self.assertEqual(result.sentiment_score, 80)
-        self.assertEqual(result.trend_prediction, "看多")
+        self.assertEqual(result.trend_prediction, "상승")
         self.assertEqual(result.decision_type, "hold")
         self.assertIn("agent:gemini", result.data_sources)
         self.assertIsNotNone(result.dashboard)
@@ -193,13 +193,13 @@ class TestAgentResultConversion(unittest.TestCase):
         )
 
         result = pipeline._agent_result_to_analysis_result(
-            agent_result, "600519", "贵州茅台", ReportType.SIMPLE, "q123"
+            agent_result, "005930", "삼성전자", ReportType.SIMPLE, "q123"
         )
 
         self.assertIsNotNone(result)
         self.assertFalse(result.success)
         self.assertEqual(result.sentiment_score, 50)
-        self.assertEqual(result.operation_advice, "观望")
+        self.assertEqual(result.operation_advice, "관망")
         self.assertIn("Max steps exceeded", result.error_message)
 
     def test_convert_uses_dashboard_stock_name_when_input_is_placeholder(self):
@@ -213,19 +213,19 @@ class TestAgentResultConversion(unittest.TestCase):
             success=True,
             content="{}",
             dashboard={
-                "stock_name": "科创芯片ETF",
+                "stock_name": "KODEX 반도체",
                 "sentiment_score": 75,
-                "trend_prediction": "震荡偏多",
-                "operation_advice": "持有",
+                "trend_prediction": "상승 우위",
+                "operation_advice": "보유",
                 "decision_type": "hold",
             },
             provider="gemini",
         )
 
         result = pipeline._agent_result_to_analysis_result(
-            agent_result, "588200", "股票588200", ReportType.SIMPLE, "q-placeholder"
+            agent_result, "091160", "종목091160", ReportType.SIMPLE, "q-placeholder"
         )
-        self.assertEqual(result.name, "科创芯片ETF")
+        self.assertEqual(result.name, "KODEX 반도체")
 
     def test_convert_keeps_input_stock_name_when_valid(self):
         """When input name is already valid, do not overwrite with dashboard value."""
@@ -238,19 +238,19 @@ class TestAgentResultConversion(unittest.TestCase):
             success=True,
             content="{}",
             dashboard={
-                "stock_name": "错误名称",
+                "stock_name": "잘못된 이름",
                 "sentiment_score": 70,
-                "trend_prediction": "看多",
-                "operation_advice": "持有",
+                "trend_prediction": "상승",
+                "operation_advice": "보유",
                 "decision_type": "hold",
             },
             provider="gemini",
         )
 
         result = pipeline._agent_result_to_analysis_result(
-            agent_result, "600519", "贵州茅台", ReportType.SIMPLE, "q-valid"
+            agent_result, "005930", "삼성전자", ReportType.SIMPLE, "q-valid"
         )
-        self.assertEqual(result.name, "贵州茅台")
+        self.assertEqual(result.name, "삼성전자")
 
 
 # ============================================================
@@ -305,7 +305,7 @@ class TestPipelineRouting(unittest.TestCase):
             mock_cfg.agent_mode = True
             mock_cfg.agent_max_steps = 5
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -323,10 +323,10 @@ class TestPipelineRouting(unittest.TestCase):
             # Mock _analyze_with_agent to verify it gets called
             pipeline._analyze_with_agent = MagicMock(return_value=None)
 
-            pipeline.analyze_stock("600519", ReportType.SIMPLE, "q1")
+            pipeline.analyze_stock("005930", ReportType.SIMPLE, "q1")
 
             pipeline._analyze_with_agent.assert_called_once_with(
-                "600519", ReportType.SIMPLE, "q1",
+                "005930", ReportType.SIMPLE, "q1",
                 pipeline.fetcher_manager.get_realtime_quote.return_value.name,
                 pipeline.fetcher_manager.get_realtime_quote.return_value,
                 pipeline.fetcher_manager.get_chip_distribution.return_value
@@ -346,7 +346,7 @@ class TestPipelineRouting(unittest.TestCase):
             mock_cfg.agent_mode = False
             mock_cfg.agent_max_steps = 10
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -371,7 +371,7 @@ class TestPipelineRouting(unittest.TestCase):
             # Mock analyzer
             pipeline.analyzer.analyze.return_value = None
 
-            result = pipeline.analyze_stock("600519", ReportType.SIMPLE, "q1")
+            result = pipeline.analyze_stock("005930", ReportType.SIMPLE, "q1")
 
             # _analyze_with_agent should NOT exist as a mock (it's the real method)
             # Instead, verify analyzer.analyze was called (legacy path)
@@ -396,7 +396,7 @@ class TestAnalyzeWithAgentStockName(unittest.TestCase):
             mock_cfg.agent_mode = True
             mock_cfg.agent_max_steps = 10
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -416,10 +416,10 @@ class TestAnalyzeWithAgentStockName(unittest.TestCase):
                 success=True,
                 content="{}",
                 dashboard={
-                    "stock_name": "科创芯片ETF",
+                    "stock_name": "KODEX 반도체",
                     "sentiment_score": 78,
-                    "trend_prediction": "震荡偏多",
-                    "operation_advice": "持有",
+                    "trend_prediction": "상승 우위",
+                    "operation_advice": "보유",
                     "decision_type": "hold",
                 },
                 provider="gemini",
@@ -436,24 +436,24 @@ class TestAnalyzeWithAgentStockName(unittest.TestCase):
             pipeline.search_service.search_stock_news.return_value = news_response
 
             result = pipeline._analyze_with_agent(
-                code="588200",
+                code="091160",
                 report_type=ReportType.SIMPLE,
                 query_id="q-news",
-                stock_name="股票588200",
+                stock_name="종목091160",
                 realtime_quote=None,
                 chip_data=None
             )
 
             self.assertIsNotNone(result)
-            self.assertEqual(result.name, "科创芯片ETF")
+            self.assertEqual(result.name, "KODEX 반도체")
             pipeline.search_service.search_stock_news.assert_called_once_with(
-                stock_code="588200",
-                stock_name="科创芯片ETF",
+                stock_code="091160",
+                stock_name="KODEX 반도체",
                 max_results=5
             )
             pipeline.db.save_news_intel.assert_called_once()
             saved_kwargs = pipeline.db.save_news_intel.call_args.kwargs
-            self.assertEqual(saved_kwargs["name"], "科创芯片ETF")
+            self.assertEqual(saved_kwargs["name"], "KODEX 반도체")
 
 
 # ============================================================
@@ -517,7 +517,7 @@ class TestAgentConstructionChain(unittest.TestCase):
         skill_manager = SkillManager()
         test_skill = Skill(
             name="test_skill",
-            display_name="测试策略",
+            display_name="Test strategy",
             description="A test skill",
             instructions="Test instructions for analysis.",
             category="trend",
@@ -526,7 +526,7 @@ class TestAgentConstructionChain(unittest.TestCase):
         skill_manager.register(test_skill)
         skill_manager.activate(["test_skill"])
         instructions = skill_manager.get_skill_instructions()
-        self.assertIn("测试策略", instructions)
+        self.assertIn("Test strategy", instructions)
 
         # Build LLM adapter with mocked config (no real API keys)
         mock_cfg = MagicMock()
@@ -570,7 +570,7 @@ class TestSafeInt(unittest.TestCase):
             mock_cfg.agent_mode = False
             mock_cfg.agent_max_steps = 10
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -597,9 +597,9 @@ class TestSafeInt(unittest.TestCase):
         self.assertEqual(safe_int("80"), 80)
 
     def test_string_with_unit(self):
-        """LLM may return '80分' instead of 80."""
+        """LLM may return '80점' instead of 80."""
         safe_int = self._get_safe_int()
-        self.assertEqual(safe_int("80分"), 80)
+        self.assertEqual(safe_int("80점"), 80)
 
     def test_string_with_percent(self):
         safe_int = self._get_safe_int()
@@ -652,9 +652,9 @@ class TestSkillActivation(unittest.TestCase):
 
         manager = SkillManager()
         # Create test skills instead of importing deleted Python modules
-        skill1 = Skill(name="dragon_head", display_name="龙头策略",
+        skill1 = Skill(name="dragon_head", display_name="Leadership strategy",
                        description="test", instructions="test")
-        skill2 = Skill(name="shrink_pullback", display_name="缩量回踩",
+        skill2 = Skill(name="shrink_pullback", display_name="Low-volume pullback",
                        description="test", instructions="test")
         manager.register(skill1)
         manager.register(skill2)
@@ -667,11 +667,11 @@ class TestSkillActivation(unittest.TestCase):
         from src.agent.skills.base import SkillManager, Skill
 
         manager = SkillManager()
-        skill1 = Skill(name="dragon_head", display_name="龙头策略",
+        skill1 = Skill(name="dragon_head", display_name="Leadership strategy",
                        description="test", instructions="test")
-        skill2 = Skill(name="shrink_pullback", display_name="缩量回踩",
+        skill2 = Skill(name="shrink_pullback", display_name="Low-volume pullback",
                        description="test", instructions="test")
-        skill3 = Skill(name="volume_breakout", display_name="放量突破",
+        skill3 = Skill(name="volume_breakout", display_name="Volume breakout",
                        description="test", instructions="test")
         manager.register(skill1)
         manager.register(skill2)
@@ -710,7 +710,7 @@ class TestSkillActivation(unittest.TestCase):
             mock_cfg.agent_mode = True
             mock_cfg.agent_max_steps = 10
             mock_cfg.agent_skills = []
-            mock_cfg.bocha_api_keys = []
+            mock_cfg.naver_api_keys = []
             mock_cfg.tavily_api_keys = []
             mock_cfg.brave_api_keys = []
             mock_cfg.serpapi_keys = []
@@ -726,22 +726,22 @@ class TestSkillActivation(unittest.TestCase):
             from src.enums import ReportType
             pipeline = StockAnalysisPipeline(config=mock_cfg)
 
-            # Dashboard with "80分" instead of 80
+            # Dashboard with "80점" instead of 80
             agent_result = AgentResult(
                 success=True,
                 content="{}",
                 dashboard={
                     "stock_name": "TestCo",
-                    "sentiment_score": "80分",
-                    "trend_prediction": "看多",
-                    "operation_advice": "买入",
+                    "sentiment_score": "80점",
+                    "trend_prediction": "상승",
+                    "operation_advice": "매수",
                     "decision_type": "buy",
                 },
                 provider="gemini",
             )
 
             result = pipeline._agent_result_to_analysis_result(
-                agent_result, "600519", "TestCo", ReportType.SIMPLE, "q1"
+                agent_result, "005930", "TestCo", ReportType.SIMPLE, "q1"
             )
             self.assertEqual(result.sentiment_score, 80)
 

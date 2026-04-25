@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-批量分析命令
-===================================
-
-批量分析自选股列表中的所有股票。
-"""
+"""Batch analysis command for configured watchlist stocks."""
 
 import logging
 import threading
@@ -20,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 class BatchCommand(BotCommand):
     """
-    批量分析命令
-    
-    批量分析配置中的自选股列表，生成汇总报告。
-    
-    用法：
-        /batch      - 分析所有自选股
-        /batch 3    - 只分析前3只
+    Batch analysis command.
+
+    Analyzes the configured watchlist and generates a summary report.
+
+    Usage:
+        /batch      - Analyze all watchlist stocks.
+        /batch 3    - Analyze only the first 3 stocks.
     """
     
     @property
@@ -35,23 +29,23 @@ class BatchCommand(BotCommand):
     
     @property
     def aliases(self) -> List[str]:
-        return ["b", "批量", "全部"]
+        return ["b", "일괄", "전체"]
     
     @property
     def description(self) -> str:
-        return "批量分析自选股"
+        return "관심 종목 일괄 분석"
     
     @property
     def usage(self) -> str:
-        return "/batch [数量]"
+        return "/batch [count]"
     
     @property
     def admin_only(self) -> bool:
-        """批量分析需要管理员权限（防止滥用）"""
-        return False  # 可以根据需要设为 True
+        """Whether batch analysis requires admin privileges."""
+        return False
     
     def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
-        """执行批量分析命令"""
+        """Execute the batch analysis command."""
         from src.config import get_config
         
         config = get_config()
@@ -61,26 +55,26 @@ class BatchCommand(BotCommand):
         
         if not stock_list:
             return BotResponse.error_response(
-                "自选股列表为空，请先配置 STOCK_LIST"
+                "관심 종목 목록이 비어 있습니다. 먼저 STOCK_LIST를 설정해 주세요"
             )
         
-        # 解析数量参数
+        # Parse count argument.
         limit = None
         if args:
             try:
                 limit = int(args[0])
                 if limit <= 0:
-                    return BotResponse.error_response("数量必须大于0")
+                    return BotResponse.error_response("수량은 0보다 커야 합니다")
             except ValueError:
-                return BotResponse.error_response(f"无效的数量: {args[0]}")
+                return BotResponse.error_response(f"유효하지 않은 수량: {args[0]}")
         
-        # 限制分析数量
+        # Apply count limit.
         if limit:
             stock_list = stock_list[:limit]
         
-        logger.info(f"[BatchCommand] 开始批量分析 {len(stock_list)} 只股票")
+        logger.info("[BatchCommand] Starting batch analysis for %d stocks", len(stock_list))
         
-        # 在后台线程中执行分析
+        # Run analysis in a background thread.
         thread = threading.Thread(
             target=self._run_batch_analysis,
             args=(stock_list, message),
@@ -89,22 +83,22 @@ class BatchCommand(BotCommand):
         thread.start()
         
         return BotResponse.markdown_response(
-            f"✅ **批量分析任务已启动**\n\n"
-            f"• 分析数量: {len(stock_list)} 只\n"
-            f"• 股票列表: {', '.join(stock_list[:5])}"
+            f"✅ **일괄 분석 작업이 시작되었습니다**\n\n"
+            f"• 분석 종목 수: {len(stock_list)}개\n"
+            f"• 종목 목록: {', '.join(stock_list[:5])}"
             f"{'...' if len(stock_list) > 5 else ''}\n\n"
-            f"分析完成后将自动推送汇总报告。"
+            f"분석이 완료되면 요약 리포트가 자동으로 전송됩니다."
         )
     
     def _run_batch_analysis(self, stock_list: List[str], message: BotMessage) -> None:
-        """后台执行批量分析"""
+        """Run batch analysis in the background."""
         try:
             from src.config import get_config
             from main import StockAnalysisPipeline
             
             config = get_config()
             
-            # 创建分析管道
+            # Create analysis pipeline.
             pipeline = StockAnalysisPipeline(
                 config=config,
                 source_message=message,
@@ -112,15 +106,15 @@ class BatchCommand(BotCommand):
                 query_source="bot"
             )
             
-            # 执行分析（会自动推送汇总报告）
+            # Execute analysis; notification is sent by the pipeline.
             results = pipeline.run(
                 stock_codes=stock_list,
                 dry_run=False,
                 send_notification=True
             )
             
-            logger.info(f"[BatchCommand] 批量分析完成，成功 {len(results)} 只")
+            logger.info("[BatchCommand] Batch analysis completed, successful: %d", len(results))
             
         except Exception as e:
-            logger.error(f"[BatchCommand] 批量分析失败: {e}")
+            logger.error("[BatchCommand] Batch analysis failed: %s", e)
             logger.exception(e)

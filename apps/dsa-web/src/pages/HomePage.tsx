@@ -7,7 +7,7 @@ import type { HistoryItem, AnalysisReport, TaskInfo } from '../types/analysis';
 import { historyApi } from '../api/history';
 import { analysisApi, DuplicateTaskError } from '../api/analysis';
 import { validateStockCode } from '../utils/validation';
-import { getRecentStartDate, getTodayInShanghai } from '../utils/format';
+import { getRecentStartDate, getTodayInSeoul } from '../utils/format';
 import { useAnalysisStore } from '../stores/analysisStore';
 import { ReportSummary } from '../components/report';
 import { HistoryList } from '../components/history';
@@ -15,8 +15,7 @@ import { TaskPanel } from '../components/tasks';
 import { useTaskStream } from '../hooks';
 
 /**
- * 首页 - 单页设计
- * 顶部输入 + 左侧历史 + 右侧报告
+ * Home page with input, history, and report panes.
  */
 const HomePage: React.FC = () => {
   const {
@@ -26,12 +25,12 @@ const HomePage: React.FC = () => {
   } = useAnalysisStore();
   const navigate = useNavigate();
 
-  // 输入状态
+  // Input state.
   const [stockCode, setStockCode] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [inputError, setInputError] = useState<string>();
 
-// 历史列表状态
+  // History list state.
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -39,19 +38,19 @@ const HomePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
-  // 报告详情状态
+  // Report detail state.
   const [selectedReport, setSelectedReport] = useState<AnalysisReport | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
 
-  // 任务队列状态
+  // Task queue state.
   const [activeTasks, setActiveTasks] = useState<TaskInfo[]>([]);
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 用于跟踪当前分析请求，避免竞态条件
+  // Track the current analysis request to avoid race conditions.
   const analysisRequestIdRef = useRef<number>(0);
 
-  // 更新任务列表中的任务
+  // Update a task in the task list.
   const updateTask = useCallback((updatedTask: TaskInfo) => {
     setActiveTasks((prev) => {
       const index = prev.findIndex((t) => t.taskId === updatedTask.taskId);
@@ -64,41 +63,41 @@ const HomePage: React.FC = () => {
     });
   }, []);
 
-  // 移除已完成/失败的任务
+  // Remove a completed or failed task.
   const removeTask = useCallback((taskId: string) => {
     setActiveTasks((prev) => prev.filter((t) => t.taskId !== taskId));
   }, []);
 
-  // SSE 任务流
+  // SSE task stream.
   useTaskStream({
     onTaskCreated: (task) => {
       setActiveTasks((prev) => {
-        // 避免重复添加
+        // Avoid duplicate tasks.
         if (prev.some((t) => t.taskId === task.taskId)) return prev;
         return [...prev, task];
       });
     },
     onTaskStarted: updateTask,
     onTaskCompleted: (task) => {
-      // 刷新历史列表
+      // Refresh history.
       fetchHistory();
-      // 延迟移除任务，让用户看到完成状态
+      // Delay removal so users can see the completed state.
       setTimeout(() => removeTask(task.taskId), 2000);
     },
     onTaskFailed: (task) => {
       updateTask(task);
-      // 显示错误提示
-      setStoreError(getParsedApiError(task.error || '分析失败'));
-      // 延迟移除任务
+      // Show error message.
+      setStoreError(getParsedApiError(task.error || '분석 실패'));
+      // Delay task removal.
       setTimeout(() => removeTask(task.taskId), 5000);
     },
     onError: () => {
-      console.warn('SSE 连接断开，正在重连...');
+      console.warn('SSE connection lost; reconnecting...');
     },
     enabled: true,
   });
 
-// 用 ref 追踪易变状态，避免 fetchHistory 频繁重建导致 effect 循环
+  // Track volatile state in refs to avoid effect loops from rebuilding fetchHistory too often.
   const currentPageRef = useRef(currentPage);
   currentPageRef.current = currentPage;
   const historyItemsRef = useRef(historyItems);
@@ -106,7 +105,7 @@ const HomePage: React.FC = () => {
   const selectedReportRef = useRef(selectedReport);
   selectedReportRef.current = selectedReport;
 
-  // 加载历史列表
+  // Load history list.
   const fetchHistory = useCallback(async (autoSelectFirst = false, reset = true, silent = false) => {
     if (!silent) {
       if (reset) {
@@ -124,13 +123,13 @@ const HomePage: React.FC = () => {
     try {
       const response = await historyApi.getList({
         startDate: getRecentStartDate(30),
-        endDate: getTodayInShanghai(),
+        endDate: getTodayInSeoul(),
         page,
         limit: pageSize,
       });
 
       if (silent && reset) {
-        // 后台刷新：合并新增项到列表顶部，保留已加载的分页数据和滚动位置
+        // Background refresh: merge new items while preserving pagination and scroll position.
         setHistoryItems(prev => {
           const existingIds = new Set(prev.map(item => item.id));
           const newItems = response.items.filter(item => !existingIds.has(item.id));
@@ -144,13 +143,13 @@ const HomePage: React.FC = () => {
         setCurrentPage(page);
       }
 
-      // 判断是否还有更多数据
+      // Determine whether more data remains.
       if (!silent) {
         const totalLoaded = reset ? response.items.length : historyItemsRef.current.length + response.items.length;
         setHasMore(totalLoaded < response.total);
       }
 
-      // 如果需要自动选择第一条，且有数据，且当前没有选中报告
+      // Auto-select the first item when requested and no report is currently selected.
       if (autoSelectFirst && response.items.length > 0 && !selectedReportRef.current) {
         const firstItem = response.items[0];
         setIsLoadingReport(true);
@@ -174,14 +173,14 @@ const HomePage: React.FC = () => {
     }
   }, [pageSize, setStoreError]);
 
-  // 加载更多历史记录
+  // Load more history records.
   const handleLoadMore = useCallback(() => {
     if (!isLoadingMore && hasMore) {
       fetchHistory(false, false);
     }
   }, [fetchHistory, isLoadingMore, hasMore]);
 
-  // 初始加载 - 自动选择第一条（仅挂载时执行一次）
+  // Initial load: auto-select the first item once on mount.
   useEffect(() => {
     fetchHistory(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -208,7 +207,7 @@ const HomePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 点击历史项加载报告
+  // Load a report when a history item is clicked.
   const handleHistoryClick = async (recordId: number) => {
     // Increment request ID to cancel any in-flight auto-select result.
     const requestId = ++analysisRequestIdRef.current;
@@ -229,7 +228,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 分析股票（异步模式）
+  // Analyze a stock asynchronously.
   const handleAnalyze = async () => {
     const { valid, message, normalized } = validateStockCode(stockCode);
     if (!valid) {
@@ -243,29 +242,29 @@ const HomePage: React.FC = () => {
     setLoading(true);
     setStoreError(null);
 
-    // 记录当前请求的 ID
+    // Record current request ID.
     const currentRequestId = ++analysisRequestIdRef.current;
 
     try {
-      // 使用异步模式提交分析
+      // Submit analysis in async mode.
       const response = await analysisApi.analyzeAsync({
         stockCode: normalized,
         reportType: 'detailed',
       });
 
-      // 清空输入框
+      // Clear input.
       if (currentRequestId === analysisRequestIdRef.current) {
         setStockCode('');
       }
 
-      // 任务已提交，SSE 会推送更新
+      // Task is submitted; SSE will push updates.
       console.log('Task submitted:', response.taskId);
     } catch (err) {
       console.error('Analysis failed:', err);
       if (currentRequestId === analysisRequestIdRef.current) {
         if (err instanceof DuplicateTaskError) {
-          // 显示重复任务错误
-          setDuplicateError(`股票 ${err.stockCode} 正在分析中，请等待完成`);
+          // Show duplicate task error.
+          setDuplicateError(`${err.stockCode} 종목을 분석 중입니다. 완료될 때까지 기다려 주세요.`);
         } else {
           setStoreError(getParsedApiError(err));
         }
@@ -276,7 +275,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 回车提交
+  // Submit on Enter.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && stockCode && !isAnalyzing) {
       handleAnalyze();
@@ -304,7 +303,7 @@ const HomePage: React.FC = () => {
       className="min-h-screen flex flex-col md:grid overflow-hidden w-full"
       style={{ gridTemplateColumns: 'minmax(12px, 1fr) 256px 24px minmax(auto, 896px) minmax(12px, 1fr)', gridTemplateRows: 'auto 1fr' }}
     >
-      {/* 顶部输入栏 */}
+      {/* Top input bar */}
       <header
         className="md:col-start-2 md:col-end-5 md:row-start-1 py-3 px-3 md:px-0 border-b border-white/5 flex-shrink-0 flex items-center min-w-0 overflow-hidden"
       >
@@ -313,7 +312,7 @@ const HomePage: React.FC = () => {
           <button
             onClick={() => setSidebarOpen(true)}
             className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-white/10 transition-colors text-secondary hover:text-white flex-shrink-0"
-            title="历史记录"
+            title="분석 기록"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -328,7 +327,7 @@ const HomePage: React.FC = () => {
                 setInputError(undefined);
               }}
               onKeyDown={handleKeyDown}
-              placeholder="输入股票代码，如 600519、00700、AAPL"
+              placeholder="주식 코드를 입력하세요. 예: 005930, AAPL"
               disabled={isAnalyzing}
               className={`input-terminal w-full ${inputError ? 'border-danger/50' : ''}`}
             />
@@ -351,10 +350,10 @@ const HomePage: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                分析中
+                분석 중
               </>
             ) : (
-              '分析'
+              '분석'
             )}
           </button>
         </div>
@@ -378,7 +377,7 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* 右侧报告详情 */}
+      {/* Right report detail */}
       <section className="md:col-start-4 md:row-start-2 flex-1 overflow-y-auto overflow-x-auto px-3 md:px-0 md:pl-1 min-w-0 min-h-0">
         {analysisError ? (
           <ApiErrorAlert
@@ -389,7 +388,7 @@ const HomePage: React.FC = () => {
         {isLoadingReport ? (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="w-10 h-10 border-3 border-cyan/20 border-t-cyan rounded-full animate-spin" />
-            <p className="mt-3 text-secondary text-sm">加载报告中...</p>
+            <p className="mt-3 text-secondary text-sm">리포트를 불러오는 중...</p>
           </div>
         ) : selectedReport ? (
           <div className="max-w-4xl">
@@ -408,7 +407,7 @@ const HomePage: React.FC = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                追问 AI
+                AI에게 이어서 질문
               </button>
             </div>
             <ReportSummary data={selectedReport} isHistory />
@@ -420,9 +419,9 @@ const HomePage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-base font-medium text-white mb-1.5">开始分析</h3>
+            <h3 className="text-base font-medium text-white mb-1.5">분석 시작</h3>
             <p className="text-xs text-muted max-w-xs">
-              输入股票代码进行分析，或从左侧选择历史报告查看
+              종목 코드를 입력해 분석하거나 왼쪽에서 이전 리포트를 선택하세요
             </p>
           </div>
         )}

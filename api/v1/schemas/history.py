@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-历史记录相关模型
-===================================
-
-职责：
-1. 定义历史记录列表和详情模型
-2. 定义分析报告完整模型
-"""
+"""Schemas for analysis history and report detail responses."""
 
 from typing import Optional, List, Any
 
@@ -15,44 +7,44 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class HistoryItem(BaseModel):
-    """历史记录摘要（列表展示用）"""
+    """History summary item used in list views."""
 
-    id: Optional[int] = Field(None, description="分析历史记录主键 ID")
-    query_id: str = Field(..., description="分析记录关联 query_id（批量分析时重复）")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
-    report_type: Optional[str] = Field(None, description="报告类型")
+    id: Optional[int] = Field(None, description="분석 이력 기본 키 ID")
+    query_id: str = Field(..., description="분석 기록의 query_id")
+    stock_code: str = Field(..., description="종목 코드")
+    stock_name: Optional[str] = Field(None, description="종목명")
+    report_type: Optional[str] = Field(None, description="리포트 유형")
     sentiment_score: Optional[int] = Field(
         None, 
-        description="情绪评分 (0-100)",
+        description="심리 점수 (0-100)",
         ge=0,
         le=100
     )
-    operation_advice: Optional[str] = Field(None, description="操作建议")
-    created_at: Optional[str] = Field(None, description="创建时间")
+    operation_advice: Optional[str] = Field(None, description="투자 판단")
+    created_at: Optional[str] = Field(None, description="생성 시간")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "id": 1234,
                 "query_id": "abc123",
-                "stock_code": "600519",
-                "stock_name": "贵州茅台",
+                "stock_code": "005930",
+                "stock_name": "삼성전자",
                 "report_type": "detailed",
                 "sentiment_score": 75,
-                "operation_advice": "持有",
+                "operation_advice": "보유",
                 "created_at": "2024-01-01T12:00:00"
             }
         }
 
 
 class HistoryListResponse(BaseModel):
-    """历史记录列表响应"""
+    """History list response."""
     
-    total: int = Field(..., description="总记录数")
-    page: int = Field(..., description="当前页码")
-    limit: int = Field(..., description="每页数量")
-    items: List[HistoryItem] = Field(default_factory=list, description="记录列表")
+    total: int = Field(..., description="전체 기록 수")
+    page: int = Field(..., description="현재 페이지")
+    limit: int = Field(..., description="페이지당 개수")
+    items: List[HistoryItem] = Field(default_factory=list, description="기록 목록")
     
     class Config:
         json_schema_extra = {
@@ -66,27 +58,27 @@ class HistoryListResponse(BaseModel):
 
 
 class NewsIntelItem(BaseModel):
-    """新闻情报条目"""
+    """News intelligence item."""
 
-    title: str = Field(..., description="新闻标题")
-    snippet: str = Field("", description="新闻摘要（最多200字）")
-    url: str = Field(..., description="新闻链接")
+    title: str = Field(..., description="뉴스 제목")
+    snippet: str = Field("", description="뉴스 요약")
+    url: str = Field(..., description="뉴스 링크")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "title": "公司发布业绩快报，营收同比增长 20%",
-                "snippet": "公司公告显示，季度营收同比增长 20%...",
+                "title": "삼성전자, 분기 실적 발표",
+                "snippet": "삼성전자가 분기 실적과 향후 전망을 공개했습니다...",
                 "url": "https://example.com/news/123"
             }
         }
 
 
 class NewsIntelResponse(BaseModel):
-    """新闻情报响应"""
+    """News intelligence response."""
 
-    total: int = Field(..., description="新闻条数")
-    items: List[NewsIntelItem] = Field(default_factory=list, description="新闻列表")
+    total: int = Field(..., description="뉴스 수")
+    items: List[NewsIntelItem] = Field(default_factory=list, description="뉴스 목록")
 
     class Config:
         json_schema_extra = {
@@ -98,77 +90,77 @@ class NewsIntelResponse(BaseModel):
 
 
 class ReportMeta(BaseModel):
-    """报告元信息"""
+    """Report metadata."""
 
     model_config = ConfigDict(protected_namespaces=("model_validate", "model_dump"))
 
-    id: Optional[int] = Field(None, description="分析历史记录主键 ID（仅历史报告有此字段）")
-    query_id: str = Field(..., description="分析记录关联 query_id（批量分析时重复）")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
-    report_type: Optional[str] = Field(None, description="报告类型")
-    created_at: Optional[str] = Field(None, description="创建时间")
-    current_price: Optional[float] = Field(None, description="分析时股价")
-    change_pct: Optional[float] = Field(None, description="分析时涨跌幅(%)")
-    model_used: Optional[str] = Field(None, description="分析使用的 LLM 模型")
+    id: Optional[int] = Field(None, description="분석 이력 기본 키 ID")
+    query_id: str = Field(..., description="분석 기록의 query_id")
+    stock_code: str = Field(..., description="종목 코드")
+    stock_name: Optional[str] = Field(None, description="종목명")
+    report_type: Optional[str] = Field(None, description="리포트 유형")
+    created_at: Optional[str] = Field(None, description="생성 시간")
+    current_price: Optional[float] = Field(None, description="분석 시점 가격")
+    change_pct: Optional[float] = Field(None, description="분석 시점 등락률(%)")
+    model_used: Optional[str] = Field(None, description="분석에 사용한 LLM 모델")
 
 
 class ReportSummary(BaseModel):
-    """报告概览区"""
+    """Report summary section."""
     
-    analysis_summary: Optional[str] = Field(None, description="关键结论")
-    operation_advice: Optional[str] = Field(None, description="操作建议")
-    trend_prediction: Optional[str] = Field(None, description="趋势预测")
+    analysis_summary: Optional[str] = Field(None, description="핵심 결론")
+    operation_advice: Optional[str] = Field(None, description="투자 판단")
+    trend_prediction: Optional[str] = Field(None, description="추세 전망")
     sentiment_score: Optional[int] = Field(
         None, 
-        description="情绪评分 (0-100)",
+        description="심리 점수 (0-100)",
         ge=0,
         le=100
     )
-    sentiment_label: Optional[str] = Field(None, description="情绪标签")
+    sentiment_label: Optional[str] = Field(None, description="심리 라벨")
 
 
 class ReportStrategy(BaseModel):
-    """策略点位区"""
+    """Strategy price section."""
     
-    ideal_buy: Optional[str] = Field(None, description="理想买入价")
-    secondary_buy: Optional[str] = Field(None, description="第二买入价")
-    stop_loss: Optional[str] = Field(None, description="止损价")
-    take_profit: Optional[str] = Field(None, description="止盈价")
+    ideal_buy: Optional[str] = Field(None, description="우선 매수가")
+    secondary_buy: Optional[str] = Field(None, description="보조 매수가")
+    stop_loss: Optional[str] = Field(None, description="손절가")
+    take_profit: Optional[str] = Field(None, description="목표가")
 
 
 class ReportDetails(BaseModel):
-    """报告详情区"""
+    """Report detail section."""
     
-    news_content: Optional[str] = Field(None, description="新闻摘要")
-    raw_result: Optional[Any] = Field(None, description="原始分析结果（JSON）")
-    context_snapshot: Optional[Any] = Field(None, description="分析时上下文快照（JSON）")
+    news_content: Optional[str] = Field(None, description="뉴스 요약")
+    raw_result: Optional[Any] = Field(None, description="원본 분석 결과(JSON)")
+    context_snapshot: Optional[Any] = Field(None, description="분석 시점 컨텍스트 스냅샷(JSON)")
 
 
 class AnalysisReport(BaseModel):
-    """完整分析报告"""
+    """Complete analysis report."""
     
-    meta: ReportMeta = Field(..., description="元信息")
-    summary: ReportSummary = Field(..., description="概览区")
-    strategy: Optional[ReportStrategy] = Field(None, description="策略点位区")
-    details: Optional[ReportDetails] = Field(None, description="详情区")
+    meta: ReportMeta = Field(..., description="메타 정보")
+    summary: ReportSummary = Field(..., description="요약 영역")
+    strategy: Optional[ReportStrategy] = Field(None, description="전략 가격 영역")
+    details: Optional[ReportDetails] = Field(None, description="상세 영역")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "meta": {
                     "query_id": "abc123",
-                    "stock_code": "600519",
-                    "stock_name": "贵州茅台",
+                    "stock_code": "005930",
+                    "stock_name": "삼성전자",
                     "report_type": "detailed",
                     "created_at": "2024-01-01T12:00:00"
                 },
                 "summary": {
-                    "analysis_summary": "技术面向好，建议持有",
-                    "operation_advice": "持有",
-                    "trend_prediction": "看多",
+                    "analysis_summary": "기술적 흐름이 양호해 보유 관점이 유효합니다",
+                    "operation_advice": "보유",
+                    "trend_prediction": "강세",
                     "sentiment_score": 75,
-                    "sentiment_label": "乐观"
+                    "sentiment_label": "낙관"
                 },
                 "strategy": {
                     "ideal_buy": "1800.00",

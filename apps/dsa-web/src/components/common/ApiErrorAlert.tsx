@@ -25,7 +25,7 @@ export const ApiErrorAlert: React.FC<ApiErrorAlertProps> = ({
       <p className="mt-1 text-xs opacity-90">{error.message}</p>
       {showDetails ? (
         <details className="mt-3 rounded-lg border border-white/8 bg-black/15 px-3 py-2">
-          <summary className="cursor-pointer text-xs text-red-100/90">查看详情</summary>
+          <summary className="cursor-pointer text-xs text-red-100/90">상세 보기</summary>
           <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] leading-5 text-red-100/85">
             {error.rawMessage}
           </pre>

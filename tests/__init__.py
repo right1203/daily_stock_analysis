@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 测试包
+KR/US stock analysis test package
 ===================================
 
-职责：
-1. 提供单元测试包结构
-2. 统一测试模块入口
+Scope:
+1. Provide the unit test package structure
+2. Provide a shared test module entry point
 """

@@ -67,9 +67,9 @@ class AnalyzeCommand(BotCommand):
         """Execute analysis command."""
         code = canonical_stock_code(args[0])
         
-        # Decide report type (default: simple; full/완전/상세 => full)
+        # Decide report type (default: simple; full/전체/상세 => full).
         report_type = "simple"
-        if len(args) > 1 and args[1].lower() in ["full", "完整", "详细"]:
+        if len(args) > 1 and args[1].lower() in ["full", "전체", "상세"]:
             report_type = "full"
         logger.info(f"[AnalyzeCommand] Analyze stock: {code}, report_type: {report_type}")
         
@@ -90,7 +90,7 @@ class AnalyzeCommand(BotCommand):
             if result.get("success"):
                 task_id = result.get("task_id", "")
                 return BotResponse.markdown_response(
-                    f"✅ **分析任务已提交**\n\n"
+                    f"✅ **분석 작업이 제출되었습니다**\n\n"
                     f"• 종목 코드: `{code}`\n"
                     f"• 보고서 유형: {ReportType.from_str(report_type).display_name}\n"
                     f"• 작업 ID: `{task_id[:20]}...`\n\n"
