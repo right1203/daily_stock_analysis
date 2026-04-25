@@ -151,7 +151,7 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
         self.assertTrue(ok)
         mock_post.assert_called_once()
-        
+
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
     def test_send_to_discord_via_notification_service_with_bot_requires_chunking(self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock):
@@ -220,33 +220,20 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
-    def test_send_to_feishu_via_notification_service(self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock):
-        cfg = _make_config(feishu_webhook_url="https://feishu.example")
+    def test_legacy_feishu_config_does_not_enable_notification_service(
+        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
+    ):
+        cfg = _make_config(feishu_webhook_url="https://feishu.example", feishu_max_bytes=2000)
         mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"code": 0})
 
         service = NotificationService()
-        self.assertIn(NotificationChannel.FEISHU, service.get_available_channels())
+        self.assertNotIn(NotificationChannel.FEISHU, service.get_available_channels())
+        self.assertFalse(service.is_available())
 
         ok = service.send("hello feishu")
 
-        self.assertTrue(ok)
-        mock_post.assert_called_once()
-        
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
-    def test_send_to_feishu_via_notification_service_requires_chunking(self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock):
-        cfg = _make_config(feishu_webhook_url="https://feishu.example", feishu_max_bytes=2000)
-        mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"code": 0})
-
-        service = NotificationService()
-        self.assertIn(NotificationChannel.FEISHU, service.get_available_channels())
-
-        ok = service.send("A" * 6000)
-
-        self.assertTrue(ok)
-        self.assertAlmostEqual(mock_post.call_count, 4, delta=1)
+        self.assertFalse(ok)
+        mock_post.assert_not_called()
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
@@ -270,37 +257,37 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
-    def test_send_to_pushplus_via_notification_service(
+    def test_legacy_pushplus_config_does_not_enable_notification_service(
         self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
     ):
         cfg = _make_config(pushplus_token="TOKEN")
         mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"code": 200})
 
         service = NotificationService()
-        self.assertIn(NotificationChannel.PUSHPLUS, service.get_available_channels())
+        self.assertNotIn(NotificationChannel.PUSHPLUS, service.get_available_channels())
+        self.assertFalse(service.is_available())
 
         ok = service.send("pushplus content")
 
-        self.assertTrue(ok)
-        mock_post.assert_called_once()
+        self.assertFalse(ok)
+        mock_post.assert_not_called()
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
-    def test_send_to_serverchan3_via_notification_service(
+    def test_legacy_serverchan3_config_does_not_enable_notification_service(
         self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
     ):
         cfg = _make_config(serverchan3_sendkey="SCTKEY")
         mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"code": 0})
 
         service = NotificationService()
-        self.assertIn(NotificationChannel.SERVERCHAN3, service.get_available_channels())
+        self.assertNotIn(NotificationChannel.SERVERCHAN3, service.get_available_channels())
+        self.assertFalse(service.is_available())
 
         ok = service.send("serverchan content")
 
-        self.assertTrue(ok)
-        mock_post.assert_called_once()
+        self.assertFalse(ok)
+        mock_post.assert_not_called()
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
@@ -321,33 +308,20 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
-    def test_send_to_wechat_via_notification_service(self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock):
-        cfg = _make_config(wechat_webhook_url="https://wechat.example")
+    def test_legacy_wechat_config_does_not_enable_notification_service(
+        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
+    ):
+        cfg = _make_config(wechat_webhook_url="https://wechat.example", wechat_max_bytes=2000)
         mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"errcode": 0})
 
         service = NotificationService()
-        self.assertIn(NotificationChannel.WECHAT, service.get_available_channels())
+        self.assertNotIn(NotificationChannel.WECHAT, service.get_available_channels())
+        self.assertFalse(service.is_available())
 
         ok = service.send("hello wechat")
 
-        self.assertTrue(ok)
-        mock_post.assert_called_once()
-
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
-    def test_send_to_wechat_via_notification_service_requires_chunking(self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock):
-        cfg = _make_config(wechat_webhook_url="https://wechat.example", wechat_max_bytes=2000)
-        mock_get_config.return_value = cfg
-        mock_post.return_value = _make_response(200, {"errcode": 0})
-
-        service = NotificationService()
-        self.assertIn(NotificationChannel.WECHAT, service.get_available_channels())
-
-        ok = service.send("A" * 6000)
-
-        self.assertTrue(ok)
-        self.assertAlmostEqual(mock_post.call_count, 4, delta=1)
+        self.assertFalse(ok)
+        mock_post.assert_not_called()
 
 
 if __name__ == "__main__":

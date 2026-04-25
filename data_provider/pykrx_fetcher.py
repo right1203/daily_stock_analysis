@@ -10,7 +10,6 @@ KOSPI, KOSDAQ 종목의 일봉 데이터를 제공합니다.
 """
 
 import logging
-from typing import Optional
 
 import pandas as pd
 
@@ -20,13 +19,15 @@ from data_provider.kr_index_mapping import is_kr_stock_code, is_kr_index_code
 logger = logging.getLogger(__name__)
 
 _PYKRX_AVAILABLE = False
+pykrx_stock = None
 try:
     from pykrx import stock as pykrx_stock
     _PYKRX_AVAILABLE = True
-except ImportError:
+except Exception as exc:
     logger.warning(
         "pykrx not installed; Korean market data unavailable. "
-        "Run: pip install pykrx"
+        "Run: pip install pykrx. Import error: %s",
+        exc,
     )
 
 

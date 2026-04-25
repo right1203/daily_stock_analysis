@@ -58,6 +58,40 @@ pytest tests/test_pykrx_fetcher.py tests/test_kr_index_mapping.py tests/test_yfi
 pytest tests/test_config_validate_structured.py tests/test_notification.py tests/test_notification_sender.py -v
 ```
 
+## Latest Verification - 2026-04-26
+
+Dependency sync:
+
+```bash
+uv sync --extra dev
+```
+
+Focused pytest suite:
+
+```bash
+uv run pytest tests/test_notification_sender.py tests/test_notification.py tests/test_config_validate_structured.py tests/test_agent_executor.py tests/test_pipeline_realtime_indicators.py tests/test_pykrx_fetcher.py tests/test_pipeline_notification_image_routing.py -q
+```
+
+Result:
+
+```text
+122 passed, 1 warning in 1.93s
+```
+
+Full pytest suite:
+
+```bash
+uv run pytest
+```
+
+Result:
+
+```text
+430 passed, 21 skipped, 39 warnings, 88 subtests passed in 23.68s
+```
+
+Warnings are currently from third-party `pykrx`/`pkg_resources`, Pydantic v2 deprecations, `lark_oapi` deprecations, and legacy `test_env.py` tests returning bool values.
+
 ## Harness Artifact Checks
 
 하네스 파일 존재 확인:

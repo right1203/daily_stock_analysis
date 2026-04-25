@@ -1084,29 +1084,25 @@ class Config:
 
         # --- 검색 엔진 (정보 제공용) ---
         if not (
-            self.bocha_api_keys
-            or self.tavily_api_keys
+            self.tavily_api_keys
             or self.brave_api_keys
             or self.serpapi_keys
         ):
             issues.append(ConfigIssue(
                 severity="info",
-                message="검색 엔진 API Key 미설정 (Bocha/Tavily/Brave/SerpAPI), 뉴스 검색 기능 사용 불가",
-                field="BOCHA_API_KEY",
+                message="검색 엔진 API Key 미설정 (Tavily/Brave/SerpAPI), 뉴스 검색 기능 사용 불가",
+                field="TAVILY_API_KEY",
             ))
 
         # --- 알림 채널 ---
         has_notification = bool(
-            self.wechat_webhook_url
-            or self.feishu_webhook_url
-            or (self.telegram_bot_token and self.telegram_chat_id)
+            (self.telegram_bot_token and self.telegram_chat_id)
             or (self.email_sender and self.email_password)
             or (self.pushover_user_key and self.pushover_api_token)
-            or self.pushplus_token
-            or self.serverchan3_sendkey
             or self.custom_webhook_urls
             or (self.discord_bot_token and self.discord_main_channel_id)
             or self.discord_webhook_url
+            or self.astrbot_url
         )
         if not has_notification:
             issues.append(ConfigIssue(

@@ -20,8 +20,8 @@ AI 기반 한국(KOSPI/KOSDAQ) + 미국 주식 분석 자동화 프로젝트입�
 
 - 시세 데이터: `pykrx`(KR), `yfinance`(US)
 - 뉴스 검색:
-- 한국 시장: 네이버 검색 API
-- 미국 시장: 글로벌 검색(Tavily, SerpAPI, Brave)
+  - 한국 시장: 네이버 검색 API
+  - 미국 시장: 글로벌 검색(Tavily, SerpAPI, Brave)
 - 중국 시장/중국 전용 검색/중국 전용 데이터 공급자는 지원하지 않습니다.
 
 ## 빠른 시작
@@ -47,9 +47,9 @@ AI 기반 한국(KOSPI/KOSDAQ) + 미국 주식 분석 자동화 프로젝트입�
 ```bash
 git clone https://github.com/ZhuLinsen/daily_stock_analysis.git
 cd daily_stock_analysis
-pip install -r requirements.txt
+uv sync
 cp .env.example .env
-python main.py
+uv run python main.py
 ```
 
 ## 알림 채널

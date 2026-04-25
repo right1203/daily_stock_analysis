@@ -2,7 +2,7 @@
 
 ## Status
 
-- queued from baseline audit
+- in progress on `codex/kr-us-market-cleanup`
 
 ## Owned Files
 
@@ -33,12 +33,25 @@
 
 ## Remaining Risks
 
-- Existing notification tests still cover China channels; update or remove them in the same slice as the channel cleanup.
+- China-channel sender modules are retained as no-op compatibility shims; remove imports fully only after confirming no serialized config or old deployments still reference them.
 - Some sender modules already act as compatibility shims. Decide whether to keep unsupported stubs temporarily or remove imports fully.
 - API schema docs are generated-like JSON; update them only with the same source-of-truth convention used by the project.
+
+## Completed In Current Slice
+
+- `NotificationService._detect_all_channels()` no longer activates WeChat, Feishu, PushPlus, or ServerChan from legacy config keys.
+- Isolated China-channel sender tests now assert no-op `False` behavior and no network calls.
+- `Config.validate_structured()` now treats only supported KR+US notification channels as active notification configuration.
+- Pipeline image routing tests now exercise Telegram image routing instead of WeChat-only routing.
 
 ## Suggested Verification
 
 ```bash
 pytest tests/test_config_validate_structured.py tests/test_system_config_service.py tests/test_notification.py tests/test_notification_sender.py -v
+```
+
+Completed:
+
+```bash
+uv run pytest tests/test_notification_sender.py tests/test_notification.py tests/test_config_validate_structured.py tests/test_pipeline_notification_image_routing.py -q
 ```

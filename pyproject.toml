@@ -17,6 +17,7 @@ dependencies = [
     "baostock>=0.8.0",
     "yfinance>=0.2.0",
     "pykrx>=1.0.45",
+    "setuptools>=70.0.0,<81",
     # 飞书
     "lark-oapi>=1.0.0",
     # 데이터 처리

@@ -8,7 +8,6 @@ Covers:
   legacy keys) via llm_model_list
 - validate() backward-compat: still returns List[str] with the same messages
 """
-import pytest
 from unittest.mock import patch
 
 from src.config import Config, ConfigIssue
@@ -25,7 +24,7 @@ def _make_config(**kwargs) -> Config:
     only have to specify the fields that matter for their scenario.
     """
     defaults = dict(
-        stock_list=["600519"],
+        stock_list=["005930"],
         tushare_token=None,
         # Populate llm_model_list as the three-tier signal
         llm_model_list=[{"model_name": "gemini/gemini-2.0-flash", "litellm_params": {"api_key": "sk-test"}}],
@@ -38,10 +37,10 @@ def _make_config(**kwargs) -> Config:
         tavily_api_keys=[],
         brave_api_keys=[],
         serpapi_keys=[],
-        wechat_webhook_url="https://example.com/webhook",
+        wechat_webhook_url=None,
         feishu_webhook_url=None,
-        telegram_bot_token=None,
-        telegram_chat_id=None,
+        telegram_bot_token="TOKEN",
+        telegram_chat_id="CHAT",
         email_sender=None,
         email_password=None,
         pushover_user_key=None,
@@ -207,21 +206,34 @@ class TestValidateStructuredLLM:
 
 class TestValidateStructuredNotification:
     def test_no_notification_is_warning(self):
-        cfg = _make_config(wechat_webhook_url=None)
+        cfg = _make_config(telegram_bot_token=None, telegram_chat_id=None)
         issues = cfg.validate_structured()
         warn = [i for i in issues if i.severity == "warning"]
-        assert any("通知渠道" in i.message for i in warn)
+        assert any("알림 채널" in i.message for i in warn)
 
     def test_notification_configured_no_warning(self):
-        cfg = _make_config(wechat_webhook_url="https://example.com/wh")
+        cfg = _make_config(telegram_bot_token="TOKEN", telegram_chat_id="CHAT")
         issues = cfg.validate_structured()
-        assert not any(i.severity == "warning" and "通知渠道" in i.message for i in issues)
+        assert not any(i.severity == "warning" and "알림 채널" in i.message for i in issues)
+
+    def test_legacy_china_notification_config_is_warning(self):
+        cfg = _make_config(
+            telegram_bot_token=None,
+            telegram_chat_id=None,
+            wechat_webhook_url="https://example.com/wechat",
+            feishu_webhook_url="https://example.com/feishu",
+            pushplus_token="TOKEN",
+            serverchan3_sendkey="SCTKEY",
+        )
+        issues = cfg.validate_structured()
+        assert any(i.severity == "warning" and "알림 채널" in i.message for i in issues)
 
     def test_no_search_engine_is_info(self):
         cfg = _make_config()
         issues = cfg.validate_structured()
         info = [i for i in issues if i.severity == "info"]
-        assert any("搜索引擎" in i.message for i in info)
+        assert any("검색 엔진" in i.message for i in info)
+        assert not any("Bocha" in i.message for i in info)
 
 
 # ---------------------------------------------------------------------------

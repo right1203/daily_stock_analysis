@@ -79,35 +79,35 @@ class MarketOverview:
 
 class MarketAnalyzer:
     """
-    大盘复盘分析器
+    Market recap analyzer.
     
-    功能：
-    1. 获取大盘指数实时行情
-    2. 获取市场涨跌统计
-    3. 获取板块涨跌榜
-    4. 搜索市场新闻
-    5. 生成大盘复盘报告
+    Responsibilities:
+    1. Fetch major market index quotes
+    2. Fetch market breadth statistics where available
+    3. Fetch sector rankings where available
+    4. Search market news
+    5. Generate a market recap report
     """
     
     def __init__(
         self,
         search_service: Optional[SearchService] = None,
         analyzer=None,
-        region: str = "cn",
+        region: str = "kr",
     ):
         """
-        初始化大盘分析器
+        Initialize the market analyzer.
 
         Args:
-            search_service: 搜索服务实例
-            analyzer: AI分析器实例（用于调用LLM）
-            region: 市场区域 cn=A股 us=美股
+            search_service: Search service instance.
+            analyzer: Analyzer instance used for LLM calls.
+            region: Market region, kr for Korean stocks or us for US stocks.
         """
         self.config = get_config()
         self.search_service = search_service
         self.analyzer = analyzer
         self.data_manager = DataFetcherManager()
-        self.region = region if region in ("cn", "us") else "cn"
+        self.region = region if region in ("kr", "us") else "kr"
         self.profile: MarketProfile = get_profile(self.region)
         self.strategy = get_market_strategy_blueprint(self.region)
 
@@ -257,8 +257,8 @@ class MarketAnalyzer:
         try:
             logger.info("[大盘] 开始搜索市场新闻...")
             
-            # 根据 region 设置搜索上下文名称，避免美股搜索被解读为 A 股语境
-            market_name = "大盘" if self.region == "cn" else "US market"
+            # Keep market context explicit so KR and US searches do not leak legacy assumptions.
+            market_name = "Korean market" if self.region == "kr" else "US market"
             for query in search_queries:
                 response = self.search_service.search_stock_news(
                     stock_code="market",
@@ -651,7 +651,7 @@ Output the report content directly, no extra commentary.
 - **领涨**: {top_text}
 - **领跌**: {bottom_text}
 """
-        market_label = "A股" if self.region == "cn" else "美股"
+        market_label = "한국 시장" if self.region == "kr" else "US market"
         strategy_summary = self.strategy.to_markdown_block()
         report = f"""## {overview.date} 大盘复盘
 

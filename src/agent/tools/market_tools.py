@@ -24,7 +24,7 @@ def _get_fetcher_manager():
 # get_market_indices
 # ============================================================
 
-def _handle_get_market_indices(region: str = "cn") -> dict:
+def _handle_get_market_indices(region: str = "kr") -> dict:
     """Get major market indices."""
     manager = _get_fetcher_manager()
     indices = manager.get_main_indices(region=region)
@@ -41,16 +41,16 @@ def _handle_get_market_indices(region: str = "cn") -> dict:
 
 get_market_indices_tool = ToolDefinition(
     name="get_market_indices",
-    description="Get major market indices (e.g., Shanghai Composite, Shenzhen Component, "
-                "CSI 300 for China; S&P 500, Nasdaq, Dow for US). Provides market overview.",
+    description="Get major market indices (e.g., KOSPI and KOSDAQ for Korea; "
+                "S&P 500, Nasdaq, Dow for US). Provides market overview.",
     parameters=[
         ToolParameter(
             name="region",
             type="string",
-            description="Market region: 'cn' for China A-shares, 'us' for US stocks (default: 'cn')",
+            description="Market region: 'kr' for Korean stocks, 'us' for US stocks (default: 'kr')",
             required=False,
-            default="cn",
-            enum=["cn", "us"],
+            default="kr",
+            enum=["kr", "us"],
         ),
     ],
     handler=_handle_get_market_indices,

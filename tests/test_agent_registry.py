@@ -402,6 +402,34 @@ class TestBuiltinToolDefinitions(unittest.TestCase):
             self.assertIsInstance(td, ToolDefinition)
             self.assertEqual(td.category, "market")
 
+    def test_market_indices_tool_uses_kr_us_regions(self):
+        from src.agent.tools.market_tools import get_market_indices_tool
+
+        region_param = next(p for p in get_market_indices_tool.parameters if p.name == "region")
+
+        self.assertEqual(region_param.default, "kr")
+        self.assertEqual(region_param.enum, ["kr", "us"])
+        self.assertNotIn("China", get_market_indices_tool.description)
+        self.assertNotIn("cn", region_param.description)
+
+    def test_data_tool_stock_code_examples_are_kr_us(self):
+        from src.agent.tools.data_tools import ALL_DATA_TOOLS
+
+        stock_code_descriptions = [
+            param.description
+            for tool in ALL_DATA_TOOLS
+            for param in tool.parameters
+            if param.name == "stock_code"
+        ]
+
+        self.assertGreater(len(stock_code_descriptions), 0)
+        for description in stock_code_descriptions:
+            self.assertIn("005930", description)
+            self.assertIn("AAPL", description)
+            self.assertNotIn("A-share", description)
+            self.assertNotIn("HK", description)
+            self.assertNotIn("hk", description)
+
     def test_all_tools_have_valid_schemas(self):
         """All tools should generate valid OpenAI-format schemas (used by litellm)."""
         from src.agent.tools.data_tools import ALL_DATA_TOOLS

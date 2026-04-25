@@ -30,6 +30,16 @@ class TestMarketStrategyBlueprint(unittest.TestCase):
 class TestMarketAnalyzerStrategyPrompt(unittest.TestCase):
     """Validate strategy section is injected into prompt/report."""
 
+    def test_default_region_is_kr(self):
+        analyzer = MarketAnalyzer()
+
+        self.assertEqual(analyzer.region, "kr")
+
+    def test_invalid_region_falls_back_to_kr(self):
+        analyzer = MarketAnalyzer(region="cn")
+
+        self.assertEqual(analyzer.region, "kr")
+
     def test_kr_prompt_contains_strategy_plan_section(self):
         analyzer = MarketAnalyzer(region="kr")
         prompt = analyzer._build_review_prompt(MarketOverview(date="2026-02-24"), [])

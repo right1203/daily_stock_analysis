@@ -2,7 +2,7 @@
 
 ## Status
 
-- queued from baseline audit
+- in progress on `codex/kr-us-market-cleanup`
 
 ## Owned Files
 
@@ -30,9 +30,21 @@
 - Frontend strings and backend schema descriptions may need coordinated updates to avoid mismatched UI/API text.
 - Some Chinese characters appear in proper nouns or historical references; classify before replacing.
 
+## Completed In Current Slice
+
+- Agent user-message tests now assert Korean labels for stock code, report type, and decision dashboard output.
+- Structured config validation tests now assert Korean notification/search messages.
+- Realtime indicator tests now use KR stock examples and Korean MA status labels.
+
 ## Suggested Verification
 
 ```bash
 rg -n "[\p{Han}]" src api bot apps/dsa-web/src tests --glob '!apps/dsa-web/package-lock.json'
 python3 -m py_compile main.py src/*.py data_provider/*.py
+```
+
+Completed:
+
+```bash
+uv run pytest tests/test_agent_executor.py::TestBuildUserMessage tests/test_config_validate_structured.py::TestValidateStructuredNotification tests/test_pipeline_realtime_indicators.py -q
 ```

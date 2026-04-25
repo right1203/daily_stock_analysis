@@ -73,7 +73,7 @@ get_realtime_quote_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="Stock code, e.g., '600519' (A-share), 'AAPL' (US), 'hk00700' (HK)",
+            description="Stock code, e.g., '005930' (KR), 'AAPL' (US)",
         ),
     ],
     handler=_handle_get_realtime_quote,
@@ -116,7 +116,7 @@ get_daily_history_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="Stock code, e.g., '600519' (A-share), 'AAPL' (US)",
+            description="Stock code, e.g., '005930' (KR), 'AAPL' (US)",
         ),
         ToolParameter(
             name="days",
@@ -167,7 +167,7 @@ get_chip_distribution_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="A-share stock code, e.g., '600519'",
+            description="Stock code, e.g., '005930' (KR), 'AAPL' (US when supported)",
         ),
     ],
     handler=_handle_get_chip_distribution,
@@ -208,7 +208,7 @@ get_analysis_context_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="Stock code, e.g., '600519'",
+            description="Stock code, e.g., '005930' (KR), 'AAPL' (US)",
         ),
     ],
     handler=_handle_get_analysis_context,
@@ -287,7 +287,7 @@ get_stock_info_tool = ToolDefinition(
         ToolParameter(
             name="stock_code",
             type="string",
-            description="A-share stock code, e.g., '600519'",
+            description="Stock code, e.g., '005930' (KR), 'AAPL' (US when supported)",
         ),
     ],
     handler=_handle_get_stock_info,

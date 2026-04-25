@@ -111,30 +111,17 @@ class TestWechatSender(unittest.TestCase):
         result = sender.send_to_wechat("hello")
         self.assertFalse(result)
 
-    @mock.patch("src.notification_sender.wechat_sender.requests.post")
-    def test_send_success_returns_true(self, mock_post):
-        mock_post.return_value = _response(200, {"errcode": 0})
+    @mock.patch("requests.post")
+    def test_send_returns_false_with_legacy_webhook_url(self, mock_post):
         cfg = _config(wechat_webhook_url="https://wechat.example/hook")
         sender = WechatSender(cfg)
         result = sender.send_to_wechat("hello")
-        self.assertTrue(result)
+        self.assertFalse(result)
+        self.assertTrue(sender._removed)
+        mock_post.assert_not_called()
 
-    def test_gen_wechat_payload_markdown(self):
-        cfg = _config(wechat_webhook_url="u", wechat_msg_type="markdown")
-        sender = WechatSender(cfg)
-        payload = sender._gen_wechat_payload("## title\nbody")
-        self.assertEqual(payload["msgtype"], "markdown")
-        self.assertEqual(payload["markdown"]["content"], "## title\nbody")
-
-    def test_gen_wechat_payload_text(self):
-        cfg = _config(wechat_webhook_url="u", wechat_msg_type="text")
-        sender = WechatSender(cfg)
-        payload = sender._gen_wechat_payload("plain")
-        self.assertEqual(payload["msgtype"], "text")
-        self.assertEqual(payload["text"]["content"], "plain")
-
-    @mock.patch("src.notification_sender.wechat_sender.requests.post")
-    def test_send_wechat_image_over_limit_returns_false(self, mock_post):
+    @mock.patch("requests.post")
+    def test_send_wechat_image_returns_false_and_does_not_call_network(self, mock_post):
         cfg = _config(wechat_webhook_url="https://wechat.example/hook")
         sender = WechatSender(cfg)
         big = b"x" * (WECHAT_IMAGE_MAX_BYTES + 1)
@@ -152,21 +139,14 @@ class TestFeishuSender(unittest.TestCase):
         result = sender.send_to_feishu("hello")
         self.assertFalse(result)
 
-    @mock.patch("src.notification_sender.feishu_sender.requests.post")
-    def test_send_success_returns_true(self, mock_post):
-        mock_post.return_value = _response(200, {"code": 0})
-        cfg = _config(feishu_webhook_url="https://feishu.example/hook")
-        sender = FeishuSender(cfg)
-        result = sender.send_to_feishu("hello")
-        self.assertTrue(result)
-
-    @mock.patch("src.notification_sender.feishu_sender.requests.post")
-    def test_send_http_error_returns_false(self, mock_post):
-        mock_post.return_value = _response(400)
+    @mock.patch("requests.post")
+    def test_send_returns_false_with_legacy_webhook_url(self, mock_post):
         cfg = _config(feishu_webhook_url="https://feishu.example/hook")
         sender = FeishuSender(cfg)
         result = sender.send_to_feishu("hello")
         self.assertFalse(result)
+        self.assertTrue(sender._removed)
+        mock_post.assert_not_called()
 
 
 class TestEmailSender(unittest.TestCase):
@@ -302,13 +282,14 @@ class TestPushplusSender(unittest.TestCase):
         result = sender.send_to_pushplus("hello")
         self.assertFalse(result)
 
-    @mock.patch("src.notification_sender.pushplus_sender.requests.post")
-    def test_send_success_returns_true(self, mock_post):
-        mock_post.return_value = _response(200, {"code": 200})
+    @mock.patch("requests.post")
+    def test_send_returns_false_with_legacy_token(self, mock_post):
         cfg = _config(pushplus_token="TOKEN")
         sender = PushplusSender(cfg)
         result = sender.send_to_pushplus("hello")
-        self.assertTrue(result)
+        self.assertFalse(result)
+        self.assertTrue(sender._removed)
+        mock_post.assert_not_called()
 
 
 class TestServerchan3Sender(unittest.TestCase):
@@ -320,13 +301,14 @@ class TestServerchan3Sender(unittest.TestCase):
         result = sender.send_to_serverchan3("hello")
         self.assertFalse(result)
 
-    @mock.patch("src.notification_sender.serverchan3_sender.requests.post")
-    def test_send_success_returns_true(self, mock_post):
-        mock_post.return_value = _response(200, {"code": 0})
+    @mock.patch("requests.post")
+    def test_send_returns_false_with_legacy_sendkey(self, mock_post):
         cfg = _config(serverchan3_sendkey="SCT123")
         sender = Serverchan3Sender(cfg)
         result = sender.send_to_serverchan3("hello")
-        self.assertTrue(result)
+        self.assertFalse(result)
+        self.assertTrue(sender._removed)
+        mock_post.assert_not_called()
 
 
 class TestTelegramSender(unittest.TestCase):

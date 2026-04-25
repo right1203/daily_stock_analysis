@@ -16,7 +16,7 @@ import unittest
 import sys
 import os
 from dataclasses import dataclass
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -403,17 +403,17 @@ class TestBuildUserMessage(unittest.TestCase):
         )
 
     def test_basic_message(self):
-        msg = self.executor._build_user_message("Analyze 600519")
-        self.assertIn("Analyze 600519", msg)
-        self.assertIn("决策仪表盘", msg)
+        msg = self.executor._build_user_message("Analyze 005930")
+        self.assertIn("Analyze 005930", msg)
+        self.assertIn("의사결정 대시보드", msg)
 
     def test_message_with_context(self):
         msg = self.executor._build_user_message(
             "Analyze",
-            context={"stock_code": "600519", "report_type": "daily"},
+            context={"stock_code": "005930", "report_type": "daily"},
         )
-        self.assertIn("股票代码: 600519", msg)
-        self.assertIn("报告类型: daily", msg)
+        self.assertIn("종목 코드: 005930", msg)
+        self.assertIn("보고서 유형: daily", msg)
 
 
 # ============================================================

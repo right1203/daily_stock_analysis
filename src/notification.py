@@ -173,14 +173,6 @@ class NotificationService(
         """
         channels = []
 
-        # 기업 WeChat
-        if self._wechat_url:
-            channels.append(NotificationChannel.WECHAT)
-
-        # Feishu
-        if self._feishu_url:
-            channels.append(NotificationChannel.FEISHU)
-
         # Telegram
         if self._is_telegram_configured():
             channels.append(NotificationChannel.TELEGRAM)
@@ -192,14 +184,6 @@ class NotificationService(
         # Pushover
         if self._is_pushover_configured():
             channels.append(NotificationChannel.PUSHOVER)
-
-        # PushPlus
-        if self._pushplus_token:
-            channels.append(NotificationChannel.PUSHPLUS)
-
-       # Server酱3
-        if self._serverchan3_sendkey:
-            channels.append(NotificationChannel.SERVERCHAN3)
 
         # 사용자 정의 Webhook
         if self._custom_webhook_urls:

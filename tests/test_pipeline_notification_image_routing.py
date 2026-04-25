@@ -84,56 +84,55 @@ class TestPipelineEmailGroupImageRouting(unittest.TestCase):
         self.assertIn(None, called_receivers)
 
 
-class _FakeWechatNotifier:
+class _FakeTelegramNotifier:
     def __init__(self):
-        self._markdown_to_image_channels = {"wechat"}
+        self._markdown_to_image_channels = {"telegram"}
         self._markdown_to_image_max_chars = 15000
         self.generate_dashboard_report = MagicMock(return_value="dashboard-report")
         self.save_report_to_file = MagicMock(return_value="/tmp/report.md")
         self.is_available = MagicMock(return_value=True)
-        self.get_available_channels = MagicMock(return_value=[NotificationChannel.WECHAT])
+        self.get_available_channels = MagicMock(return_value=[NotificationChannel.TELEGRAM])
         self.send_to_context = MagicMock(return_value=False)
-        self.generate_wechat_dashboard = MagicMock(return_value="wechat-dashboard")
         self._should_use_image_for_channel = MagicMock(
             side_effect=lambda channel, image_bytes: (
                 channel.value in self._markdown_to_image_channels and image_bytes is not None
             )
         )
-        self._send_wechat_image = MagicMock(return_value=True)
-        self.send_to_wechat = MagicMock(return_value=True)
+        self._send_telegram_photo = MagicMock(return_value=True)
+        self.send_to_telegram = MagicMock(return_value=True)
 
 
-class TestPipelineWechatOnlyImageRouting(unittest.TestCase):
-    def test_send_notifications_wechat_only_skips_full_report_conversion(self):
+class TestPipelineTelegramImageRouting(unittest.TestCase):
+    def test_send_notifications_telegram_uses_image_when_enabled(self):
         pipeline = StockAnalysisPipeline.__new__(StockAnalysisPipeline)
-        pipeline.notifier = _FakeWechatNotifier()
+        pipeline.notifier = _FakeTelegramNotifier()
         pipeline.config = SimpleNamespace(stock_email_groups=[])
-        results = [SimpleNamespace(code="000001")]
+        results = [SimpleNamespace(code="005930")]
 
-        with patch("src.md2img.markdown_to_image", return_value=b"wechat-image") as mock_md2img:
+        with patch("src.md2img.markdown_to_image", return_value=b"telegram-image") as mock_md2img:
             pipeline._send_notifications(results)
 
         mock_md2img.assert_called_once_with(
-            "wechat-dashboard", max_chars=pipeline.notifier._markdown_to_image_max_chars
+            "dashboard-report", max_chars=pipeline.notifier._markdown_to_image_max_chars
         )
-        pipeline.notifier._send_wechat_image.assert_called_once()
-        pipeline.notifier.send_to_wechat.assert_not_called()
+        pipeline.notifier._send_telegram_photo.assert_called_once_with(b"telegram-image")
+        pipeline.notifier.send_to_telegram.assert_not_called()
 
-    def test_send_notifications_wechat_only_logs_hint_and_falls_back_to_text(self):
+    def test_send_notifications_telegram_logs_hint_and_falls_back_to_text(self):
         pipeline = StockAnalysisPipeline.__new__(StockAnalysisPipeline)
-        pipeline.notifier = _FakeWechatNotifier()
+        pipeline.notifier = _FakeTelegramNotifier()
         pipeline.config = SimpleNamespace(stock_email_groups=[])
-        results = [SimpleNamespace(code="000001")]
+        results = [SimpleNamespace(code="005930")]
 
         with patch("src.md2img.markdown_to_image", return_value=None), patch(
             "src.core.pipeline.get_config", return_value=SimpleNamespace(md2img_engine="wkhtmltoimage")
         ), patch("src.core.pipeline.logger.warning") as mock_warning:
             pipeline._send_notifications(results)
 
-        pipeline.notifier._send_wechat_image.assert_not_called()
-        pipeline.notifier.send_to_wechat.assert_called_once_with("wechat-dashboard")
+        pipeline.notifier._send_telegram_photo.assert_not_called()
+        pipeline.notifier.send_to_telegram.assert_called_once_with("dashboard-report")
         self.assertTrue(
-            any("企业微信 Markdown 转图片失败" in str(call.args[0]) for call in mock_warning.call_args_list)
+            any("Markdown 이미지 변환 실패" in str(call.args[0]) for call in mock_warning.call_args_list)
         )
 
 
