@@ -24,19 +24,19 @@ export const ChangePasswordCard: React.FC = () => {
     setSuccess(false);
 
     if (!currentPassword.trim()) {
-      setError('请输入当前密码');
+      setError('현재 비밀번호를 입력해 주세요');
       return;
     }
     if (!newPassword.trim()) {
-      setError('请输入新密码');
+      setError('새 비밀번호를 입력해 주세요');
       return;
     }
     if (newPassword.length < 6) {
-      setError('新密码至少 6 位');
+      setError('새 비밀번호는 최소 6자 이상이어야 합니다');
       return;
     }
     if (newPassword !== newPasswordConfirm) {
-      setError('两次输入的新密码不一致');
+      setError('새 비밀번호가 일치하지 않습니다');
       return;
     }
 
@@ -53,7 +53,7 @@ export const ChangePasswordCard: React.FC = () => {
         setShowConfirm(false);
         setTimeout(() => setSuccess(false), 4000);
       } else {
-        setError(result.error ?? '修改失败');
+        setError(result.error ?? '변경 실패');
       }
     } finally {
       setIsSubmitting(false);
@@ -63,9 +63,9 @@ export const ChangePasswordCard: React.FC = () => {
   return (
     <div className="rounded-xl border border-white/8 bg-elevated/50 p-4">
       <div className="mb-2 flex items-center gap-2">
-        <label className="text-sm font-semibold text-white">修改密码</label>
+        <label className="text-sm font-semibold text-white">비밀번호 변경</label>
       </div>
-      <p className="mb-3 text-xs text-muted">修改管理员登录密码</p>
+      <p className="mb-3 text-xs text-muted">관리자 로그인 비밀번호를 변경합니다</p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -73,14 +73,14 @@ export const ChangePasswordCard: React.FC = () => {
             htmlFor="change-pass-current"
             className="mb-1 block text-xs font-medium text-secondary"
           >
-            当前密码
+            현재 비밀번호
           </label>
           <div className="flex items-center gap-2">
             <input
               id="change-pass-current"
               type={showCurrent ? 'text' : 'password'}
               className="input-terminal flex-1"
-              placeholder="输入当前密码"
+              placeholder="현재 비밀번호 입력"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               disabled={isSubmitting}
@@ -91,8 +91,8 @@ export const ChangePasswordCard: React.FC = () => {
               className="btn-secondary !p-2 shrink-0"
               disabled={isSubmitting}
               onClick={() => setShowCurrent((v) => !v)}
-              title={showCurrent ? '隐藏' : '显示'}
-              aria-label={showCurrent ? '隐藏密码' : '显示密码'}
+              title={showCurrent ? '숨기기' : '표시'}
+              aria-label={showCurrent ? '비밀번호 숨기기' : '비밀번호 표시'}
             >
               <EyeToggleIcon visible={showCurrent} />
             </button>
@@ -103,14 +103,14 @@ export const ChangePasswordCard: React.FC = () => {
             htmlFor="change-pass-new"
             className="mb-1 block text-xs font-medium text-secondary"
           >
-            新密码
+            새 비밀번호
           </label>
           <div className="flex items-center gap-2">
             <input
               id="change-pass-new"
               type={showNew ? 'text' : 'password'}
               className="input-terminal flex-1"
-              placeholder="输入新密码（至少 6 位）"
+              placeholder="새 비밀번호 입력(최소 6자)"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               disabled={isSubmitting}
@@ -121,8 +121,8 @@ export const ChangePasswordCard: React.FC = () => {
               className="btn-secondary !p-2 shrink-0"
               disabled={isSubmitting}
               onClick={() => setShowNew((v) => !v)}
-              title={showNew ? '隐藏' : '显示'}
-              aria-label={showNew ? '隐藏密码' : '显示密码'}
+              title={showNew ? '숨기기' : '표시'}
+              aria-label={showNew ? '비밀번호 숨기기' : '비밀번호 표시'}
             >
               <EyeToggleIcon visible={showNew} />
             </button>
@@ -133,14 +133,14 @@ export const ChangePasswordCard: React.FC = () => {
             htmlFor="change-pass-confirm"
             className="mb-1 block text-xs font-medium text-secondary"
           >
-            确认新密码
+            새 비밀번호 확인
           </label>
           <div className="flex items-center gap-2">
             <input
               id="change-pass-confirm"
               type={showConfirm ? 'text' : 'password'}
               className="input-terminal flex-1"
-              placeholder="再次输入新密码"
+              placeholder="새 비밀번호 다시 입력"
               value={newPasswordConfirm}
               onChange={(e) => setNewPasswordConfirm(e.target.value)}
               disabled={isSubmitting}
@@ -151,8 +151,8 @@ export const ChangePasswordCard: React.FC = () => {
               className="btn-secondary !p-2 shrink-0"
               disabled={isSubmitting}
               onClick={() => setShowConfirm((v) => !v)}
-              title={showConfirm ? '隐藏' : '显示'}
-              aria-label={showConfirm ? '隐藏密码' : '显示密码'}
+              title={showConfirm ? '숨기기' : '표시'}
+              aria-label={showConfirm ? '비밀번호 숨기기' : '비밀번호 표시'}
             >
               <EyeToggleIcon visible={showConfirm} />
             </button>
@@ -162,10 +162,10 @@ export const ChangePasswordCard: React.FC = () => {
         {error
           ? isParsedApiError(error)
             ? <ApiErrorAlert error={error} className="!mt-3" />
-            : <SettingsAlert title="修改失败" message={error} variant="error" className="!mt-3" />
+            : <SettingsAlert title="변경 실패" message={error} variant="error" className="!mt-3" />
           : null}
         {success ? (
-          <p className="text-xs text-green-500">密码已修改成功</p>
+          <p className="text-xs text-green-500">비밀번호가 변경되었습니다</p>
         ) : null}
 
         <button
@@ -173,7 +173,7 @@ export const ChangePasswordCard: React.FC = () => {
           className="btn-primary mt-2"
           disabled={isSubmitting}
         >
-          {isSubmitting ? '修改中...' : '修改'}
+          {isSubmitting ? '변경 중...' : '변경'}
         </button>
       </form>
     </div>

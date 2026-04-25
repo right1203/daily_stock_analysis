@@ -1,40 +1,38 @@
 #!/bin/bash
 # ===================================
-# A股/港股/美股 智能分析系统 - 测试脚本
+# KR/US intelligent analysis system - test script
 # ===================================
 #
-# 使用方法：
-#   ./test.sh [测试场景]
+# Usage:
+#   ./test.sh [테스트 시나리오]
 #
-# 测试场景：
-#   market      - 仅大盘复盘
-#   a-stock     - A股个股分析（茅台、平安银行）
-#   etf         - etf分析(卫星etf 563230)
-#   hk-stock    - 港股分析（腾讯、阿里）
-#   us-stock    - 美股分析（苹果、特斯拉）
-#   mixed       - 混合市场分析
-#   single      - 单股模式测试
-#   dry-run     - 仅获取数据不分析
-#   full        - 完整流程测试
-#   quick       - 快速测试（单只股票）
-#   all         - 运行所有测试
+# Scenarios:
+#   market      - 시장 리뷰만
+#   kr-stock    - 한국 주식 분석(삼성전자, 카카오)
+#   us-stock    - 미국 주식 분석(Apple, Tesla)
+#   mixed       - KR/US 혼합 시장 분석
+#   single      - 단일 종목 모드 테스트
+#   dry-run     - 데이터만 가져오고 분석하지 않음
+#   full        - 전체 흐름 테스트
+#   quick       - 빠른 테스트(단일 종목)
+#   all         - 모든 테스트 실행
 #
-# 示例：
-#   ./test.sh market      # 测试大盘复盘
-#   ./test.sh us-stock    # 测试美股分析
-#   ./test.sh quick       # 快速测试
+# Examples:
+#   ./test.sh market      # 시장 리뷰 테스트
+#   ./test.sh us-stock    # 미국 주식 테스트
+#   ./test.sh quick       # 빠른 테스트
 #
 
 set -e
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# 打印带颜色的信息
+# Print colored messages
 info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -59,151 +57,147 @@ header() {
     echo ""
 }
 
-# 检查Python环境
+# Check Python environment
 check_python() {
     if ! command -v python3 &> /dev/null; then
-        error "Python3 未安装"
+        error "Python3가 설치되어 있지 않습니다"
         exit 1
     fi
-    info "Python版本: $(python3 --version)"
+    info "Python 버전: $(python3 --version)"
 }
 
-# 检查依赖
+# Check dependencies
 check_deps() {
-    info "检查依赖..."
-    python3 -c "import yfinance" 2>/dev/null || { warn "yfinance 未安装，美股测试可能失败"; }
-    python3 -c "import akshare" 2>/dev/null || { warn "akshare 未安装，A股/港股测试可能失败"; }
-    success "依赖检查完成"
+    info "의존성 확인 중..."
+    python3 -c "import yfinance" 2>/dev/null || { warn "yfinance가 설치되어 있지 않아 미국 주식 테스트가 실패할 수 있습니다"; }
+    python3 -c "import pykrx" 2>/dev/null || { warn "pykrx가 설치되어 있지 않아 한국 주식 테스트가 실패할 수 있습니다"; }
+    success "의존성 확인 완료"
 }
 
-# ==================== 测试场景 ====================
+# ==================== Test scenarios ====================
 
-# 测试1: 大盘复盘
+# Test 1: market review
 test_market() {
-    header "测试场景: 大盘复盘"
-    info "运行大盘复盘分析..."
+    header "테스트 시나리오: 시장 리뷰"
+    info "시장 리뷰 분석 실행 중..."
     python3 main.py --market-review "$@"
-    success "大盘复盘测试完成"
+    success "시장 리뷰 테스트 완료"
 }
 
-# 测试2: A股分析
-test_a_stock() {
-    header "测试场景: A股分析"
-    info "分析A股: 600519(茅台), 000001(平安银行)"
-    python3 main.py --stocks 600519,000001  --no-market-review "$@"
-    success "A股分析测试完成"
+# Test 2: KR stock analysis
+test_kr_stock() {
+    header "테스트 시나리오: 한국 주식 분석"
+    info "한국 주식 분석: 005930(삼성전자), 035720(카카오)"
+    python3 main.py --stocks 005930,035720 --no-market-review "$@"
+    success "한국 주식 분석 테스트 완료"
 }
 
-# 测试2.5: ETF分析
-test_etf() {
-    header "测试场景: ETF分析"
-    info "分析ETF: 563230(卫星ETF)"
-    python3 main.py --stocks 563230,512400 --no-market-review "$@"
-    success "ETF分析测试完成"
-}
-
-# 测试3: 港股分析
-test_hk_stock() {
-    header "测试场景: 港股分析"
-    info "分析港股: hk00700(腾讯), hk09988(阿里)"
-    python3 main.py --stocks hk00700,hk09988 --no-market-review "$@"
-    success "港股分析测试完成"
-}
-
-# 测试4: 美股分析
+# Test 3: US stock analysis
 test_us_stock() {
-    header "测试场景: 美股分析"
-    info "分析美股: AAPL(苹果), TSLA(特斯拉)"
-    # 允许透传参数，默认不带 --no-notify
+    header "테스트 시나리오: 미국 주식 분석"
+    info "미국 주식 분석: AAPL(Apple), TSLA(Tesla)"
+    # Forward extra args; do not add --no-notify by default
     python3 main.py --stocks AAPL --no-market-review "$@"
-    success "美股分析测试完成"
+    success "미국 주식 분석 테스트 완료"
 }
 
-# 测试5: 混合市场
+# Test 4: mixed market
 test_mixed() {
-    header "测试场景: 混合市场分析"
-    info "分析混合市场: 600519(A股), hk00700(港股), AAPL(美股)"
-    python3 main.py --stocks 600519,hk00700,AAPL --no-market-review
-    success "混合市场测试完成"
+    header "테스트 시나리오: 혼합 시장 분석"
+    info "혼합 시장 분석: 005930(한국), AAPL(미국)"
+    python3 main.py --stocks 005930,AAPL --no-market-review
+    success "혼합 시장 테스트 완료"
 }
 
-# 测试6: 单股推送模式
+# Test 5: single-stock notification mode
 test_single() {
-    header "测试场景: 单股推送模式"
-    info "测试单股推送模式..."
-    python3 main.py --stocks 600519 --single-notify --no-market-review
-    success "单股推送模式测试完成"
+    header "테스트 시나리오: 단일 종목 알림 모드"
+    info "단일 종목 알림 모드 테스트 중..."
+    python3 main.py --stocks 005930 --single-notify --no-market-review
+    success "단일 종목 알림 모드 테스트 완료"
 }
 
-# 测试7: dry-run模式
+# Test 6: dry-run mode
 test_dry_run() {
-    header "测试场景: Dry-Run 模式"
-    info "仅获取数据，不进行AI分析..."
-    python3 main.py --stocks 600519,AAPL --dry-run --no-notify
-    success "Dry-Run 测试完成"
+    header "테스트 시나리오: Dry-Run 모드"
+    info "데이터만 가져오고 AI 분석은 실행하지 않습니다..."
+    python3 main.py --stocks 005930,AAPL --dry-run --no-notify
+    success "Dry-Run 테스트 완료"
 }
 
-# 测试8: 完整流程
+# Test 7: full flow
 test_full() {
-    header "测试场景: 完整流程"
-    info "运行完整分析流程（个股+大盘）..."
-    python3 main.py --stocks 600519 --no-notify
-    success "完整流程测试完成"
+    header "테스트 시나리오: 전체 흐름"
+    info "전체 분석 흐름(종목+시장)을 실행 중..."
+    python3 main.py --stocks 005930 --no-notify
+    success "전체 흐름 테스트 완료"
 }
 
-# 测试9: 快速测试
+# Test 8: 빠른 테스트
 test_quick() {
-    header "测试场景: 快速测试"
-    info "单只股票快速测试..."
-    python3 main.py --stocks 600519 --no-market-review
-    success "快速测试完成"
+    header "테스트 시나리오: 빠른 테스트"
+    info "단일 종목 빠른 테스트 중..."
+    python3 main.py --stocks 005930 --no-market-review
+    success "빠른 테스트 완료"
 }
 
-# 测试10: 代码识别测试
+# Test 9: code recognition test
 test_code_recognition() {
-    header "测试场景: 代码识别"
-    info "测试股票代码识别逻辑..."
+    header "테스트 시나리오: 코드 인식"
+    info "주식 코드 인식 로직 테스트 중..."
 
     python3 << 'PYTEST'
 import sys
 sys.path.insert(0, '.')
-from data_provider.akshare_fetcher import _is_hk_code, _is_us_code
+from data_provider.kr_index_mapping import is_kr_index_code, is_kr_stock_code
+from data_provider.us_index_mapping import is_us_index_code, is_us_stock_code
 
 test_cases = [
-    # (代码, 预期HK, 预期US, 描述)
-    ("AAPL", False, True, "美股-苹果"),
-    ("TSLA", False, True, "美股-特斯拉"),
-    ("BRK.B", False, True, "美股-伯克希尔B"),
-    ("hk00700", True, False, "港股-腾讯"),
-    ("HK09988", True, False, "港股-阿里"),
-    ("600519", False, False, "A股-茅台"),
-    ("000001", False, False, "A股-平安"),
+    # (code, expected_kr_stock, expected_kr_index, expected_us_stock, expected_us_index, description)
+    ("005930", True, False, False, False, "KR stock-Samsung Electronics"),
+    ("035720", True, False, False, False, "KR stock-Kakao"),
+    ("KOSDAQ", False, True, False, False, "KR index-KOSDAQ"),
+    ("AAPL", False, False, True, False, "US stock-Apple"),
+    ("TSLA", False, False, True, False, "US stock-Tesla"),
+    ("BRK.B", False, False, True, False, "US stock-Berkshire B"),
+    ("SPX", False, False, False, True, "US index-S&P 500"),
+    ("hk00700", False, False, False, False, "removed legacy HK code"),  # kr-us-static-allow: removed-market
+    ("SH600518", False, False, False, False, "removed legacy China code"),  # kr-us-static-allow: removed-market
 ]
 
-print("\n股票代码识别测试:")
+print("\n주식 코드 인식 테스트:")
 print("-" * 60)
 all_pass = True
-for code, exp_hk, exp_us, desc in test_cases:
-    is_hk = _is_hk_code(code)
-    is_us = _is_us_code(code)
-    hk_ok = is_hk == exp_hk
-    us_ok = is_us == exp_us
-    status = "✅" if (hk_ok and us_ok) else "❌"
-    all_pass = all_pass and hk_ok and us_ok
-    print(f"{status} {code:10} | HK:{is_hk:5} US:{is_us:5} | {desc}")
+for code, exp_kr_stock, exp_kr_index, exp_us_stock, exp_us_index, desc in test_cases:
+    kr_stock = is_kr_stock_code(code)
+    kr_index = is_kr_index_code(code)
+    us_stock = is_us_stock_code(code)
+    us_index = is_us_index_code(code)
+    ok = (
+        kr_stock == exp_kr_stock
+        and kr_index == exp_kr_index
+        and us_stock == exp_us_stock
+        and us_index == exp_us_index
+    )
+    status = "✅" if ok else "❌"
+    all_pass = all_pass and ok
+    print(
+        f"{status} {code:10} | KR_STOCK:{kr_stock!s:5} KR_INDEX:{kr_index!s:5} "
+        f"US_STOCK:{us_stock!s:5} US_INDEX:{us_index!s:5} | {desc}"
+    )
 
 print("-" * 60)
-print(f"{'✅ 所有测试通过!' if all_pass else '❌ 有测试失败!'}")
+print(f"{'✅ 모든 테스트 통과!' if all_pass else '❌ 테스트 실패가 있습니다!'}")
 sys.exit(0 if all_pass else 1)
 PYTEST
 
-    success "代码识别测试完成"
+    success "코드 인식 테스트 완료"
 }
 
-# 测试11: YFinance代码转换测试
+# Test 10: YFinance code conversion test
 test_yfinance_convert() {
-    header "测试场景: YFinance 代码转换"
-    info "测试YFinance代码转换逻辑..."
+    header "테스트 시나리오: YFinance 코드 변환"
+    info "YFinance 코드 변환 로직 테스트 중..."
 
     python3 << 'PYTEST'
 import sys
@@ -213,62 +207,64 @@ from data_provider.yfinance_fetcher import YfinanceFetcher
 fetcher = YfinanceFetcher()
 
 test_cases = [
-    ("AAPL", "AAPL", "美股"),
-    ("tsla", "TSLA", "美股小写"),
-    ("BRK.B", "BRK.B", "美股特殊"),
-    ("hk00700", "0700.HK", "港股"),
-    ("HK09988", "9988.HK", "港股大写"),
-    ("600519", "600519.SS", "A股沪市"),
-    ("000001", "000001.SZ", "A股深市"),
-    ("300750", "300750.SZ", "A股创业板"),
+    ("AAPL", "AAPL", "US stock"),
+    ("tsla", "TSLA", "US stock lowercase"),
+    ("BRK.B", "BRK.B", "US stock special"),
+    ("SPX", "^GSPC", "US index"),
+    ("NASDAQ", "^IXIC", "US index alias"),
+    ("005930", "005930.KS", "KR stock"),
+    ("035720", "035720.KS", "KR stock"),
+    ("KOSPI", "^KS11", "KR index"),
+    ("KOSDAQ", "^KQ11", "KR index"),
 ]
 
-print("\nYFinance 代码转换测试:")
+print("\nYFinance 코드 변환 테스트:")
 print("-" * 60)
 all_pass = True
 for input_code, expected, desc in test_cases:
     result = fetcher._convert_stock_code(input_code)
     status = "✅" if result == expected else "❌"
     all_pass = all_pass and (result == expected)
-    print(f"{status} {input_code:10} -> {result:12} (期望: {expected:12}) | {desc}")
+    print(f"{status} {input_code:10} -> {result:12} (expected: {expected:12}) | {desc}")
 
 print("-" * 60)
-print(f"{'✅ 所有测试通过!' if all_pass else '❌ 有测试失败!'}")
+print(f"{'✅ 모든 테스트 통과!' if all_pass else '❌ 테스트 실패가 있습니다!'}")
 sys.exit(0 if all_pass else 1)
 PYTEST
 
-    success "YFinance 代码转换测试完成"
+    success "YFinance 코드 변환 테스트 완료"
 }
 
-# 测试12: 语法检查
+# Test 11: syntax check
 test_syntax() {
-    header "测试场景: Python 语法检查"
-    info "检查所有Python文件语法..."
+    header "테스트 시나리오: Python 문법 검사"
+    info "모든 Python 파일 문법 검사 중..."
 
-    python3 -m py_compile main.py src/config.py src/notification.py \
-        data_provider/akshare_fetcher.py \
+    PYTHONPYCACHEPREFIX=/tmp/dsa_test_pycache python3 -m py_compile \
+        main.py src/config.py src/notification.py \
         data_provider/yfinance_fetcher.py \
+        data_provider/pykrx_fetcher.py \
         bot/commands/analyze.py
 
-    success "语法检查通过"
+    success "문법 검사 통과"
 }
 
-# 测试13: Flake8 静态检查
+# Test 12: Flake8 static check
 test_flake8() {
-    header "测试场景: Flake8 静态检查"
-    info "运行 Flake8 检查严重错误..."
+    header "테스트 시나리오: Flake8 정적 검사"
+    info "Flake8로 심각한 오류 검사 중..."
 
     if command -v flake8 &> /dev/null; then
         flake8 main.py src/config.py src/notification.py --select=F821,E999 --max-line-length=120
-        success "Flake8 检查通过"
+        success "Flake8 검사 통과"
     else
-        warn "Flake8 未安装，跳过检查"
+        warn "Flake8이 설치되어 있지 않아 검사를 건너뜁니다"
     fi
 }
 
-# 运行所有测试
+# 모든 테스트 실행
 test_all() {
-    header "运行所有测试"
+    header "모든 테스트 실행"
 
     test_syntax
     test_code_recognition
@@ -276,19 +272,19 @@ test_all() {
     test_flake8
 
     echo ""
-    info "以下测试需要网络和API配置，可能会失败:"
+    info "다음 테스트는 네트워크와 API 설정이 필요하여 실패할 수 있습니다:"
     echo ""
 
-    test_dry_run || warn "Dry-Run 测试失败（可能是网络问题）"
-    test_quick || warn "快速测试失败（可能是API问题）"
+    test_dry_run || warn "Dry-Run 테스트 실패(네트워크 문제일 수 있음)"
+    test_quick || warn "빠른 테스트 실패(API 문제일 수 있음)"
 
-    success "所有测试完成!"
+    success "모든 테스트 완료!"
 }
 
-# ==================== 主程序 ====================
+# ==================== Main program ====================
 
 main() {
-    header "A股/港股/美股 智能分析系统 - 测试"
+    header "KR/US 지능형 분석 시스템 - 테스트"
 
     check_python
     check_deps
@@ -298,17 +294,9 @@ main() {
             shift
             test_market "$@"
             ;;
-        a-stock|a_stock|astock)
+        kr-stock|kr_stock|krstock|kr)
             shift
-            test_a_stock "$@"
-            ;;
-        etf)
-            shift
-            test_etf "$@"
-            ;;
-        hk-stock|hk_stock|hkstock|hk)
-            shift
-            test_hk_stock "$@"
+            test_kr_stock "$@"
             ;;
         us-stock|us_stock|usstock|us)
             shift
@@ -355,30 +343,29 @@ main() {
             test_all "$@"
             ;;
         help|--help|-h|*)
-            echo "使用方法: $0 [测试场景]"
+            echo "사용법: $0 [테스트 시나리오]"
             echo ""
-            echo "测试场景:"
-            echo "  market      - 仅大盘复盘"
-            echo "  a-stock     - A股个股分析"
-            echo "  etf         - ETF分析"
-            echo "  hk-stock    - 港股分析"
-            echo "  us-stock    - 美股分析"
-            echo "  mixed       - 混合市场分析"
-            echo "  single      - 单股推送模式"
-            echo "  dry-run     - 仅获取数据"
-            echo "  full        - 完整流程"
-            echo "  quick       - 快速测试（推荐）"
-            echo "  code        - 代码识别测试"
-            echo "  yfinance    - YFinance转换测试"
-            echo "  syntax      - 语法检查"
-            echo "  flake8      - 静态检查"
-            echo "  all         - 运行所有测试"
+            echo "테스트 시나리오:"
+            echo "  market      - 시장 리뷰만"
+            echo "  kr-stock    - 한국 주식 분석"
+            echo "  us-stock    - 미국 주식 분석"
+            echo "  mixed       - KR/US 혼합 시장 분석"
+            echo "  single      - 단일 종목 알림 모드"
+            echo "  dry-run     - 데이터만 가져오기"
+            echo "  full        - 전체 흐름"
+            echo "  quick       - 빠른 테스트(권장)"
+            echo "  code        - 코드 인식 테스트"
+            echo "  yfinance    - YFinance 변환 테스트"
+            echo "  syntax      - 문법 검사"
+            echo "  flake8      - 정적 검사"
+            echo "  all         - 모든 테스트 실행"
             echo ""
-            echo "示例:"
-            echo "  $0 quick     # 快速测试"
-            echo "  $0 us-stock  # 测试美股"
-            echo "  $0 code      # 测试代码识别"
-            echo "  $0 all       # 运行所有测试"
+            echo "예시:"
+            echo "  $0 quick     # 빠른 테스트"
+            echo "  $0 kr-stock  # 한국 주식 테스트"
+            echo "  $0 us-stock  # 미국 주식 테스트"
+            echo "  $0 code      # 코드 인식 테스트"
+            echo "  $0 all       # 모든 테스트 실행"
             ;;
     esac
 }

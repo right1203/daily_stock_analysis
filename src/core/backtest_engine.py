@@ -50,39 +50,35 @@ class EvaluationConfig:
 class BacktestEngine:
     """Long-only daily-bar backtesting engine."""
 
-    # Operation advice keywords (Chinese + Korean + English)
+    # Operation advice keywords for current Korean and English analyzer outputs.
     _BULLISH_KEYWORDS = (
-        "买入",
         "매수",
-        "强烈买入",
-        "加仓",
-        "强烈매수",
-        "增持",
-        "建仓",
+        "강력 매수",
+        "추가매수",
+        "비중확대",
         "strong buy",
         "buy",
         "add",
+        "increase",
     )
     _BEARISH_KEYWORDS = (
-        "卖出",
         "매도",
-        "强烈卖出",
-        "减仓",
-        "强烈매도",
-        "清仓",
+        "강력 매도",
+        "비중축소",
+        "청산",
         "strong sell",
         "sell",
         "reduce",
+        "decrease",
     )
     _HOLD_KEYWORDS = (
-        "持有",
         "보유",
         "hold",
     )
     _WAIT_KEYWORDS = (
-        "观望",
         "관망",
-        "等待",
+        "대기",
+        "기다림",
         "wait",
     )
 
@@ -91,7 +87,7 @@ class BacktestEngine:
     # applied during matching so "do not" matches prefix "do not " or "do not".
     _NEGATION_PATTERNS = (
         "not", "don't", "do not", "no", "never", "avoid",  # English
-        "不要", "不", "别", "勿", "没有",  # 부정어 (중국어)
+        "하지 않", "아니", "없", "피하", "금지",  # Korean
     )
 
     @classmethod
@@ -321,7 +317,8 @@ class BacktestEngine:
             [
                 float(r.first_hit_trading_days)
                 for r in any_target_applicable
-                if r.first_hit_trading_days is not None and (r.first_hit or "") in ("stop_loss", "take_profit", "ambiguous")
+                if r.first_hit_trading_days is not None
+                and (r.first_hit or "") in ("stop_loss", "take_profit", "ambiguous")
             ]
         )
 
@@ -362,7 +359,7 @@ class BacktestEngine:
     def _matches_intent(cls, text: str, keywords: Sequence[str]) -> bool:
         """Check if text expresses the intent of any keyword, accounting for negation.
 
-        Tier 1: 정확 일치（"매수", "hold" 같은 명확한 레이블 처리）.
+        Tier 1: exact match for explicit labels such as "매수" or "hold".
         Tier 2: substring match with negation guard.
         Keywords are assumed to be lowercase (matching _normalize_text output).
         """

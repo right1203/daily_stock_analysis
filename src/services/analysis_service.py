@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-分析服务层
+Analysis service layer
 ===================================
 
-职责：
-1. 封装股票分析逻辑
-2. 调用 analyzer 和 pipeline 执行分析
-3. 保存分析结果到数据库
+Responsibilities:
+1. Encapsulate stock analysis logic.
+2. Call analyzer and pipeline execution.
+3. Save analysis results to the database.
 """
 
 import logging
@@ -21,15 +21,15 @@ logger = logging.getLogger(__name__)
 
 class AnalysisService:
     """
-    分析服务
-    
-    封装股票分析相关的业务逻辑
+    Analysis service.
+
+    Encapsulates stock analysis business logic.
     """
-    
+
     def __init__(self):
-        """初始化分析服务"""
+        """Initialize analysis service."""
         self.repo = AnalysisRepository()
-    
+
     def analyze_stock(
         self,
         stock_code: str,
@@ -39,87 +39,85 @@ class AnalysisService:
         send_notification: bool = True
     ) -> Optional[Dict[str, Any]]:
         """
-        执行股票分析
-        
+        Run stock analysis.
+
         Args:
-            stock_code: 股票代码
-            report_type: 报告类型 (simple/detailed)
-            force_refresh: 是否强制刷新
-            query_id: 查询 ID（可选）
-            send_notification: 是否发送通知（API 触发默认发送）
-            
+            stock_code: Stock code.
+            report_type: Report type, such as simple or detailed.
+            force_refresh: Whether to force refresh.
+            query_id: Optional query ID.
+            send_notification: Whether to send notification; API-triggered
+                analysis sends notifications by default.
+
         Returns:
-            分析结果字典，包含:
-            - stock_code: 股票代码
-            - stock_name: 股票名称
-            - report: 分析报告
+            Analysis result dict containing stock_code, stock_name, and report.
         """
         try:
-            # 导入分析相关模块
+            # Import analysis modules lazily.
             from src.config import get_config
             from src.core.pipeline import StockAnalysisPipeline
             from src.enums import ReportType
-            
-            # 生成 query_id
+
+            # Generate query_id when absent.
             if query_id is None:
                 query_id = uuid.uuid4().hex
-            
-            # 获取配置
+
+            # Load config.
             config = get_config()
-            
-            # 创建分析流水线
+
+            # Create analysis pipeline.
             pipeline = StockAnalysisPipeline(
                 config=config,
                 query_id=query_id,
                 query_source="api"
             )
-            
-            # 确定报告类型
+
+            # Resolve report type.
             rt = ReportType.FULL if report_type == "detailed" else ReportType.SIMPLE
-            
-            # 执行分析
+
+            # Run analysis.
             result = pipeline.process_single_stock(
                 code=stock_code,
                 skip_analysis=False,
                 single_stock_notify=send_notification,
                 report_type=rt
             )
-            
+
             if result is None:
-                logger.warning(f"分析股票 {stock_code} 返回空结果")
+                logger.warning(f"Stock {stock_code} analysis returned an empty result")
                 return None
-            
-            # 构建响应
+
+            # Build response.
             return self._build_analysis_response(result, query_id)
-            
+
         except Exception as e:
-            logger.error(f"分析股票 {stock_code} 失败: {e}", exc_info=True)
+            logger.error(f"Stock {stock_code} analysis failed: {e}", exc_info=True)
             return None
-    
+
     def _build_analysis_response(
-        self, 
-        result: Any, 
+        self,
+        result: Any,
         query_id: str
     ) -> Dict[str, Any]:
         """
-        构建分析响应
-        
+        Build analysis response.
+
         Args:
-            result: AnalysisResult 对象
-            query_id: 查询 ID
-            
+            result: AnalysisResult object.
+            query_id: Query ID.
+
         Returns:
-            格式化的响应字典
+            Formatted response dict.
         """
-        # 获取狙击点位
+        # Get strategy price points.
         sniper_points = {}
         if hasattr(result, 'get_sniper_points'):
             sniper_points = result.get_sniper_points() or {}
-        
-        # 计算情绪标签
+
+        # Calculate sentiment label.
         sentiment_label = self._get_sentiment_label(result.sentiment_score)
-        
-        # 构建报告结构
+
+        # Build report structure.
         report = {
             "meta": {
                 "query_id": query_id,
@@ -156,24 +154,24 @@ class AnalysisService:
             "stock_name": result.name,
             "report": report,
         }
-    
+
     def _get_sentiment_label(self, score: int) -> str:
         """
-        根据评分获取情绪标签
-        
+        Return sentiment label for a score.
+
         Args:
-            score: 情绪评分 (0-100)
-            
+            score: Sentiment score from 0 to 100.
+
         Returns:
-            情绪标签
+            Korean sentiment label.
         """
         if score >= 80:
-            return "极度乐观"
+            return "매우 긍정"
         elif score >= 60:
-            return "乐观"
+            return "긍정"
         elif score >= 40:
-            return "中性"
+            return "중립"
         elif score >= 20:
-            return "悲观"
+            return "부정"
         else:
-            return "极度悲观"
+            return "매우 부정"

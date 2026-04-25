@@ -1,53 +1,64 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "Daily Stock Analysis API",
-    "description": "A股/港股/美股自选股智能分析系统 API\n\n## 功能模块\n- 股票分析：触发 AI 智能分析\n- 历史记录：查询历史分析报告\n- 股票数据：获取行情数据\n\n## 认证方式\n当前版本暂无认证要求",
-    "version": "1.0.0",
-    "contact": {
-      "name": "Daily Stock Analysis Team"
-    }
+    "description": "KR/US Watchlist AI Stock Analysis API\n\n## Modules\n- Stock analysis: trigger AI analysis\n- History: query historical analysis reports\n- Stock data: fetch market quotes\n\n## Authentication\nNo authentication required in the current version",
+    "version": "1.0.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:8000",
-      "description": "本地开发服务器"
-    }
-  ],
-  "tags": [
-    {
-      "name": "Health",
-      "description": "健康检查接口"
-    },
-    {
-      "name": "Analysis",
-      "description": "股票分析相关接口"
-    },
-    {
-      "name": "History",
-      "description": "历史记录相关接口"
-    },
-    {
-      "name": "SystemConfig",
-      "description": "系统配置管理接口"
-    }
-  ],
   "paths": {
-    "/": {
+    "/api/v1/auth/status": {
       "get": {
         "tags": [
-          "Health"
+          "Auth"
         ],
-        "summary": "API 根路由",
-        "description": "返回 API 运行状态信息",
-        "operationId": "root",
+        "summary": "Get auth status",
+        "description": "Returns whether auth is enabled and if the current request is logged in.",
+        "operationId": "auth_status_api_v1_auth_status_get",
         "responses": {
           "200": {
-            "description": "API 正常运行",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login or set initial password",
+        "description": "Verify password and set session cookie. If password not set yet, accepts password+passwordConfirm.",
+        "operationId": "auth_login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RootResponse"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -55,21 +66,299 @@
         }
       }
     },
-    "/api/health": {
-      "get": {
+    "/api/v1/auth/change-password": {
+      "post": {
         "tags": [
-          "Health"
+          "Auth"
         ],
-        "summary": "健康检查",
-        "description": "用于负载均衡器或监控系统检查服务状态",
-        "operationId": "healthCheck",
+        "summary": "Change password",
+        "description": "Change password. Requires valid session.",
+        "operationId": "auth_change_password_api_v1_auth_change_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "服务健康",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout",
+        "description": "Clear session cookie.",
+        "operationId": "auth_logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/strategies": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Get Strategies",
+        "description": "Get available agent strategies.",
+        "operationId": "get_strategies_api_v1_agent_strategies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategiesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/chat": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Agent Chat",
+        "description": "Chat with the AI Agent.",
+        "operationId": "agent_chat_api_v1_agent_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/chat/sessions": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "List Chat Sessions",
+        "description": "List chat sessions.",
+        "operationId": "list_chat_sessions_api_v1_agent_chat_sessions_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/chat/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Get Chat Session Messages",
+        "description": "Return messages for one chat session.",
+        "operationId": "get_chat_session_messages_api_v1_agent_chat_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionMessagesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Delete Chat Session",
+        "description": "Delete a chat session.",
+        "operationId": "delete_chat_session_api_v1_agent_chat_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/chat/stream": {
+      "post": {
+        "tags": [
+          "Agent"
+        ],
+        "summary": "Agent Chat Stream",
+        "description": "Chat with the AI Agent, streaming progress via SSE.\nEach SSE event is a JSON object with a 'type' field:\n  - thinking: AI is deciding next action\n  - tool_start: a tool call has begun\n  - tool_done: a tool call finished\n  - generating: final answer being generated\n  - done: analysis complete, contains 'content' and 'success'\n  - error: error occurred, contains 'message'",
+        "operationId": "agent_chat_stream_api_v1_agent_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -82,32 +371,32 @@
         "tags": [
           "Analysis"
         ],
-        "summary": "触发股票分析",
-        "description": "启动 AI 智能分析任务，支持单只或多只股票批量分析",
-        "operationId": "triggerAnalysis",
+        "summary": "종목 분석 실행",
+        "description": "AI 종목 분석 작업을 시작합니다. 동기/비동기 모드를 지원하며 비동기 모드에서는 중복 제출을 막습니다.",
+        "operationId": "trigger_analysis_api_v1_analysis_analyze_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AnalyzeRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "分析完成（同步模式）",
+            "description": "분석 완료(동기 모드)",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalysisResult"
+                  "$ref": "#/components/schemas/AnalysisResultResponse"
                 }
               }
             }
           },
           "202": {
-            "description": "分析任务已接受（异步模式）",
+            "description": "분석 작업 접수됨(비동기 모드)",
             "content": {
               "application/json": {
                 "schema": {
@@ -117,7 +406,7 @@
             }
           },
           "400": {
-            "description": "请求参数잘못됨",
+            "description": "요청 파라미터 오류",
             "content": {
               "application/json": {
                 "schema": {
@@ -127,21 +416,31 @@
             }
           },
           "409": {
-            "description": "股票正在分析中，拒绝重复提交",
+            "description": "해당 종목 분석이 진행 중이라 중복 제출이 거부됨",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DuplicateTaskError"
+                  "$ref": "#/components/schemas/DuplicateTaskErrorResponse"
                 }
               }
             }
           },
           "500": {
-            "description": "分析失败",
+            "description": "분석 실패",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -154,38 +453,60 @@
         "tags": [
           "Analysis"
         ],
-        "summary": "获取分析任务列表",
-        "description": "获取当前所有分析任务，支持按状态筛选。返回进行中和最近完成的任务。",
-        "operationId": "getAnalysisTasks",
+        "summary": "분석 작업 목록 조회",
+        "description": "현재 분석 작업을 조회합니다. 상태로 필터링할 수 있습니다.",
+        "operationId": "get_task_list_api_v1_analysis_tasks_get",
         "parameters": [
           {
             "name": "status",
             "in": "query",
-            "description": "筛选状态：pending, processing, completed, failed（支持逗号分隔多个）",
+            "required": false,
             "schema": {
-              "type": "string",
-              "example": "pending,processing"
-            }
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "필터 상태: pending, processing, completed, failed. 여러 값은 쉼표로 구분합니다.",
+              "title": "Status"
+            },
+            "description": "필터 상태: pending, processing, completed, failed. 여러 값은 쉼표로 구분합니다."
           },
           {
             "name": "limit",
             "in": "query",
-            "description": "返回数量限制",
+            "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "maximum": 100,
               "minimum": 1,
-              "maximum": 100
-            }
+              "description": "반환 개수 제한",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "반환 개수 제한"
           }
         ],
         "responses": {
           "200": {
-            "description": "任务列表",
+            "description": "작업 목록",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -198,17 +519,68 @@
         "tags": [
           "Analysis"
         ],
-        "summary": "任务状态 SSE 流",
-        "description": "通过 Server-Sent Events 实时推送任务状态变化。\n\n## 事件类型\n- `connected`: 连接成功\n- `task_created`: 新任务创建\n- `task_started`: 任务开始执行\n- `task_completed`: 任务完成\n- `task_failed`: 任务失败\n- `heartbeat`: 心跳（每 30 秒）",
-        "operationId": "taskStream",
+        "summary": "작업 상태 SSE 스트림",
+        "description": "Server-Sent Events로 작업 상태 변경을 실시간 전송합니다.",
+        "operationId": "task_stream_api_v1_analysis_tasks_stream_get",
         "responses": {
           "200": {
-            "description": "SSE 事件流",
+            "description": "SSE 이벤트 스트림",
             "content": {
-              "text/event-stream": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/status/{task_id}": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "분석 작업 상태 조회",
+        "description": "task_id로 단일 작업 상태를 조회합니다.",
+        "operationId": "get_analysis_status_api_v1_analysis_status__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "작업 상태",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "event: task_created\ndata: {\"task_id\": \"abc123\", \"stock_code\": \"600519\", \"status\": \"pending\"}\n\n"
+                  "$ref": "#/components/schemas/TaskStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "작업을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -221,61 +593,95 @@
         "tags": [
           "History"
         ],
-        "summary": "获取历史分析列表",
-        "description": "分页获取历史分析记录摘要，支持按股票代码和日期范围筛选",
-        "operationId": "getHistoryList",
+        "summary": "히스토리 분석 목록 조회",
+        "description": "히스토리 분석 기록 요약을 페이지 단위로 조회하며, 종목 코드와 날짜 범위로 필터링할 수 있습니다.",
+        "operationId": "get_history_list_api_v1_history_get",
         "parameters": [
           {
             "name": "stock_code",
             "in": "query",
-            "description": "股票代码筛选",
+            "required": false,
             "schema": {
-              "type": "string"
-            }
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "종목 코드 필터",
+              "title": "Stock Code"
+            },
+            "description": "종목 코드 필터"
           },
           {
             "name": "start_date",
             "in": "query",
-            "description": "开始日期 (YYYY-MM-DD)",
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "date"
-            }
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "시작일 (YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "시작일 (YYYY-MM-DD)"
           },
           {
             "name": "end_date",
             "in": "query",
-            "description": "结束日期 (YYYY-MM-DD)",
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "date"
-            }
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "종료일 (YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "종료일 (YYYY-MM-DD)"
           },
           {
             "name": "page",
             "in": "query",
-            "description": "页码（从 1 开始）",
+            "required": false,
             "schema": {
               "type": "integer",
+              "minimum": 1,
+              "description": "페이지 번호 (1부터 시작)",
               "default": 1,
-              "minimum": 1
-            }
+              "title": "Page"
+            },
+            "description": "페이지 번호 (1부터 시작)"
           },
           {
             "name": "limit",
             "in": "query",
-            "description": "每页数量",
+            "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "maximum": 100,
               "minimum": 1,
-              "maximum": 100
-            }
+              "description": "페이지당 항목 수",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "페이지당 항목 수"
           }
         ],
         "responses": {
           "200": {
-            "description": "历史记录列表",
+            "description": "히스토리 기록 목록",
             "content": {
               "application/json": {
                 "schema": {
@@ -283,32 +689,52 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/v1/history/{query_id}": {
+    "/api/v1/history/{record_id}": {
       "get": {
         "tags": [
           "History"
         ],
-        "summary": "获取历史报告详情",
-        "description": "根据 query_id 获取完整的历史分析报告",
-        "operationId": "getHistoryDetail",
+        "summary": "히스토리 보고서 상세 조회",
+        "description": "분석 히스토리 기록 ID 또는 query_id로 전체 히스토리 분석 보고서를 조회합니다.",
+        "operationId": "get_history_detail_api_v1_history__record_id__get",
         "parameters": [
           {
-            "name": "query_id",
+            "name": "record_id",
             "in": "path",
             "required": true,
-            "description": "分析记录唯一标识",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "title": "Record Id"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "报告详情",
+            "description": "보고서 상세",
             "content": {
               "application/json": {
                 "schema": {
@@ -318,7 +744,312 @@
             }
           },
           "404": {
-            "description": "报告不存在",
+            "description": "보고서를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/history/{record_id}/news": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "summary": "히스토리 보고서 관련 뉴스 조회",
+        "description": "분석 히스토리 기록 ID로 관련 뉴스 인텔리전스 목록을 조회합니다. 결과가 없어도 200을 반환합니다.",
+        "operationId": "get_history_news_api_v1_history__record_id__news_get",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "반환 항목 수 제한",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "반환 항목 수 제한"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "뉴스 인텔리전스 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsIntelResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/extract-from-image": {
+      "post": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "이미지에서 종목 코드 추출",
+        "description": "스크린샷이나 이미지를 업로드하면 Vision LLM으로 종목 코드를 추출합니다. JPEG, PNG, WebP, GIF를 지원하며 최대 5MB입니다.",
+        "operationId": "extract_from_image_api_v1_stocks_extract_from_image_post",
+        "parameters": [
+          {
+            "name": "include_raw",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "원본 LLM 응답 포함 여부",
+              "default": false,
+              "title": "Include Raw"
+            },
+            "description": "원본 LLM 응답 포함 여부"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_extract_from_image_api_v1_stocks_extract_from_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "추출된 종목 코드",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractFromImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "이미지가 올바르지 않습니다",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{stock_code}/quote": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "종목 실시간 시세 조회",
+        "description": "지정한 종목의 최신 시세 데이터를 조회합니다",
+        "operationId": "get_stock_quote_api_v1_stocks__stock_code__quote_get",
+        "parameters": [
+          {
+            "name": "stock_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Stock Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "시세 데이터",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockQuote"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "종목을 찾을 수 없습니다",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stocks/{stock_code}/history": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "종목 과거 시세 조회",
+        "description": "지정한 종목의 과거 OHLCV 데이터를 조회합니다",
+        "operationId": "get_stock_history_api_v1_stocks__stock_code__history_get",
+        "parameters": [
+          {
+            "name": "stock_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Stock Code"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(daily|weekly|monthly)$",
+              "description": "가격 주기",
+              "default": "daily",
+              "title": "Period"
+            },
+            "description": "가격 주기"
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "조회 일수",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "조회 일수"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "과거 시세 데이터",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "지원하지 않는 기간 파라미터",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
             "content": {
               "application/json": {
                 "schema": {
@@ -330,53 +1061,315 @@
         }
       }
     },
-    "/api/v1/history/{query_id}/news": {
-      "get": {
+    "/api/v1/backtest/run": {
+      "post": {
         "tags": [
-          "History"
+          "Backtest"
         ],
-        "summary": "获取历史报告关联新闻",
-        "description": "根据 query_id 获取关联的新闻情报列表（为空也返回 200）",
-        "operationId": "getHistoryNews",
-        "parameters": [
-          {
-            "name": "query_id",
-            "in": "path",
-            "required": true,
-            "description": "分析记录唯一标识",
-            "schema": {
-              "type": "string"
+        "summary": "백테스트 실행",
+        "description": "히스토리 분석 기록을 백테스트 평가하고 backtest_results/backtest_summaries에 기록합니다.",
+        "operationId": "run_backtest_api_v1_backtest_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestRunRequest"
+              }
             }
           },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "返回数量限制",
-            "schema": {
-              "type": "integer",
-              "default": 20,
-              "minimum": 1,
-              "maximum": 100
-            }
-          }
-        ],
+          "required": true
+        },
         "responses": {
           "200": {
-            "description": "新闻情报列表",
+            "description": "백테스트 실행 완료",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NewsIntelResponse"
+                  "$ref": "#/components/schemas/BacktestRunResponse"
                 }
               }
             }
           },
           "500": {
-            "description": "服务器잘못됨",
+            "description": "서버 오류",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/backtest/results": {
+      "get": {
+        "tags": [
+          "Backtest"
+        ],
+        "summary": "백테스트 결과 조회",
+        "description": "백테스트 결과를 페이지 단위로 조회하며 종목 코드로 필터링할 수 있습니다.",
+        "operationId": "get_backtest_results_api_v1_backtest_results_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "종목 코드 필터",
+              "title": "Code"
+            },
+            "description": "종목 코드 필터"
+          },
+          {
+            "name": "eval_window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 120,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "평가 기간 필터",
+              "title": "Eval Window Days"
+            },
+            "description": "평가 기간 필터"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "페이지 번호",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "페이지 번호"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "페이지당 항목 수",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "페이지당 항목 수"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "백테스트 결과 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestResultsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/backtest/performance": {
+      "get": {
+        "tags": [
+          "Backtest"
+        ],
+        "summary": "전체 백테스트 성과 조회",
+        "operationId": "get_overall_performance_api_v1_backtest_performance_get",
+        "parameters": [
+          {
+            "name": "eval_window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 120,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "평가 기간 필터",
+              "title": "Eval Window Days"
+            },
+            "description": "평가 기간 필터"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "전체 백테스트 성과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceMetrics"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "백테스트 요약 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/backtest/performance/{code}": {
+      "get": {
+        "tags": [
+          "Backtest"
+        ],
+        "summary": "개별 종목 백테스트 성과 조회",
+        "operationId": "get_stock_performance_api_v1_backtest_performance__code__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "eval_window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 120,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "평가 기간 필터",
+              "title": "Eval Window Days"
+            },
+            "description": "평가 기간 필터"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "개별 종목 백테스트 성과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceMetrics"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "백테스트 요약 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -389,23 +1382,26 @@
         "tags": [
           "SystemConfig"
         ],
-        "summary": "获取系统配置",
-        "description": "读取当前系统配置并返回분류后的字段列表。敏感字段返回真实值，前端自行控制显示/隐藏。",
-        "operationId": "getSystemConfig",
+        "summary": "시스템 설정 조회",
+        "description": ".env에서 현재 설정을 읽어 원본 값을 반환합니다.",
+        "operationId": "get_system_config_api_v1_system_config_get",
         "parameters": [
           {
             "name": "include_schema",
             "in": "query",
-            "description": "是否携带字段元数据（默认 true）",
+            "required": false,
             "schema": {
               "type": "boolean",
-              "default": true
-            }
+              "description": "스키마 메타데이터를 포함할지 여부입니다.",
+              "default": true,
+              "title": "Include Schema"
+            },
+            "description": "스키마 메타데이터를 포함할지 여부입니다."
           }
         ],
         "responses": {
           "200": {
-            "description": "配置读取成功",
+            "description": "설정을 불러왔습니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -415,7 +1411,7 @@
             }
           },
           "401": {
-            "description": "未认证",
+            "description": "인증이 필요합니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -425,11 +1421,21 @@
             }
           },
           "500": {
-            "description": "读取失败",
+            "description": "서버 내부 오류",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -440,9 +1446,9 @@
         "tags": [
           "SystemConfig"
         ],
-        "summary": "업데이트系统配置",
-        "description": "按键업데이트系统配置。若字段值为掩码（如 ******），则保留原值不覆盖。",
-        "operationId": "updateSystemConfig",
+        "summary": "시스템 설정 업데이트",
+        "description": ".env의 키-값 설정을 업데이트합니다. 마스킹 토큰은 기존 비밀 값을 유지합니다.",
+        "operationId": "update_system_config_api_v1_system_config_put",
         "requestBody": {
           "required": true,
           "content": {
@@ -455,7 +1461,7 @@
         },
         "responses": {
           "200": {
-            "description": "업데이트成功",
+            "description": "설정이 업데이트되었습니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -465,7 +1471,7 @@
             }
           },
           "400": {
-            "description": "参数校验失败",
+            "description": "검증에 실패했습니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -475,7 +1481,7 @@
             }
           },
           "409": {
-            "description": "配置版本冲突",
+            "description": "버전 충돌",
             "content": {
               "application/json": {
                 "schema": {
@@ -485,11 +1491,21 @@
             }
           },
           "500": {
-            "description": "업데이트失败",
+            "description": "서버 내부 오류",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -502,22 +1518,22 @@
         "tags": [
           "SystemConfig"
         ],
-        "summary": "校验配置",
-        "description": "仅校验提交内容，不写入 .env。用于前端保存前预检查。",
-        "operationId": "validateSystemConfig",
+        "summary": "시스템 설정 검증",
+        "description": ".env에 기록하지 않고 제출된 설정 값을 검증합니다.",
+        "operationId": "validate_system_config_api_v1_system_config_validate_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ValidateSystemConfigRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "校验完成",
+            "description": "검증이 완료되었습니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -527,11 +1543,21 @@
             }
           },
           "500": {
-            "description": "校验失败",
+            "description": "서버 내부 오류",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -544,12 +1570,12 @@
         "tags": [
           "SystemConfig"
         ],
-        "summary": "获取配置字段元数据",
-        "description": "返回配置분류、字段类型、校验规则和 UI 控件권장 조치，用于前端动态渲染。",
-        "operationId": "getSystemConfigSchema",
+        "summary": "시스템 설정 스키마 조회",
+        "description": "동적 설정 폼 렌더링에 사용하는 분류별 필드 메타데이터를 반환합니다.",
+        "operationId": "get_system_config_schema_api_v1_system_config_schema_get",
         "responses": {
           "200": {
-            "description": "元数据读取成功",
+            "description": "스키마를 불러왔습니다",
             "content": {
               "application/json": {
                 "schema": {
@@ -559,7 +1585,7 @@
             }
           },
           "500": {
-            "description": "元数据读取失败",
+            "description": "서버 내부 오류",
             "content": {
               "application/json": {
                 "schema": {
@@ -570,583 +1596,2163 @@
           }
         }
       }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "description": "Check service status for load balancers or monitoring systems",
+        "operationId": "health_check_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "RootResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Daily Stock Analysis API is running"
-          },
-          "version": {
-            "type": "string",
-            "example": "1.0.0"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "HealthResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "example": "ok"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "AnalyzeRequest": {
-        "type": "object",
-        "properties": {
-          "stock_code": {
-            "type": "string",
-            "description": "单只股票代码",
-            "example": "600519"
-          },
-          "stock_codes": {
-            "type": "array",
-            "description": "多只股票代码（与 stock_code 二选一）",
-            "items": {
-              "type": "string"
-            },
-            "example": [
-              "600519",
-              "000858"
-            ]
-          },
-          "report_type": {
-            "type": "string",
-            "enum": [
-              "simple",
-              "detailed"
-            ],
-            "default": "detailed",
-            "description": "报告类型"
-          },
-          "force_refresh": {
-            "type": "boolean",
-            "default": false,
-            "description": "是否强制刷新（忽略缓存）"
-          },
-          "async_mode": {
-            "type": "boolean",
-            "default": false,
-            "description": "是否使用异步模式"
-          }
-        }
-      },
-      "AnalysisResult": {
-        "type": "object",
-        "properties": {
-          "query_id": {
-            "type": "string",
-            "description": "分析记录唯一标识"
-          },
-          "stock_code": {
-            "type": "string"
-          },
-          "stock_name": {
-            "type": "string"
-          },
-          "report": {
-            "$ref": "#/components/schemas/AnalysisReport"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "query_id",
-          "stock_code",
-          "report",
-          "created_at"
-        ]
-      },
-      "TaskAccepted": {
-        "type": "object",
-        "properties": {
-          "task_id": {
-            "type": "string",
-            "description": "任务 ID，用于查询状态"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "processing"
-            ],
-            "example": "pending"
-          },
-          "message": {
-            "type": "string",
-            "example": "Analysis task accepted"
-          }
-        },
-        "required": [
-          "task_id",
-          "status"
-        ]
-      },
-      "TaskStatus": {
-        "type": "object",
-        "properties": {
-          "task_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "processing",
-              "completed",
-              "failed"
-            ]
-          },
-          "progress": {
-            "type": "integer",
-            "description": "进度百分比 (0-100)"
-          },
-          "result": {
-            "$ref": "#/components/schemas/AnalysisResult"
-          },
-          "error": {
-            "type": "string",
-            "description": "잘못됨信息（仅在 failed 时存在）"
-          }
-        },
-        "required": [
-          "task_id",
-          "status"
-        ]
-      },
-      "TaskInfo": {
-        "type": "object",
-        "description": "任务详情（用于任务列表和 SSE 事件）",
-        "properties": {
-          "task_id": {
-            "type": "string",
-            "description": "任务 ID"
-          },
-          "stock_code": {
-            "type": "string",
-            "description": "股票代码"
-          },
-          "stock_name": {
-            "type": "string",
-            "description": "股票名称"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "processing",
-              "completed",
-              "failed"
-            ],
-            "description": "任务状态"
-          },
-          "progress": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 100,
-            "description": "进度百分比"
-          },
-          "message": {
-            "type": "string",
-            "description": "状态消息"
-          },
-          "report_type": {
-            "type": "string",
-            "enum": [
-              "simple",
-              "detailed"
-            ],
-            "description": "报告类型"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "创建时间"
-          },
-          "started_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "开始执行时间"
-          },
-          "completed_at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "完成时间"
-          },
-          "error": {
-            "type": "string",
-            "description": "잘못됨信息"
-          }
-        },
-        "required": [
-          "task_id",
-          "stock_code",
-          "status",
-          "created_at"
-        ]
-      },
-      "TaskListResponse": {
-        "type": "object",
-        "description": "任务列表响应",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "description": "任务总数"
-          },
-          "pending": {
-            "type": "integer",
-            "description": "等待中的任务数"
-          },
-          "processing": {
-            "type": "integer",
-            "description": "处理中的任务数"
-          },
-          "tasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskInfo"
-            },
-            "description": "任务列表"
-          }
-        },
-        "required": [
-          "total",
-          "pending",
-          "processing",
-          "tasks"
-        ]
-      },
-      "DuplicateTaskError": {
-        "type": "object",
-        "description": "重复任务잘못됨响应",
-        "properties": {
-          "error": {
-            "type": "string",
-            "example": "duplicate_task",
-            "description": "잘못됨类型"
-          },
-          "message": {
-            "type": "string",
-            "example": "股票 600519 正在分析中",
-            "description": "잘못됨信息"
-          },
-          "stock_code": {
-            "type": "string",
-            "example": "600519",
-            "description": "股票代码"
-          },
-          "existing_task_id": {
-            "type": "string",
-            "example": "abc123def456",
-            "description": "已存在的任务 ID"
-          }
-        },
-        "required": [
-          "error",
-          "message",
-          "stock_code",
-          "existing_task_id"
-        ]
-      },
-      "HistoryListResponse": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "description": "总记录数"
-          },
-          "page": {
-            "type": "integer"
-          },
-          "limit": {
-            "type": "integer"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HistoryItem"
-            }
-          }
-        },
-        "required": [
-          "total",
-          "page",
-          "limit",
-          "items"
-        ]
-      },
-      "NewsIntelItem": {
-        "type": "object",
-        "description": "新闻情报条目",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "新闻标题"
-          },
-          "snippet": {
-            "type": "string",
-            "description": "新闻摘要（最多50字）"
-          },
-          "url": {
-            "type": "string",
-            "description": "新闻链接"
-          }
-        },
-        "required": [
-          "title",
-          "url"
-        ]
-      },
-      "NewsIntelResponse": {
-        "type": "object",
-        "description": "新闻情报响应",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "description": "新闻条数"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NewsIntelItem"
-            },
-            "description": "新闻列表"
-          }
-        },
-        "required": [
-          "total",
-          "items"
-        ]
-      },
-      "HistoryItem": {
-        "type": "object",
-        "description": "历史记录摘要（列表展示用）",
-        "properties": {
-          "query_id": {
-            "type": "string"
-          },
-          "stock_code": {
-            "type": "string"
-          },
-          "stock_name": {
-            "type": "string"
-          },
-          "report_type": {
-            "type": "string"
-          },
-          "sentiment_score": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 100
-          },
-          "operation_advice": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "query_id",
-          "stock_code",
-          "created_at"
-        ]
-      },
       "AnalysisReport": {
-        "type": "object",
-        "description": "完整分析报告",
         "properties": {
           "meta": {
-            "type": "object",
-            "description": "元信息",
-            "properties": {
-              "query_id": {
-                "type": "string"
-              },
-              "stock_code": {
-                "type": "string"
-              },
-              "stock_name": {
-                "type": "string"
-              },
-              "report_type": {
-                "type": "string"
-              },
-              "created_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "model_used": {
-                "type": "string",
-                "description": "分析使用的 LLM 模型（完整名，如 gemini/gemini-2.0-flash）"
-              }
-            }
+            "$ref": "#/components/schemas/ReportMeta",
+            "description": "메타 정보"
           },
           "summary": {
-            "type": "object",
-            "description": "概览区（首屏展示）",
-            "properties": {
-              "analysis_summary": {
-                "type": "string",
-                "description": "关键결론"
-              },
-              "operation_advice": {
-                "type": "string",
-                "description": "操作권장 조치"
-              },
-              "trend_prediction": {
-                "type": "string",
-                "description": "趋势预测"
-              },
-              "sentiment_score": {
-                "type": "integer",
-                "description": "情绪评分 (0-100)"
-              },
-              "sentiment_label": {
-                "type": "string",
-                "description": "情绪标签",
-                "enum": [
-                  "极度悲观",
-                  "悲观",
-                  "中性",
-                  "乐观",
-                  "极度乐观"
-                ]
-              }
-            }
+            "$ref": "#/components/schemas/ReportSummary",
+            "description": "요약 영역"
           },
           "strategy": {
-            "type": "object",
-            "description": "策略点位区",
-            "properties": {
-              "ideal_buy": {
-                "type": "string",
-                "description": "理想买入价"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportStrategy"
               },
-              "secondary_buy": {
-                "type": "string",
-                "description": "第二买入价"
-              },
-              "stop_loss": {
-                "type": "string",
-                "description": "止损价"
-              },
-              "take_profit": {
-                "type": "string",
-                "description": "止盈价"
+              {
+                "type": "null"
               }
-            }
+            ],
+            "description": "전략 가격 영역"
           },
           "details": {
-            "type": "object",
-            "description": "详情区（可折叠）",
-            "properties": {
-              "news_content": {
-                "type": "string",
-                "description": "新闻摘要"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportDetails"
               },
-              "raw_result": {
-                "type": "object",
-                "description": "原始分析结果（JSON）"
-              },
-              "context_snapshot": {
-                "type": "object",
-                "description": "分析时上下文快照（JSON）"
+              {
+                "type": "null"
               }
-            }
+            ],
+            "description": "상세 영역"
           }
         },
+        "type": "object",
         "required": [
           "meta",
           "summary"
-        ]
+        ],
+        "title": "AnalysisReport",
+        "description": "Complete analysis report.",
+        "example": {
+          "meta": {
+            "created_at": "2024-01-01T12:00:00",
+            "query_id": "abc123",
+            "report_type": "detailed",
+            "stock_code": "005930",
+            "stock_name": "삼성전자"
+          },
+          "strategy": {
+            "ideal_buy": "1800.00",
+            "secondary_buy": "1750.00",
+            "stop_loss": "1700.00",
+            "take_profit": "2000.00"
+          },
+          "summary": {
+            "analysis_summary": "기술적 흐름이 양호해 보유 관점이 유효합니다",
+            "operation_advice": "보유",
+            "sentiment_label": "낙관",
+            "sentiment_score": 75,
+            "trend_prediction": "강세"
+          }
+        }
       },
-      "StockQuote": {
-        "type": "object",
-        "description": "股票实时行情",
+      "AnalysisResultResponse": {
         "properties": {
+          "query_id": {
+            "type": "string",
+            "title": "Query Id",
+            "description": "분석 기록 고유 ID"
+          },
           "stock_code": {
-            "type": "string"
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
           },
           "stock_name": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
           },
-          "current_price": {
-            "type": "number"
+          "report": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report",
+            "description": "분석 리포트"
           },
-          "change": {
-            "type": "number",
-            "description": "涨跌额"
-          },
-          "change_percent": {
-            "type": "number",
-            "description": "涨跌幅 (%)"
-          },
-          "open": {
-            "type": "number"
-          },
-          "high": {
-            "type": "number"
-          },
-          "low": {
-            "type": "number"
-          },
-          "prev_close": {
-            "type": "number"
-          },
-          "volume": {
-            "type": "number",
-            "description": "成交量（股）"
-          },
-          "amount": {
-            "type": "number",
-            "description": "成交额（元）"
-          },
-          "update_time": {
+          "created_at": {
             "type": "string",
-            "format": "date-time"
+            "title": "Created At",
+            "description": "생성 시간"
           }
         },
-        "required": [
-          "stock_code",
-          "current_price"
-        ]
-      },
-      "SystemConfigFieldSchema": {
         "type": "object",
-        "description": "系统配置字段元数据",
+        "required": [
+          "query_id",
+          "stock_code",
+          "created_at"
+        ],
+        "title": "AnalysisResultResponse",
+        "description": "Analysis result response model.",
+        "example": {
+          "created_at": "2024-01-01T12:00:00",
+          "query_id": "abc123def456",
+          "report": {
+            "summary": {
+              "operation_advice": "보유",
+              "sentiment_score": 75
+            }
+          },
+          "stock_code": "005930",
+          "stock_name": "삼성전자"
+        }
+      },
+      "AnalyzeRequest": {
+        "properties": {
+          "stock_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Code",
+            "description": "단일 종목 코드",
+            "example": "005930"
+          },
+          "stock_codes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Codes",
+            "description": "여러 종목 코드(stock_code와 둘 중 하나 사용)",
+            "example": [
+              "005930",
+              "AAPL"
+            ]
+          },
+          "report_type": {
+            "type": "string",
+            "pattern": "^(simple|detailed)$",
+            "title": "Report Type",
+            "description": "리포트 유형",
+            "default": "detailed"
+          },
+          "force_refresh": {
+            "type": "boolean",
+            "title": "Force Refresh",
+            "description": "캐시를 무시하고 강제로 새로고침할지 여부",
+            "default": true
+          },
+          "async_mode": {
+            "type": "boolean",
+            "title": "Async Mode",
+            "description": "비동기 모드 사용 여부",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "AnalyzeRequest",
+        "description": "Analysis request model.",
+        "example": {
+          "async_mode": false,
+          "force_refresh": false,
+          "report_type": "detailed",
+          "stock_code": "005930"
+        }
+      },
+      "BacktestResultItem": {
+        "properties": {
+          "analysis_history_id": {
+            "type": "integer",
+            "title": "Analysis History Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "analysis_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Date"
+          },
+          "eval_window_days": {
+            "type": "integer",
+            "title": "Eval Window Days"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "eval_status": {
+            "type": "string",
+            "title": "Eval Status"
+          },
+          "evaluated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluated At"
+          },
+          "operation_advice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Advice"
+          },
+          "position_recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Recommendation"
+          },
+          "start_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Price"
+          },
+          "end_close": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Close"
+          },
+          "max_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max High"
+          },
+          "min_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Low"
+          },
+          "stock_return_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Return Pct"
+          },
+          "direction_expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction Expected"
+          },
+          "direction_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction Correct"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit"
+          },
+          "hit_stop_loss": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Stop Loss"
+          },
+          "hit_take_profit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hit Take Profit"
+          },
+          "first_hit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Hit"
+          },
+          "first_hit_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Hit Date"
+          },
+          "first_hit_trading_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Hit Trading Days"
+          },
+          "simulated_entry_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Entry Price"
+          },
+          "simulated_exit_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Exit Price"
+          },
+          "simulated_exit_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Exit Reason"
+          },
+          "simulated_return_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Return Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analysis_history_id",
+          "code",
+          "eval_window_days",
+          "engine_version",
+          "eval_status"
+        ],
+        "title": "BacktestResultItem"
+      },
+      "BacktestResultsResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BacktestResultItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "BacktestResultsResponse"
+      },
+      "BacktestRunRequest": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code",
+            "description": "특정 종목만 백테스트합니다. 예: 005930 또는 AAPL"
+          },
+          "force": {
+            "type": "boolean",
+            "title": "Force",
+            "description": "기존 결과가 있어도 다시 계산합니다.",
+            "default": false
+          },
+          "eval_window_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 120.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Window Days",
+            "description": "평가 기간(거래일 기준)"
+          },
+          "min_age_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Age Days",
+            "description": "분석 기록의 최소 경과일(0=제한 없음)"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "처리할 분석 기록의 최대 개수",
+            "default": 200
+          }
+        },
+        "type": "object",
+        "title": "BacktestRunRequest"
+      },
+      "BacktestRunResponse": {
+        "properties": {
+          "processed": {
+            "type": "integer",
+            "title": "Processed",
+            "description": "후보 기록 수"
+          },
+          "saved": {
+            "type": "integer",
+            "title": "Saved",
+            "description": "저장된 백테스트 결과 수"
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "description": "완료된 백테스트 수"
+          },
+          "insufficient": {
+            "type": "integer",
+            "title": "Insufficient",
+            "description": "데이터 부족 건수"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors",
+            "description": "오류 건수"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed",
+          "saved",
+          "completed",
+          "insufficient",
+          "errors"
+        ],
+        "title": "BacktestRunResponse"
+      },
+      "Body_extract_from_image_api_v1_stocks_extract_from_image_post": {
+        "properties": {
+          "file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File",
+            "description": "이미지 파일(form field name: file)"
+          }
+        },
+        "type": "object",
+        "title": "Body_extract_from_image_api_v1_stocks_extract_from_image_post"
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "title": "Currentpassword",
+            "default": ""
+          },
+          "newPassword": {
+            "type": "string",
+            "title": "Newpassword",
+            "default": ""
+          },
+          "newPasswordConfirm": {
+            "type": "string",
+            "title": "Newpasswordconfirm",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ChangePasswordRequest",
+        "description": "Change password request body."
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skills"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "content",
+          "session_id"
+        ],
+        "title": "ChatResponse"
+      },
+      "ConfigValidationIssue": {
         "properties": {
           "key": {
             "type": "string",
-            "description": "配置键名（ENV 变量）",
-            "example": "GEMINI_API_KEY"
+            "title": "Key"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "title": "Severity"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "actual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "code",
+          "message",
+          "severity"
+        ],
+        "title": "ConfigValidationIssue",
+        "description": "Validation issue details."
+      },
+      "DuplicateTaskErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "오류 유형",
+            "default": "duplicate_task"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "오류 메시지"
+          },
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "existing_task_id": {
+            "type": "string",
+            "title": "Existing Task Id",
+            "description": "이미 존재하는 작업 ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "stock_code",
+          "existing_task_id"
+        ],
+        "title": "DuplicateTaskErrorResponse",
+        "description": "Duplicate task error response model.",
+        "example": {
+          "error": "duplicate_task",
+          "existing_task_id": "abc123def456",
+          "message": "종목 005930 분석 작업이 이미 진행 중입니다",
+          "stock_code": "005930"
+        }
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Error type",
+            "example": "validation_error"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Error detail",
+            "example": "요청 파라미터 오류"
+          },
+          "detail": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Additional error information"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "ErrorResponse",
+        "description": "Error response.",
+        "example": {
+          "error": "not_found",
+          "message": "리소스를 찾을 수 없습니다"
+        }
+      },
+      "ExtractFromImageResponse": {
+        "properties": {
+          "codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Codes",
+            "description": "추출된 종목 코드(중복 제거)"
+          },
+          "raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Text",
+            "description": "원본 LLM 응답(디버그용)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codes"
+        ],
+        "title": "ExtractFromImageResponse",
+        "description": "Stock code extraction response for uploaded images."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Service status",
+            "example": "ok"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp",
+            "description": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "description": "Health check response.",
+        "example": {
+          "status": "ok",
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      },
+      "HistoryItem": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "분석 이력 기본 키 ID"
+          },
+          "query_id": {
+            "type": "string",
+            "title": "Query Id",
+            "description": "분석 기록의 query_id"
+          },
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "stock_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
+          },
+          "report_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Type",
+            "description": "리포트 유형"
+          },
+          "sentiment_score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentiment Score",
+            "description": "심리 점수 (0-100)"
+          },
+          "operation_advice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Advice",
+            "description": "투자 판단"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "생성 시간"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query_id",
+          "stock_code"
+        ],
+        "title": "HistoryItem",
+        "description": "History summary item used in list views.",
+        "example": {
+          "created_at": "2024-01-01T12:00:00",
+          "id": 1234,
+          "operation_advice": "보유",
+          "query_id": "abc123",
+          "report_type": "detailed",
+          "sentiment_score": 75,
+          "stock_code": "005930",
+          "stock_name": "삼성전자"
+        }
+      },
+      "HistoryListResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "전체 기록 수"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "현재 페이지"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "페이지당 개수"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "기록 목록"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "limit"
+        ],
+        "title": "HistoryListResponse",
+        "description": "History list response.",
+        "example": {
+          "items": [],
+          "limit": 20,
+          "page": 1,
+          "total": 100
+        }
+      },
+      "KLineData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "날짜"
+          },
+          "open": {
+            "type": "number",
+            "title": "Open",
+            "description": "시가"
+          },
+          "high": {
+            "type": "number",
+            "title": "High",
+            "description": "고가"
+          },
+          "low": {
+            "type": "number",
+            "title": "Low",
+            "description": "저가"
+          },
+          "close": {
+            "type": "number",
+            "title": "Close",
+            "description": "종가"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume",
+            "description": "거래량"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "거래대금"
+          },
+          "change_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Percent",
+            "description": "등락률 (%)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "open",
+          "high",
+          "low",
+          "close"
+        ],
+        "title": "KLineData",
+        "description": "Historical OHLCV data point.",
+        "example": {
+          "amount": 18000000000,
+          "change_percent": 0.84,
+          "close": 1800.0,
+          "date": "2024-01-01",
+          "high": 1810.0,
+          "low": 1780.0,
+          "open": 1785.0,
+          "volume": 10000000
+        }
+      },
+      "LoginRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Admin password",
+            "default": ""
+          },
+          "passwordConfirm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passwordconfirm",
+            "description": "Confirm (first-time)"
+          }
+        },
+        "type": "object",
+        "title": "LoginRequest",
+        "description": "Login request body. For first-time setup use password + password_confirm."
+      },
+      "NewsIntelItem": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "뉴스 제목"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet",
+            "description": "뉴스 요약",
+            "default": ""
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "뉴스 링크"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "url"
+        ],
+        "title": "NewsIntelItem",
+        "description": "News intelligence item.",
+        "example": {
+          "snippet": "삼성전자가 분기 실적과 향후 전망을 공개했습니다...",
+          "title": "삼성전자, 분기 실적 발표",
+          "url": "https://example.com/news/123"
+        }
+      },
+      "NewsIntelResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "뉴스 수"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NewsIntelItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "뉴스 목록"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total"
+        ],
+        "title": "NewsIntelResponse",
+        "description": "News intelligence response.",
+        "example": {
+          "items": [],
+          "total": 2
+        }
+      },
+      "PerformanceMetrics": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "title": "Scope"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "eval_window_days": {
+            "type": "integer",
+            "title": "Eval Window Days"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "computed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Computed At"
+          },
+          "total_evaluations": {
+            "type": "integer",
+            "title": "Total Evaluations"
+          },
+          "completed_count": {
+            "type": "integer",
+            "title": "Completed Count"
+          },
+          "insufficient_count": {
+            "type": "integer",
+            "title": "Insufficient Count"
+          },
+          "long_count": {
+            "type": "integer",
+            "title": "Long Count"
+          },
+          "cash_count": {
+            "type": "integer",
+            "title": "Cash Count"
+          },
+          "win_count": {
+            "type": "integer",
+            "title": "Win Count"
+          },
+          "loss_count": {
+            "type": "integer",
+            "title": "Loss Count"
+          },
+          "neutral_count": {
+            "type": "integer",
+            "title": "Neutral Count"
+          },
+          "direction_accuracy_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction Accuracy Pct"
+          },
+          "win_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate Pct"
+          },
+          "neutral_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neutral Rate Pct"
+          },
+          "avg_stock_return_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Stock Return Pct"
+          },
+          "avg_simulated_return_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Simulated Return Pct"
+          },
+          "stop_loss_trigger_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss Trigger Rate"
+          },
+          "take_profit_trigger_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit Trigger Rate"
+          },
+          "ambiguous_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ambiguous Rate"
+          },
+          "avg_days_to_first_hit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Days To First Hit"
+          },
+          "advice_breakdown": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Advice Breakdown"
+          },
+          "diagnostics": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Diagnostics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "eval_window_days",
+          "engine_version",
+          "total_evaluations",
+          "completed_count",
+          "insufficient_count",
+          "long_count",
+          "cash_count",
+          "win_count",
+          "loss_count",
+          "neutral_count"
+        ],
+        "title": "PerformanceMetrics"
+      },
+      "ReportDetails": {
+        "properties": {
+          "news_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "News Content",
+            "description": "뉴스 요약"
+          },
+          "raw_result": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Result",
+            "description": "원본 분석 결과(JSON)"
+          },
+          "context_snapshot": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Snapshot",
+            "description": "분석 시점 컨텍스트 스냅샷(JSON)"
+          }
+        },
+        "type": "object",
+        "title": "ReportDetails",
+        "description": "Report detail section."
+      },
+      "ReportMeta": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "분석 이력 기본 키 ID"
+          },
+          "query_id": {
+            "type": "string",
+            "title": "Query Id",
+            "description": "분석 기록의 query_id"
+          },
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "stock_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
+          },
+          "report_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Type",
+            "description": "리포트 유형"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "생성 시간"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price",
+            "description": "분석 시점 가격"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct",
+            "description": "분석 시점 등락률(%)"
+          },
+          "model_used": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Used",
+            "description": "분석에 사용한 LLM 모델"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query_id",
+          "stock_code"
+        ],
+        "title": "ReportMeta",
+        "description": "Report metadata."
+      },
+      "ReportStrategy": {
+        "properties": {
+          "ideal_buy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ideal Buy",
+            "description": "우선 매수가"
+          },
+          "secondary_buy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondary Buy",
+            "description": "보조 매수가"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss",
+            "description": "손절가"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit",
+            "description": "목표가"
+          }
+        },
+        "type": "object",
+        "title": "ReportStrategy",
+        "description": "Strategy price section."
+      },
+      "ReportSummary": {
+        "properties": {
+          "analysis_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Summary",
+            "description": "핵심 결론"
+          },
+          "operation_advice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Advice",
+            "description": "투자 판단"
+          },
+          "trend_prediction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Prediction",
+            "description": "추세 전망"
+          },
+          "sentiment_score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentiment Score",
+            "description": "심리 점수 (0-100)"
+          },
+          "sentiment_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentiment Label",
+            "description": "심리 라벨"
+          }
+        },
+        "type": "object",
+        "title": "ReportSummary",
+        "description": "Report summary section."
+      },
+      "SessionItem": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
           },
           "title": {
             "type": "string",
-            "description": "前端展示标题",
-            "example": "Gemini API Key"
+            "title": "Title"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "last_active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "title",
+          "message_count"
+        ],
+        "title": "SessionItem"
+      },
+      "SessionMessagesResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "messages"
+        ],
+        "title": "SessionMessagesResponse"
+      },
+      "SessionsResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionItem"
+            },
+            "type": "array",
+            "title": "Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions"
+        ],
+        "title": "SessionsResponse"
+      },
+      "StockHistoryResponse": {
+        "properties": {
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "stock_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period",
+            "description": "가격 주기"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/KLineData"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "가격 데이터 목록"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stock_code",
+          "period"
+        ],
+        "title": "StockHistoryResponse",
+        "description": "Historical stock quote response.",
+        "example": {
+          "data": [],
+          "period": "daily",
+          "stock_code": "AAPL",
+          "stock_name": "Apple Inc."
+        }
+      },
+      "StockQuote": {
+        "properties": {
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "stock_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
+          },
+          "current_price": {
+            "type": "number",
+            "title": "Current Price",
+            "description": "현재가"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change",
+            "description": "등락 금액"
+          },
+          "change_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Percent",
+            "description": "등락률 (%)"
+          },
+          "open": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open",
+            "description": "시가"
+          },
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High",
+            "description": "고가"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low",
+            "description": "저가"
+          },
+          "prev_close": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev Close",
+            "description": "전일 종가"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume",
+            "description": "거래량"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "거래대금"
+          },
+          "update_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Update Time",
+            "description": "업데이트 시간"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stock_code",
+          "current_price"
+        ],
+        "title": "StockQuote",
+        "description": "Real-time stock quote.",
+        "example": {
+          "amount": 18000000000,
+          "change": 500.0,
+          "change_percent": 0.84,
+          "current_price": 78000.0,
+          "high": 78500.0,
+          "low": 77200.0,
+          "open": 77500.0,
+          "prev_close": 77500.0,
+          "stock_code": "005930",
+          "stock_name": "삼성전자",
+          "update_time": "2024-01-01T15:00:00",
+          "volume": 10000000
+        }
+      },
+      "StrategiesResponse": {
+        "properties": {
+          "strategies": {
+            "items": {
+              "$ref": "#/components/schemas/StrategyInfo"
+            },
+            "type": "array",
+            "title": "Strategies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "strategies"
+        ],
+        "title": "StrategiesResponse"
+      },
+      "StrategyInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
           },
           "description": {
             "type": "string",
-            "description": "字段설명"
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "StrategyInfo"
+      },
+      "SystemConfigCategorySchema": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/SystemConfigFieldSchema"
+            },
+            "type": "array",
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "title",
+          "display_order",
+          "fields"
+        ],
+        "title": "SystemConfigCategorySchema",
+        "description": "Category grouping metadata."
+      },
+      "SystemConfigConflictResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "current_config_version": {
+            "type": "string",
+            "title": "Current Config Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "message",
+          "current_config_version"
+        ],
+        "title": "SystemConfigConflictResponse",
+        "description": "Error payload for optimistic lock conflict."
+      },
+      "SystemConfigFieldSchema": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Configuration key name"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Display title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Field description"
           },
           "category": {
             "type": "string",
@@ -1156,10 +3762,11 @@
               "ai_model",
               "notification",
               "system",
+              "agent",
               "backtest",
               "uncategorized"
             ],
-            "description": "분류"
+            "title": "Category"
           },
           "data_type": {
             "type": "string",
@@ -1171,7 +3778,8 @@
               "array",
               "json",
               "time"
-            ]
+            ],
+            "title": "Data Type"
           },
           "ui_control": {
             "type": "string",
@@ -1184,36 +3792,49 @@
               "switch",
               "time"
             ],
-            "description": "前端控件권장 조치"
+            "title": "Ui Control"
           },
           "is_sensitive": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Is Sensitive"
           },
           "is_required": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Is Required"
           },
           "is_editable": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Is Editable"
           },
           "default_value": {
-            "type": "string",
-            "nullable": true
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Value"
           },
           "options": {
-            "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "可选值列表（用于 select）"
+            "type": "array",
+            "title": "Options"
           },
           "validation": {
+            "additionalProperties": true,
             "type": "object",
-            "description": "校验规则定义（min/max/regex/enum/custom）"
+            "title": "Validation"
           },
           "display_order": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Display Order"
           }
         },
+        "type": "object",
         "required": [
           "key",
           "category",
@@ -1223,195 +3844,499 @@
           "is_required",
           "is_editable",
           "display_order"
-        ]
-      },
-      "SystemConfigCategorySchema": {
-        "type": "object",
-        "description": "配置분류元数据",
-        "properties": {
-          "category": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "display_order": {
-            "type": "integer"
-          },
-          "fields": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SystemConfigFieldSchema"
-            }
-          }
-        },
-        "required": [
-          "category",
-          "title",
-          "display_order",
-          "fields"
-        ]
-      },
-      "SystemConfigSchemaResponse": {
-        "type": "object",
-        "description": "配置元数据响应",
-        "properties": {
-          "schema_version": {
-            "type": "string",
-            "example": "2026-02-09"
-          },
-          "categories": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SystemConfigCategorySchema"
-            }
-          }
-        },
-        "required": [
-          "schema_version",
-          "categories"
-        ]
+        ],
+        "title": "SystemConfigFieldSchema",
+        "description": "Metadata schema for a single config field."
       },
       "SystemConfigItem": {
-        "type": "object",
-        "description": "系统配置项（含脱敏显示值）",
         "properties": {
           "key": {
-            "type": "string"
+            "type": "string",
+            "title": "Key"
           },
           "value": {
             "type": "string",
-            "description": "当前配置值（敏感字段返回真实值）"
+            "title": "Value"
           },
           "raw_value_exists": {
             "type": "boolean",
-            "description": "敏感字段是否存在真实值（不返回真实值）"
+            "title": "Raw Value Exists"
           },
           "is_masked": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Is Masked"
           },
           "schema": {
-            "$ref": "#/components/schemas/SystemConfigFieldSchema"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SystemConfigFieldSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "type": "object",
         "required": [
           "key",
           "value",
           "raw_value_exists",
           "is_masked"
-        ]
+        ],
+        "title": "SystemConfigItem",
+        "description": "Config value entry with optional schema metadata."
       },
       "SystemConfigResponse": {
-        "type": "object",
-        "description": "系统配置读取响应",
         "properties": {
           "config_version": {
             "type": "string",
-            "description": "配置版本（用于乐观锁）",
-            "example": "2026-02-09T13:20:31Z:sha256:4f9a..."
+            "title": "Config Version"
           },
           "mask_token": {
             "type": "string",
-            "example": "******"
+            "title": "Mask Token"
           },
           "items": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/SystemConfigItem"
-            }
+            },
+            "type": "array",
+            "title": "Items"
           },
           "updated_at": {
-            "type": "string",
-            "format": "date-time"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
           }
         },
+        "type": "object",
         "required": [
           "config_version",
           "mask_token",
           "items"
-        ]
+        ],
+        "title": "SystemConfigResponse",
+        "description": "Read response for current configuration values."
+      },
+      "SystemConfigSchemaResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/SystemConfigCategorySchema"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schema_version",
+          "categories"
+        ],
+        "title": "SystemConfigSchemaResponse",
+        "description": "Metadata response for dynamic frontend rendering."
       },
       "SystemConfigUpdateItem": {
-        "type": "object",
-        "description": "配置업데이트项",
         "properties": {
           "key": {
             "type": "string",
-            "example": "STOCK_LIST"
+            "title": "Key"
           },
           "value": {
             "type": "string",
-            "description": "字段新值；若敏感字段传入掩码 token 则表示保持原值"
+            "title": "Value"
           }
         },
+        "type": "object",
         "required": [
           "key",
           "value"
-        ]
+        ],
+        "title": "SystemConfigUpdateItem",
+        "description": "Single key-value update item."
+      },
+      "SystemConfigValidationErrorResponse": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigValidationIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "message",
+          "issues"
+        ],
+        "title": "SystemConfigValidationErrorResponse",
+        "description": "Error payload for failed update validation."
+      },
+      "TaskAccepted": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "상태 조회에 사용하는 작업 ID"
+          },
+          "status": {
+            "type": "string",
+            "pattern": "^(pending|processing)$",
+            "title": "Status",
+            "description": "작업 상태"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "안내 메시지"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status"
+        ],
+        "title": "TaskAccepted",
+        "description": "Asynchronous task acceptance response.",
+        "example": {
+          "message": "Analysis task accepted",
+          "status": "pending",
+          "task_id": "task_abc123"
+        }
+      },
+      "TaskInfo": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "작업 ID"
+          },
+          "stock_code": {
+            "type": "string",
+            "title": "Stock Code",
+            "description": "종목 코드"
+          },
+          "stock_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Name",
+            "description": "종목명"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatusEnum",
+            "description": "작업 상태"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "description": "진행률 (0-100)",
+            "default": 0
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "상태 메시지"
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type",
+            "description": "리포트 유형",
+            "default": "detailed"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "생성 시간"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "시작 시간"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At",
+            "description": "완료 시간"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "오류 메시지(failed 상태에서만 존재)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "stock_code",
+          "status",
+          "created_at"
+        ],
+        "title": "TaskInfo",
+        "description": "Task detail model used by task lists and SSE events.",
+        "example": {
+          "created_at": "2026-02-05T10:30:00",
+          "message": "분석 중...",
+          "progress": 50,
+          "report_type": "detailed",
+          "started_at": "2026-02-05T10:30:01",
+          "status": "processing",
+          "stock_code": "005930",
+          "stock_name": "삼성전자",
+          "task_id": "abc123def456"
+        }
+      },
+      "TaskListResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "전체 작업 수"
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "description": "대기 중인 작업 수"
+          },
+          "processing": {
+            "type": "integer",
+            "title": "Processing",
+            "description": "처리 중인 작업 수"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskInfo"
+            },
+            "type": "array",
+            "title": "Tasks",
+            "description": "작업 목록"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "pending",
+          "processing",
+          "tasks"
+        ],
+        "title": "TaskListResponse",
+        "description": "Task list response model.",
+        "example": {
+          "pending": 1,
+          "processing": 2,
+          "tasks": [],
+          "total": 3
+        }
+      },
+      "TaskStatus": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "작업 ID"
+          },
+          "status": {
+            "type": "string",
+            "pattern": "^(pending|processing|completed|failed)$",
+            "title": "Status",
+            "description": "작업 상태"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress",
+            "description": "진행률 (0-100)"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "분석 결과(completed 상태에서만 존재)"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "오류 메시지(failed 상태에서만 존재)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status"
+        ],
+        "title": "TaskStatus",
+        "description": "Task status model.",
+        "example": {
+          "progress": 100,
+          "status": "completed",
+          "task_id": "task_abc123"
+        }
+      },
+      "TaskStatusEnum": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "title": "TaskStatusEnum",
+        "description": "Task status values."
       },
       "UpdateSystemConfigRequest": {
-        "type": "object",
-        "description": "系统配置업데이트请求",
         "properties": {
           "config_version": {
-            "type": "string"
+            "type": "string",
+            "title": "Config Version"
           },
           "mask_token": {
             "type": "string",
+            "title": "Mask Token",
             "default": "******"
           },
           "reload_now": {
             "type": "boolean",
+            "title": "Reload Now",
             "default": true
           },
           "items": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/SystemConfigUpdateItem"
             },
-            "minItems": 1
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
           }
         },
+        "type": "object",
         "required": [
           "config_version",
           "items"
-        ]
+        ],
+        "title": "UpdateSystemConfigRequest",
+        "description": "Update request payload."
       },
       "UpdateSystemConfigResponse": {
-        "type": "object",
-        "description": "系统配置업데이트结果",
         "properties": {
           "success": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Success"
           },
           "config_version": {
-            "type": "string"
+            "type": "string",
+            "title": "Config Version"
           },
           "applied_count": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Applied Count"
           },
           "skipped_masked_count": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Skipped Masked Count"
           },
           "reload_triggered": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Reload Triggered"
           },
           "updated_keys": {
-            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "type": "array",
+            "title": "Updated Keys"
           },
           "warnings": {
-            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "type": "array",
+            "title": "Warnings"
           }
         },
+        "type": "object",
         "required": [
           "success",
           "config_version",
@@ -1419,143 +4344,89 @@
           "skipped_masked_count",
           "reload_triggered",
           "updated_keys"
-        ]
+        ],
+        "title": "UpdateSystemConfigResponse",
+        "description": "Update operation result payload."
       },
       "ValidateSystemConfigRequest": {
-        "type": "object",
-        "description": "配置校验请求",
         "properties": {
           "items": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/SystemConfigUpdateItem"
             },
-            "minItems": 1
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
           }
         },
+        "type": "object",
         "required": [
           "items"
-        ]
-      },
-      "ConfigValidationIssue": {
-        "type": "object",
-        "description": "配置校验문제",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string",
-            "example": "invalid_format"
-          },
-          "message": {
-            "type": "string"
-          },
-          "severity": {
-            "type": "string",
-            "enum": [
-              "error",
-              "warning"
-            ]
-          },
-          "expected": {
-            "type": "string"
-          },
-          "actual": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "code",
-          "message",
-          "severity"
-        ]
+        ],
+        "title": "ValidateSystemConfigRequest",
+        "description": "Validation request payload."
       },
       "ValidateSystemConfigResponse": {
-        "type": "object",
-        "description": "配置校验结果",
         "properties": {
           "valid": {
-            "type": "boolean"
+            "type": "boolean",
+            "title": "Valid"
           },
           "issues": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ConfigValidationIssue"
-            }
+            },
+            "type": "array",
+            "title": "Issues"
           }
         },
+        "type": "object",
         "required": [
           "valid",
           "issues"
-        ]
+        ],
+        "title": "ValidateSystemConfigResponse",
+        "description": "Validation result payload."
       },
-      "SystemConfigValidationErrorResponse": {
-        "type": "object",
-        "description": "配置업데이트校验失败响应",
+      "ValidationError": {
         "properties": {
-          "error": {
-            "type": "string",
-            "example": "validation_failed"
-          },
-          "message": {
-            "type": "string"
-          },
-          "issues": {
-            "type": "array",
+          "loc": {
             "items": {
-              "$ref": "#/components/schemas/ConfigValidationIssue"
-            }
-          }
-        },
-        "required": [
-          "error",
-          "message",
-          "issues"
-        ]
-      },
-      "SystemConfigConflictResponse": {
-        "type": "object",
-        "description": "配置版本冲突响应",
-        "properties": {
-          "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
             "type": "string",
-            "example": "config_version_conflict"
+            "title": "Message"
           },
-          "message": {
-            "type": "string"
-          },
-          "current_config_version": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "error",
-          "message",
-          "current_config_version"
-        ]
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
+          "type": {
             "type": "string",
-            "description": "잘못됨类型"
+            "title": "Error Type"
           },
-          "message": {
-            "type": "string",
-            "description": "잘못됨详情"
+          "input": {
+            "title": "Input"
           },
-          "detail": {
+          "ctx": {
             "type": "object",
-            "description": "附加잘못됨信息"
+            "title": "Context"
           }
         },
+        "type": "object",
         "required": [
-          "error",
-          "message"
-        ]
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

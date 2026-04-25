@@ -326,7 +326,8 @@ class GeminiAnalyzer:
     # 핵심 모듈: 핵심 결론 + 데이터 투시 + 뉴스 정보 + 전략 계획
     # ========================================
 
-    SYSTEM_PROMPT = """당신은 추세 매매에 특화된 주식 투자 분석가이며, 전문적인 【의사결정 대시보드】 분석 리포트를 생성합니다.
+    SYSTEM_PROMPT = """당신은 추세 매매에 특화된 주식 투자 분석가입니다.
+전문적인 [의사결정 대시보드] 분석 리포트를 생성합니다.
 
 ## 핵심 매매 원칙 (반드시 엄격히 준수)
 
@@ -366,12 +367,13 @@ class GeminiAnalyzer:
 - 고성장주는 높은 PER을 허용할 수 있으나, 실적 뒷받침이 필요합니다
 
 ### 7. 강세 추세주 기준 완화
-- 강세 추세주(정배열 + 높은 추세 강도 + 거래량 뒷받침)는 이격률 기준을 소폭 완화할 수 있습니다
+- 강세 추세주(정배열 + 높은 추세 강도 + 거래량 뒷받침)는
+  이격률 기준을 소폭 완화할 수 있습니다
 - 이런 종목은 소량 추적 매매가 가능하나, 반드시 손절가를 설정합니다
 
 ## 출력 형식: 의사결정 대시보드 JSON
 
-다음 JSON 형식을 엄격히 준수하여 출력하세요. 이것은 완전한 【의사결정 대시보드】입니다:
+다음 JSON 형식을 엄격히 준수하여 출력하세요. 이것은 완전한 [의사결정 대시보드]입니다:
 
 ```json
 {
@@ -423,7 +425,7 @@ class GeminiAnalyzer:
         },
 
         "intelligence": {
-            "latest_news": "【최신 뉴스】최근 주요 뉴스 요약",
+            "latest_news": "[최신 뉴스]최근 주요 뉴스 요약",
             "risk_alerts": ["리스크 1: 구체적 설명", "리스크 2: 구체적 설명"],
             "positive_catalysts": ["호재 1: 구체적 설명", "호재 2: 구체적 설명"],
             "earnings_outlook": "실적 전망 분석",
@@ -744,7 +746,10 @@ class GeminiAnalyzer:
                 operation_advice='보유',
                 confidence_level='낮음',
                 analysis_summary='AI 분석 기능 미활성화 (API Key 미설정)',
-                risk_warning='LLM API Key (GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY)를 설정 후 재시도하세요',
+                risk_warning=(
+                    'LLM API Key (GEMINI_API_KEY/ANTHROPIC_API_KEY/OPENAI_API_KEY)를 '
+                    '설정 후 재시도하세요'
+                ),
                 success=False,
                 error_message='LLM API Key 미설정',
                 model_used=None,
@@ -780,12 +785,18 @@ class GeminiAnalyzer:
             elapsed = time.time() - start_time
 
             # 응답 정보 기록
-            logger.info(f"[LLM 응답] {model_name} 응답 성공, 소요 {elapsed:.2f}초, 응답 길이 {len(response_text)}자")
+            logger.info(
+                f"[LLM 응답] {model_name} 응답 성공, 소요 {elapsed:.2f}초, "
+                f"응답 길이 {len(response_text)}자"
+            )
 
             # 응답 미리보기 기록 (INFO) 및 전체 응답 (DEBUG)
             response_preview = response_text[:300] + "..." if len(response_text) > 300 else response_text
             logger.info(f"[LLM 응답 미리보기]\n{response_preview}")
-            logger.debug(f"=== {model_name} 전체 응답 ({len(response_text)}자) ===\n{response_text}\n=== 응답 끝 ===")
+            logger.debug(
+                f"=== {model_name} 전체 응답 ({len(response_text)}자) ===\n"
+                f"{response_text}\n=== 응답 끝 ==="
+            )
 
             # 응답 파싱
             result = self._parse_response(response_text, code, name)
@@ -794,7 +805,10 @@ class GeminiAnalyzer:
             result.market_snapshot = self._build_market_snapshot(context)
             result.model_used = model_used
 
-            logger.info(f"[LLM 파싱] {name}({code}) 분석 완료: {result.trend_prediction}, 점수 {result.sentiment_score}")
+            logger.info(
+                f"[LLM 파싱] {name}({code}) 분석 완료: "
+                f"{result.trend_prediction}, 점수 {result.sentiment_score}"
+            )
 
             return result
 
@@ -908,7 +922,10 @@ class GeminiAnalyzer:
         # 추세 분석 결과 추가 (매매 원칙 기반 사전 판단)
         if 'trend_analysis' in context:
             trend = context['trend_analysis']
-            bias_warning = "🚨 5% 초과 — 고점 추격 금지!" if trend.get('bias_ma5', 0) > 5 else "✅ 안전 범위"
+            if trend.get('bias_ma5', 0) > 5:
+                bias_warning = "🚨 5% 초과 — 고점 추격 금지!"
+            else:
+                bias_warning = "✅ 안전 범위"
             prompt += f"""
 ### 추세 분석 사전 판단 (매매 원칙 기반)
 | 지표 | 수치 | 판정 |
@@ -966,8 +983,10 @@ class GeminiAnalyzer:
             prompt += """
 ⚠️ **데이터 누락 경고**
 인터페이스 제한으로 인해 전체 실시간 시세 및 기술 지표 데이터를 가져올 수 없습니다.
-위 표의 **N/A 데이터는 무시**하고, **【📰 뉴스 및 시장 정보】** 의 뉴스를 중심으로 기본적·심리적 분석을 수행하세요.
-기술적 질문(이평선, 이격률 등)에 대해서는 "데이터 누락으로 판단 불가"라고 직접 명시하고, **데이터를 임의로 생성하지 마세요**.
+위 표의 **N/A 데이터는 무시**하세요.
+뉴스 및 시장 정보 섹션의 뉴스를 중심으로 기본 및 심리 분석을 수행하세요.
+기술적 질문(이평선, 이격률 등)에 대해서는
+"데이터 누락으로 판단 불가"라고 직접 명시하고, **데이터를 임의로 생성하지 마세요**.
 """
 
         # 출력 요구사항 명시
@@ -976,7 +995,7 @@ class GeminiAnalyzer:
 
 ## ✅ 분석 작업
 
-**{stock_name}({code})** 에 대한 【의사결정 대시보드】를 JSON 형식으로 출력하세요.
+**{stock_name}({code})** 에 대한 [의사결정 대시보드]를 JSON 형식으로 출력하세요.
 """
         if context.get('is_index_etf'):
             prompt += """
@@ -989,12 +1008,13 @@ class GeminiAnalyzer:
 """
         prompt += f"""
 ### ⚠️ 중요: 올바른 종목명 형식 출력
-올바른 종목명 형식은 "종목명（종목 코드）"입니다. 예: "삼성전자（005930）".
-위에 표시된 종목명이 "종목{code}" 또는 올바르지 않다면, 분석 시작 부분에 **올바른 한국어 전체 이름을 명확히 출력**하세요.
+올바른 종목명 형식은 "종목명(종목 코드)"입니다. 예: "삼성전자(005930)".
+위에 표시된 종목명이 "종목{code}" 또는 올바르지 않다면,
+분석 시작 부분에 **올바른 한국어 전체 이름을 명확히 출력**하세요.
 
 ### 중점 확인 사항 (반드시 명확히 답변):
 1. ❓ MA5>MA10>MA20 정배열 충족 여부?
-2. ❓ 현재 이격률이 안전 범위(<5%) 이내인지? — 5% 초과 시 반드시 "고점 추격 금지" 표시
+2. ❓ 현재 이격률이 안전 범위(<5%) 이내인지? 5% 초과 시 반드시 "고점 추격 금지" 표시
 3. ❓ 거래량 뒷받침 여부 (거래량 감소 조정 / 거래량 증가 돌파)?
 4. ❓ 수급 구조 건전성?
 5. ❓ 뉴스에 중대 악재 있는지? (대량 매도, 제재, 실적 악화 등)
@@ -1035,7 +1055,7 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
             return f"{amount:.0f} 원"
 
     def _format_percent(self, value: Optional[float]) -> str:
-        """형식化百分比표시"""
+        """Format a percentage value for display."""
         if value is None:
             return 'N/A'
         try:
@@ -1044,7 +1064,7 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
             return 'N/A'
 
     def _format_price(self, value: Optional[float]) -> str:
-        """형식化가격표시"""
+        """Format a price value for display."""
         if value is None:
             return 'N/A'
         try:
@@ -1053,7 +1073,7 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
             return 'N/A'
 
     def _build_market_snapshot(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """构建当日시세快照（展示用）"""
+        """Build a market snapshot for display."""
         today = context.get('today', {}) or {}
         realtime = context.get('realtime', {}) or {}
         yesterday = context.get('yesterday', {}) or {}
@@ -1107,47 +1127,47 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
         name: str
     ) -> AnalysisResult:
         """
-        파싱 Gemini 응답（决策仪表盘版）
-        
-        尝试从응답中提取 JSON 형식的분석결과，包含 dashboard 字段
-        如果파싱실패，尝试지능형提取或반환기본값결과
+        Parse a Gemini response for the decision dashboard.
+
+        Attempts to extract JSON analysis data including the dashboard field.
+        Falls back to text extraction when parsing fails.
         """
         try:
-            # 清理응답텍스트：移除 markdown 코드块标记
+            # Remove Markdown code block markers.
             cleaned_text = response_text
             if '```json' in cleaned_text:
                 cleaned_text = cleaned_text.replace('```json', '').replace('```', '')
             elif '```' in cleaned_text:
                 cleaned_text = cleaned_text.replace('```', '')
             
-            # 尝试找到 JSON 내용
+            # Locate JSON content.
             json_start = cleaned_text.find('{')
             json_end = cleaned_text.rfind('}') + 1
             
             if json_start >= 0 and json_end > json_start:
                 json_str = cleaned_text[json_start:json_end]
                 
-                # 尝试수정常见的 JSON 问题
+                # Repair common JSON issues.
                 json_str = self._fix_json_string(json_str)
                 
                 data = json.loads(json_str)
                 
-                # 提取 dashboard 데이터
+                # Extract dashboard data.
                 dashboard = data.get('dashboard', None)
 
-                # 优先사용 AI 반환的종목명（如果原이름无效或包含코드）
+                # Prefer the AI-returned stock name when the original name is invalid.
                 ai_stock_name = data.get('stock_name')
                 if ai_stock_name and (name.startswith('주식') or name == code or 'Unknown' in name):
                     name = ai_stock_name
 
-                # 파싱所有字段，사용기본값防止缺失
-                # 파싱 decision_type，如果没有则기준으로 operation_advice 推断
+                # Parse all fields with defaults to tolerate missing fields.
+                # Infer decision_type from operation_advice when it is not provided.
                 decision_type = data.get('decision_type', '')
                 if not decision_type:
                     op = data.get('operation_advice', '보유')
-                    if op in ['매수', '加仓', '强烈매수']:
+                    if op in ['매수', '추가매수', '강력 매수']:
                         decision_type = 'buy'
-                    elif op in ['매도', '减仓', '强烈매도']:
+                    elif op in ['매도', '비중축소', '강력 매도']:
                         decision_type = 'sell'
                     else:
                         decision_type = 'hold'
@@ -1155,66 +1175,66 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
                 return AnalysisResult(
                     code=code,
                     name=name,
-                    # 核心指标
+                    # Core metrics.
                     sentiment_score=int(data.get('sentiment_score', 50)),
-                    trend_prediction=data.get('trend_prediction', '震荡'),
+                    trend_prediction=data.get('trend_prediction', '횡보'),
                     operation_advice=data.get('operation_advice', '보유'),
                     decision_type=decision_type,
-                    confidence_level=data.get('confidence_level', '中'),
-                    # 决策仪表盘
+                    confidence_level=data.get('confidence_level', '보통'),
+                    # Decision dashboard.
                     dashboard=dashboard,
-                    # 走势분석
+                    # Trend analysis.
                     trend_analysis=data.get('trend_analysis', ''),
                     short_term_outlook=data.get('short_term_outlook', ''),
                     medium_term_outlook=data.get('medium_term_outlook', ''),
-                    # 技术面
+                    # Technical analysis.
                     technical_analysis=data.get('technical_analysis', ''),
                     ma_analysis=data.get('ma_analysis', ''),
                     volume_analysis=data.get('volume_analysis', ''),
                     pattern_analysis=data.get('pattern_analysis', ''),
-                    # 基本面
+                    # Fundamentals.
                     fundamental_analysis=data.get('fundamental_analysis', ''),
                     sector_position=data.get('sector_position', ''),
                     company_highlights=data.get('company_highlights', ''),
-                    # 情绪面/메시지面
+                    # Sentiment and news.
                     news_summary=data.get('news_summary', ''),
                     market_sentiment=data.get('market_sentiment', ''),
                     hot_topics=data.get('hot_topics', ''),
-                    # 综合
+                    # Summary.
                     analysis_summary=data.get('analysis_summary', '분석완료'),
                     key_points=data.get('key_points', ''),
                     risk_warning=data.get('risk_warning', ''),
                     buy_reason=data.get('buy_reason', ''),
-                    # 元데이터
+                    # Metadata.
                     search_performed=data.get('search_performed', False),
-                    data_sources=data.get('data_sources', '技术面데이터'),
+                    data_sources=data.get('data_sources', '기술 데이터'),
                     success=True,
                 )
             else:
-                # 没有找到 JSON，尝试从纯텍스트中提取정보
-                logger.warning(f"无法从응답中提取 JSON，사용原始텍스트분석")
+                # Fall back to text extraction when no JSON object is found.
+                logger.warning("Could not extract JSON from response; using text fallback")
                 return self._parse_text_response(response_text, code, name)
                 
         except json.JSONDecodeError as e:
-            logger.warning(f"JSON 파싱실패: {e}，尝试从텍스트提取")
+            logger.warning(f"JSON parsing failed: {e}; using text fallback")
             return self._parse_text_response(response_text, code, name)
     
     def _fix_json_string(self, json_str: str) -> str:
-        """수정常见的 JSON 형식问题"""
+        """Repair common JSON formatting issues."""
         import re
-        
-        # 移除注释
+
+        # Remove comments.
         json_str = re.sub(r'//.*?\n', '\n', json_str)
         json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
-        
-        # 수정尾随逗号
+
+        # Remove trailing commas.
         json_str = re.sub(r',\s*}', '}', json_str)
         json_str = re.sub(r',\s*]', ']', json_str)
-        
-        # 确保布尔值是小写
+
+        # Ensure JSON booleans are lowercase.
         json_str = json_str.replace('True', 'true').replace('False', 'false')
-        
-        # fix by json-repair
+
+        # Repair malformed JSON.
         json_str = repair_json(json_str)
         
         return json_str
@@ -1225,17 +1245,17 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
         code: str, 
         name: str
     ) -> AnalysisResult:
-        """从纯텍스트응답中尽可能提取분석정보"""
-        # 尝试识别关键词来판단情绪
+        """Extract best-effort analysis information from a plain-text response."""
+        # Use keyword matching to estimate sentiment.
         sentiment_score = 50
-        trend = '震荡'
+        trend = '횡보'
         advice = '보유'
         
         text_lower = response_text.lower()
         
-        # 简单的情绪识别
-        positive_keywords = ['강세', '매수', '上涨', '突破', '强势', '利好', '加仓', 'bullish', 'buy']
-        negative_keywords = ['看空', '매도', '下跌', '跌破', '弱势', '利空', '减仓', 'bearish', 'sell']
+        # Simple sentiment recognition.
+        positive_keywords = ['강세', '매수', '상승', '돌파', '호재', '추가매수', 'bullish', 'buy']
+        negative_keywords = ['약세', '매도', '하락', '이탈', '악재', '비중축소', 'bearish', 'sell']
         
         positive_count = sum(1 for kw in positive_keywords if kw in text_lower)
         negative_count = sum(1 for kw in negative_keywords if kw in text_lower)
@@ -1247,14 +1267,14 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
             decision_type = 'buy'
         elif negative_count > positive_count + 1:
             sentiment_score = 35
-            trend = '看空'
+            trend = '약세'
             advice = '매도'
             decision_type = 'sell'
         else:
             decision_type = 'hold'
         
-        # 截取前500字符作为요약
-        summary = response_text[:500] if response_text else '无분석결과'
+        # Use the first 500 characters as a fallback summary.
+        summary = response_text[:500] if response_text else '분석 결과 없음'
         
         return AnalysisResult(
             code=code,
@@ -1263,10 +1283,10 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
             trend_prediction=trend,
             operation_advice=advice,
             decision_type=decision_type,
-            confidence_level='低',
+            confidence_level='낮음',
             analysis_summary=summary,
-            key_points='JSON파싱실패，仅供参考',
-            risk_warning='분석결과可能不准确，建议结合其他정보판단',
+            key_points='JSON 파싱 실패, 참고용 결과',
+            risk_warning='분석 결과가 부정확할 수 있으므로 다른 정보와 함께 판단하세요.',
             raw_response=response_text,
             success=True,
         )
@@ -1277,22 +1297,22 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
         delay_between: float = 2.0
     ) -> List[AnalysisResult]:
         """
-        일괄여러 종목 분석
-        
-        주의：为방지 API 速率限制，每次분석之间会有延迟
-        
+        Analyze multiple stocks in sequence.
+
+        A delay is applied between analyses to reduce API rate-limit pressure.
+
         Args:
-            contexts: 上下文데이터목록
-            delay_between: 每次분석之间的延迟（秒）
-            
+            contexts: Context data list.
+            delay_between: Delay between analyses in seconds.
+
         Returns:
-            AnalysisResult 목록
+            AnalysisResult list.
         """
         results = []
         
         for i, context in enumerate(contexts):
             if i > 0:
-                logger.debug(f"等待 {delay_between} 秒后继续...")
+                logger.debug(f"Waiting {delay_between} seconds before continuing...")
                 time.sleep(delay_between)
             
             result = self.analyze(context)
@@ -1303,7 +1323,7 @@ JSON 형식의 전체 의사결정 대시보드를 출력하세요."""
 
 # 도우미 함수
 def get_analyzer() -> GeminiAnalyzer:
-    """가져오기 LLM 분석器인스턴스"""
+    """Return an LLM analyzer instance."""
     return GeminiAnalyzer()
 
 
@@ -1311,9 +1331,9 @@ if __name__ == "__main__":
     # 테스트코드
     logging.basicConfig(level=logging.DEBUG)
     
-    # 模拟上下文데이터
+    # Sample context data.
     test_context = {
-        'code': '600519',
+        'code': '005930',
         'date': '2026-01-09',
         'today': {
             'open': 1800.0,
@@ -1340,4 +1360,4 @@ if __name__ == "__main__":
         result = analyzer.analyze(test_context)
         print(f"분석결과: {result.to_dict()}")
     else:
-        print("Gemini API 未설정，跳过테스트")
+        print("Gemini API가 설정되지 않아 테스트를 건너뜁니다.")

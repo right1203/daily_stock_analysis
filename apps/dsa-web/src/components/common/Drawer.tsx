@@ -10,7 +10,7 @@ interface DrawerProps {
 }
 
 /**
- * 侧滑抽屉组件 - 终端风格
+ * Slide-out drawer component - terminal style
  */
 export const Drawer: React.FC<DrawerProps> = ({
   isOpen,
@@ -19,7 +19,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   children,
   width = 'max-w-2xl',
 }) => {
-  // ESC 键关闭
+  // Close with the ESC key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -44,13 +44,13 @@ export const Drawer: React.FC<DrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* 遮罩层 */}
+      {/* Overlay layer */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* 抽屉内容 */}
+      {/* Drawer content */}
       <div className={`absolute inset-y-0 right-0 w-full ${width} flex`}>
         <div
           className="relative w-full flex flex-col
@@ -59,7 +59,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             transform transition-transform duration-300 ease-out
             animate-slide-in-right"
         >
-          {/* 头部 */}
+          {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
             {title && (
               <div>
@@ -80,7 +80,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             </button>
           </div>
 
-          {/* 内容区 */}
+          {/* Content area */}
           <div className="flex-1 overflow-y-auto p-6">
             {children}
           </div>

@@ -4,7 +4,7 @@ interface ValidationResult {
   normalized: string;
 }
 
-// 한국 / 중국 / 홍콩 / 미국 주식 코드 형식 검증
+// Validate supported KR/US stock and index code formats.
 export const validateStockCode = (value: string): ValidationResult => {
   const normalized = value.trim().toUpperCase();
 
@@ -13,12 +13,10 @@ export const validateStockCode = (value: string): ValidationResult => {
   }
 
   const patterns = [
-    /^\d{6}$/, // 한국 주식 6자리 숫자
-    /^(SH|SZ)\d{6}$/, // 중국 A주 거래소 접두사 포함
-    /^\d{5}$/, // 홍콩 주식 5자리 숫자
-    /^[A-Z]{1,6}(\.[A-Z]{1,2})?$/, // 미국 주식 Ticker
-    /^(KOSPI|KOSDAQ|KS200)$/i, // 한국 지수
-    /^(SPX|DJI|IXIC|NDX|VIX|RUT)$/i, // 미국 지수
+    /^\d{6}$/, // Korean stock codes
+    /^(KOSPI|KS11|\^KS11|KOSDAQ|KQ11|\^KQ11|KS200|KOSPI200|\^KS200|KRX300)$/, // Korean indices
+    /^(SPX|\^GSPC|GSPC|DJI|\^DJI|DJIA|IXIC|\^IXIC|NASDAQ|NDX|\^NDX|VIX|\^VIX|RUT|\^RUT)$/, // US indices
+    /^[A-Z]{1,5}(\.[A-Z])?$/, // US stock tickers
   ];
 
   const valid = patterns.some((regex) => regex.test(normalized));

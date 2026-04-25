@@ -57,7 +57,7 @@ class TestKrBlueprint:
 
     def test_kr_blueprint_to_prompt(self):
         prompt = KR_BLUEPRINT.to_prompt_block()
-        assert "Strategy Blueprint" in prompt
+        assert "전략 청사진" in prompt
 
     def test_kr_blueprint_to_markdown(self):
         md = KR_BLUEPRINT.to_markdown_block()

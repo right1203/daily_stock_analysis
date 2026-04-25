@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-A股自选股智能分析系统 - 分析历史存储单元测试
-===================================
-
-职责：
-1. 验证分析历史保存逻辑
-2. 验证上下文快照保存开关
-"""
+"""Tests for analysis history storage."""
 
 import json
 import os
@@ -29,10 +21,10 @@ from src.services.history_service import HistoryService
 
 
 class AnalysisHistoryTestCase(unittest.TestCase):
-    """分析历史存储测试"""
+    """Tests for analysis history storage."""
 
     def setUp(self) -> None:
-        """为每个用例初始化独立数据库"""
+        """Initialize an isolated database for each test case."""
         self._temp_dir = tempfile.TemporaryDirectory()
         self._db_path = os.path.join(self._temp_dir.name, "test_analysis_history.db")
         os.environ["DATABASE_PATH"] = self._db_path
@@ -42,54 +34,54 @@ class AnalysisHistoryTestCase(unittest.TestCase):
         self.db = DatabaseManager.get_instance()
 
     def tearDown(self) -> None:
-        """清理资源"""
+        """Clean up resources."""
         DatabaseManager.reset_instance()
         self._temp_dir.cleanup()
 
     def _build_result(self) -> AnalysisResult:
-        """构造分析结果"""
+        """Build an analysis result fixture."""
         return AnalysisResult(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             sentiment_score=78,
-            trend_prediction="看多",
-            operation_advice="持有",
-            analysis_summary="基本面稳健，短期震荡",
+            trend_prediction="강세",
+            operation_advice="보유",
+            analysis_summary="펀더멘털은 안정적이고 단기 흐름은 변동성 구간입니다",
         )
 
     def test_save_analysis_history_with_snapshot(self) -> None:
-        """保存历史记录并写入上下文快照"""
+        """Save history with a context snapshot."""
         result = self._build_result()
         result.dashboard = {
             "battle_plan": {
                 "sniper_points": {
-                    "ideal_buy": "理想买入点：125.5元",
+                    "ideal_buy": "ideal buy: 125.5",
                     "secondary_buy": "120",
-                    "stop_loss": "止损位：110元",
-                    "take_profit": "目标位：150.0元",
+                    "stop_loss": "stop loss: 110",
+                    "take_profit": "target: 150.0",
                 }
             }
         }
-        context_snapshot = {"enhanced_context": {"code": "600519"}}
+        context_snapshot = {"enhanced_context": {"code": "005930"}}
 
         saved = self.db.save_analysis_history(
             result=result,
             query_id="query_001",
             report_type="simple",
-            news_content="新闻摘要",
+            news_content="뉴스 요약",
             context_snapshot=context_snapshot,
             save_snapshot=True
         )
 
         self.assertEqual(saved, 1)
 
-        history = self.db.get_analysis_history(code="600519", days=7, limit=10)
+        history = self.db.get_analysis_history(code="005930", days=7, limit=10)
         self.assertEqual(len(history), 1)
 
         with self.db.get_session() as session:
             row = session.query(AnalysisHistory).first()
             if row is None:
-                self.fail("未找到保存的历史记录")
+                self.fail("Saved history record was not found")
             self.assertEqual(row.query_id, "query_001")
             self.assertIsNotNone(row.context_snapshot)
             self.assertEqual(row.ideal_buy, 125.5)
@@ -98,14 +90,14 @@ class AnalysisHistoryTestCase(unittest.TestCase):
             self.assertEqual(row.take_profit, 150.0)
 
     def test_save_analysis_history_without_snapshot(self) -> None:
-        """关闭快照保存时不写入 context_snapshot"""
+        """Do not write context_snapshot when snapshot saving is disabled."""
         result = self._build_result()
 
         saved = self.db.save_analysis_history(
             result=result,
             query_id="query_002",
             report_type="simple",
-            news_content="新闻摘要",
+            news_content="뉴스 요약",
             context_snapshot={"foo": "bar"},
             save_snapshot=False
         )
@@ -115,7 +107,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             row = session.query(AnalysisHistory).first()
             if row is None:
-                self.fail("未找到保存的历史记录")
+                self.fail("Saved history record was not found")
             self.assertIsNone(row.context_snapshot)
 
     def test_save_analysis_history_persists_model_used(self) -> None:
@@ -127,7 +119,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
             result=result,
             query_id="query_003",
             report_type="simple",
-            news_content="新闻摘要",
+            news_content="뉴스 요약",
             context_snapshot=None,
             save_snapshot=False
         )
@@ -136,7 +128,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             row = session.query(AnalysisHistory).filter(AnalysisHistory.query_id == "query_003").first()
             if row is None:
-                self.fail("未找到保存的历史记录")
+                self.fail("Saved history record was not found")
             payload = json.loads(row.raw_result or "{}")
             self.assertEqual(payload.get("model_used"), "gemini/gemini-2.0-flash")
 
@@ -149,7 +141,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
             result=result,
             query_id="query_004",
             report_type="simple",
-            news_content="新闻摘要",
+            news_content="뉴스 요약",
             context_snapshot=None,
             save_snapshot=False
         )
@@ -158,7 +150,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             row = session.query(AnalysisHistory).filter(AnalysisHistory.query_id == "query_004").first()
             if row is None:
-                self.fail("未找到保存的历史记录")
+                self.fail("Saved history record was not found")
             record_id = row.id
 
         service = HistoryService(self.db)
@@ -174,7 +166,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
             result=result,
             query_id="query_005",
             report_type="simple",
-            news_content="新闻摘要",
+            news_content="뉴스 요약",
             context_snapshot=None,
             save_snapshot=False
         )
@@ -183,7 +175,7 @@ class AnalysisHistoryTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             row = session.query(AnalysisHistory).filter(AnalysisHistory.query_id == "query_005").first()
             if row is None:
-                self.fail("未找到保存的历史记录")
+                self.fail("Saved history record was not found")
             row.raw_result = {"model_used": "unknown", "extra": "v"}
 
             service = HistoryService(self.db)

@@ -9,7 +9,7 @@ import type {
   NewsIntelItem,
 } from '../types/analysis';
 
-// ============ API 接口 ============
+// ============ API interface ============
 
 export interface GetHistoryListParams extends HistoryFilters {
   page?: number;
@@ -18,8 +18,8 @@ export interface GetHistoryListParams extends HistoryFilters {
 
 export const historyApi = {
   /**
-   * 获取历史分析列表
-   * @param params 筛选和分页参数
+   * Get history analysis list
+   * @param params Filter and pagination parameters
    */
   getList: async (params: GetHistoryListParams = {}): Promise<HistoryListResponse> => {
     const { stockCode, startDate, endDate, page = 1, limit = 20 } = params;
@@ -43,8 +43,8 @@ export const historyApi = {
   },
 
   /**
-   * 获取历史报告详情
-   * @param recordId 分析历史记录主键 ID（使用 ID 而非 query_id，因为 query_id 在批量分析时可能重复）
+   * Get history report details
+   * @param recordId Analysis history record primary key ID (uses ID instead of query_id because query_id can repeat in batch analysis)
    */
   getDetail: async (recordId: number): Promise<AnalysisReport> => {
     const response = await apiClient.get<Record<string, unknown>>(`/api/v1/history/${recordId}`);
@@ -52,9 +52,9 @@ export const historyApi = {
   },
 
   /**
-   * 获取历史报告关联新闻
-   * @param recordId 分析历史记录主键 ID
-   * @param limit 返回数量限制
+   * Get news linked to a history report
+   * @param recordId Analysis history record primary key ID
+   * @param limit Returned item limit
    */
   getNews: async (recordId: number, limit = 20): Promise<NewsIntelResponse> => {
     const response = await apiClient.get<Record<string, unknown>>(`/api/v1/history/${recordId}/news`, {

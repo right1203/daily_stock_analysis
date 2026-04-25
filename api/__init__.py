@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-API 模块初始化
+API Module Initialization
 ===================================
 
-职责：
-1. 导出 API 模块的公共接口
-2. 统一版本管理
+Responsibilities:
+1. Export the public API module interface
+2. Centralize version management
 """
 
 __version__ = "1.0.0"

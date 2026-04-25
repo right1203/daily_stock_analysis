@@ -10,10 +10,16 @@ Covers:
 - SkillManager registration, activation, and prompt generation
 """
 
-import unittest
 import sys
 import os
+import json
+import importlib.util
+import re
+import shutil
+import subprocess
+import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -29,6 +35,14 @@ from src.agent.skills.base import Skill, SkillManager
 def _builtin_strategy_names() -> set[str]:
     strategies_dir = Path(__file__).resolve().parent.parent / "strategies"
     return {path.stem for path in strategies_dir.glob("*.yaml")}
+
+
+def _load_module_from_path(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 # ============================================================
@@ -124,18 +138,18 @@ class TestToolRegistry(unittest.TestCase):
     def test_execute_success(self):
         tool = _make_tool("exec_test")
         self.registry.register(tool)
-        result = self.registry.execute("exec_test", stock_code="600519", days=10)
-        self.assertEqual(result, {"code": "600519", "days": 10})
+        result = self.registry.execute("exec_test", stock_code="005930", days=10)
+        self.assertEqual(result, {"code": "005930", "days": 10})
 
     def test_execute_default_param(self):
         tool = _make_tool("default_test")
         self.registry.register(tool)
-        result = self.registry.execute("default_test", stock_code="600519")
+        result = self.registry.execute("default_test", stock_code="005930")
         self.assertEqual(result["days"], 30)
 
     def test_execute_not_found(self):
         with self.assertRaises(KeyError):
-            self.registry.execute("not_exist", stock_code="600519")
+            self.registry.execute("not_exist", stock_code="005930")
 
     def test_execute_handler_error(self):
         def bad_handler(**kwargs):
@@ -308,7 +322,7 @@ class TestSkillManager(unittest.TestCase):
         instructions = self.manager.get_skill_instructions()
         self.assertIn("Test Skill (demo)", instructions)
         self.assertIn("Instructions for demo", instructions)
-        self.assertIn("策略 1:", instructions)
+        self.assertIn("전략 1:", instructions)
 
     def test_get_required_tools(self):
         s1 = _make_skill("s1")
@@ -410,7 +424,22 @@ class TestBuiltinToolDefinitions(unittest.TestCase):
         self.assertEqual(region_param.default, "kr")
         self.assertEqual(region_param.enum, ["kr", "us"])
         self.assertNotIn("China", get_market_indices_tool.description)
-        self.assertNotIn("cn", region_param.description)
+        self.assertNotIn("cn", region_param.description)  # kr-us-static-allow: removed-market
+
+    def test_market_indices_handler_rejects_unsupported_region(self):
+        from src.agent.tools import market_tools
+
+        with patch.object(market_tools, "_get_fetcher_manager") as get_manager:
+            result = market_tools._handle_get_market_indices(region="cn")  # kr-us-static-allow: removed-market
+
+        get_manager.assert_not_called()
+        expected_error = (
+            "Unsupported market region 'cn'. Supported regions: kr, us"  # kr-us-static-allow: removed-market
+        )
+        self.assertEqual(
+            result,
+            {"error": expected_error},
+        )
 
     def test_data_tool_stock_code_examples_are_kr_us(self):
         from src.agent.tools.data_tools import ALL_DATA_TOOLS
@@ -426,9 +455,86 @@ class TestBuiltinToolDefinitions(unittest.TestCase):
         for description in stock_code_descriptions:
             self.assertIn("005930", description)
             self.assertIn("AAPL", description)
-            self.assertNotIn("A-share", description)
-            self.assertNotIn("HK", description)
-            self.assertNotIn("hk", description)
+            self.assertNotIn("A-share", description)  # kr-us-static-allow: removed-market
+            self.assertNotIn("HK", description)  # kr-us-static-allow: removed-market
+            self.assertNotIn("hk", description)  # kr-us-static-allow: removed-market
+
+    def test_api_schema_examples_are_kr_us_only(self):
+        repo_root = Path(__file__).resolve().parent.parent
+        analysis_schema = _load_module_from_path(
+            "analysis_schema_for_market_option_test",
+            repo_root / "api/v1/schemas/analysis.py",
+        )
+        stocks_schema = _load_module_from_path(
+            "stocks_schema_for_market_option_test",
+            repo_root / "api/v1/schemas/stocks.py",
+        )
+
+        schema_text = json.dumps(
+            [
+                analysis_schema.AnalyzeRequest.model_json_schema(),
+                analysis_schema.AnalysisResultResponse.model_json_schema(),
+                analysis_schema.TaskInfo.model_json_schema(),
+                analysis_schema.DuplicateTaskErrorResponse.model_json_schema(),
+                stocks_schema.StockQuote.model_json_schema(),
+                stocks_schema.StockHistoryResponse.model_json_schema(),
+            ],
+            ensure_ascii=False,
+        )
+
+        self.assertIn("005930", schema_text)
+        self.assertIn("AAPL", schema_text)
+        for legacy_example in ("600518", "000001", "Legacy China example"):
+            self.assertNotIn(legacy_example, schema_text)
+
+    def test_frontend_stock_code_validation_is_kr_us_only(self):
+        if shutil.which("node") is None:
+            self.skipTest("Node.js is not available for executing validation.ts")
+
+        repo_root = Path(__file__).resolve().parent.parent
+        validation_path = repo_root / "apps/dsa-web/src/utils/validation.ts"
+        source = validation_path.read_text(encoding="utf-8")
+        source = re.sub(r"interface ValidationResult \{.*?\}\n\n", "", source, flags=re.S)
+        source = source.replace(
+            "export const validateStockCode = (value: string): ValidationResult =>",
+            "const validateStockCode = (value) =>",
+        )
+        cases = {
+            "SH600518": False,  # kr-us-static-allow: removed-market
+            "HK00700": False,  # kr-us-static-allow: removed-market
+            "00700": False,
+            "ABCDEF": False,
+            "BRK.AA": False,
+            "005930": True,
+            "AAPL": True,
+            "KOSPI": True,
+            "KOSPI200": True,
+            "KRX300": True,
+            "KS11": True,
+            "^KS11": True,
+            "SPX": True,
+            "BRK.B": True,
+            "NASDAQ": True,
+            "^GSPC": True,
+        }
+        script = f"""
+{source}
+const cases = {json.dumps(cases)};
+const results = Object.fromEntries(
+  Object.keys(cases).map((code) => [code, validateStockCode(code).valid])
+);
+console.log(JSON.stringify(results));
+"""
+
+        completed = subprocess.run(
+            ["node", "--input-type=module", "-e", script],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+
+        self.assertEqual(json.loads(completed.stdout), cases)
 
     def test_all_tools_have_valid_schemas(self):
         """All tools should generate valid OpenAI-format schemas (used by litellm)."""
@@ -462,18 +568,18 @@ class TestYAMLStrategyLoading(unittest.TestCase):
 
         yaml_content = """
 name: test_yaml_strategy
-display_name: 测试YAML策略
-description: 一个用于测试的策略
+display_name: 테스트 YAML 전략
+description: 테스트용 전략
 category: trend
 core_rules: [1, 3]
 required_tools:
   - analyze_trend
   - get_daily_history
 instructions: |
-  **测试策略**
+  **테스트 전략**
 
-  这是一个用自然语言编写的测试策略。
-  判断标准：当 MA5 > MA10 时买入。
+  자연어로 작성한 테스트 전략입니다.
+  판단 기준: MA5 > MA10이면 매수합니다.
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False, encoding='utf-8') as f:
             f.write(yaml_content)
@@ -483,11 +589,11 @@ instructions: |
             skill = load_skill_from_yaml(tmp_path)
             self.assertIsInstance(skill, Skill)
             self.assertEqual(skill.name, "test_yaml_strategy")
-            self.assertEqual(skill.display_name, "测试YAML策略")
+            self.assertEqual(skill.display_name, "테스트 YAML 전략")
             self.assertEqual(skill.category, "trend")
             self.assertEqual(skill.core_rules, [1, 3])
             self.assertEqual(skill.required_tools, ["analyze_trend", "get_daily_history"])
-            self.assertIn("自然语言", skill.instructions)
+            self.assertIn("자연어", skill.instructions)
             self.assertFalse(skill.enabled)
         finally:
             os.unlink(tmp_path)
@@ -499,9 +605,9 @@ instructions: |
 
         yaml_content = """
 name: minimal
-display_name: 最简策略
-description: 最简描述
-instructions: 用自然语言描述的策略内容
+display_name: 최소 전략
+description: 최소 설명
+instructions: 자연어로 작성한 전략 내용
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False, encoding='utf-8') as f:
             f.write(yaml_content)
@@ -523,7 +629,7 @@ instructions: 用自然语言描述的策略内容
 
         yaml_content = """
 name: incomplete
-display_name: 不完整
+display_name: 미완성
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False, encoding='utf-8') as f:
             f.write(yaml_content)
@@ -553,9 +659,9 @@ display_name: 不完整
                 with open(os.path.join(tmpdir, f"{name}.yaml"), 'w', encoding='utf-8') as f:
                     f.write(f"""
 name: {name}
-display_name: 策略{chr(65 + i)}
-description: 描述{chr(65 + i)}
-instructions: 自然语言策略描述 {name}
+display_name: 전략{chr(65 + i)}
+description: 설명{chr(65 + i)}
+instructions: 자연어 전략 설명 {name}
 """)
 
             # Create an invalid YAML file (should be skipped)
@@ -594,14 +700,14 @@ instructions: 自然语言策略描述 {name}
             with open(os.path.join(tmpdir, "dragon_head.yaml"), 'w', encoding='utf-8') as f:
                 f.write("""
 name: dragon_head
-display_name: 自定义龙头策略
-description: 我自己的龙头策略
-instructions: 按照我的规则分析龙头股
+display_name: 사용자 주도주 전략
+description: 내 사용자 주도주 전략
+instructions: 내 규칙에 따라 주도주를 분석합니다
 """)
             manager.load_custom_strategies(tmpdir)
 
             overridden = manager.get("dragon_head")
-            self.assertEqual(overridden.display_name, "自定义龙头策略")
+            self.assertEqual(overridden.display_name, "사용자 주도주 전략")
             self.assertIn(tmpdir, overridden.source)
         finally:
             import shutil

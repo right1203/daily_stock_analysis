@@ -60,7 +60,7 @@ class MarketCommand(BotCommand):
         thread.start()
 
         return BotResponse.markdown_response(
-            "✅ **大盘复盘任务已启动**\n\n"
+            "✅ **시장 복기 작업을 시작했습니다**\n\n"
             "다음 항목을 분석합니다:\n"
             "• 주요 지수 흐름\n"
             "• 업종/테마 동향\n"
@@ -83,9 +83,9 @@ class MarketCommand(BotCommand):
 
             # Initialize search service
             search_service = None
-            if config.bocha_api_keys or config.tavily_api_keys or config.brave_api_keys or config.serpapi_keys:
+            if config.naver_api_keys or config.tavily_api_keys or config.brave_api_keys or config.serpapi_keys:
                 search_service = SearchService(
-                    bocha_keys=config.bocha_api_keys,
+                    naver_keys=config.naver_api_keys,
                     tavily_keys=config.tavily_api_keys,
                     brave_keys=config.brave_api_keys,
                     serpapi_keys=config.serpapi_keys,

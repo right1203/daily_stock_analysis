@@ -8,8 +8,7 @@ from unittest.mock import MagicMock, patch
 
 # Provide lightweight stubs so importing trading_calendar does not require
 # full LLM/HTTP runtime dependencies in minimal CI.
-for _mod in ("litellm", "json_repair", "dotenv", "openai", "anthropic", "requests",
-             "fake_useragent", "efinance"):
+for _mod in ("litellm", "json_repair", "dotenv", "openai", "anthropic", "fake_useragent"):
     if _mod not in sys.modules:
         sys.modules[_mod] = MagicMock()
 
@@ -48,26 +47,16 @@ def _call_get_market(code: str):
 
 
 class TestMarketExchange:
-    def test_kr_exchange_exists(self):
-        assert "kr" in MARKET_EXCHANGE
+    def test_supported_exchanges_are_kr_us_only(self):
+        assert set(MARKET_EXCHANGE) == {"kr", "us"}
         assert MARKET_EXCHANGE["kr"] == "XKRX"
-
-    def test_us_exchange_exists(self):
-        assert "us" in MARKET_EXCHANGE
         assert MARKET_EXCHANGE["us"] == "XNYS"
-
-    def test_cn_exchange_removed(self):
-        assert "cn" not in MARKET_EXCHANGE
-
-    def test_hk_exchange_removed(self):
-        assert "hk" not in MARKET_EXCHANGE
 
 
 class TestMarketTimezone:
-    def test_kr_timezone(self):
+    def test_supported_timezones_are_kr_us_only(self):
+        assert set(MARKET_TIMEZONE) == {"kr", "us"}
         assert MARKET_TIMEZONE["kr"] == "Asia/Seoul"
-
-    def test_us_timezone(self):
         assert MARKET_TIMEZONE["us"] == "America/New_York"
 
 
@@ -83,6 +72,10 @@ class TestGetMarketForStock:
 
     def test_kr_index(self):
         assert _call_get_market("KOSPI") == "kr"
+
+    @pytest.mark.parametrize("code", ["SH600518", "HK00700", "00700"])  # kr-us-static-allow: removed-market
+    def test_legacy_market_codes_are_unrecognized(self, code):
+        assert _call_get_market(code) is None
 
     def test_empty_string(self):
         assert get_market_for_stock("") is None
@@ -117,7 +110,7 @@ class TestComputeEffectiveRegion:
         assert compute_effective_region("both", set()) == ""
 
     def test_invalid_region_defaults_to_kr(self):
-        assert compute_effective_region("cn", {"kr", "us"}) == "kr"
+        assert compute_effective_region("legacy", {"kr", "us"}) == "kr"
 
     def test_invalid_region_xyz(self):
         assert compute_effective_region("xyz", {"kr"}) == "kr"

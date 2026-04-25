@@ -14,6 +14,7 @@ from src.core.config_registry import (
     get_category_definitions,
     get_field_definition,
     get_registered_field_keys,
+    is_removed_field_key,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class SystemConfigService:
     def get_config(self, include_schema: bool = True, mask_token: str = "******") -> Dict[str, Any]:
         """Return current config values without server-side secret masking."""
         config_map = self._manager.read_config_map()
+        config_map = {key: value for key, value in config_map.items() if not is_removed_field_key(key)}
         registered_keys = set(get_registered_field_keys())
         all_keys = set(config_map.keys()) | registered_keys
 
@@ -165,6 +167,18 @@ class SystemConfigService:
         for item in items:
             key = item["key"].upper()
             value = item["value"]
+            if is_removed_field_key(key):
+                issues.append(
+                    {
+                        "key": key,
+                        "code": "removed_field",
+                        "message": "This configuration field is no longer supported",
+                        "severity": "error",
+                        "expected": "supported configuration field",
+                        "actual": key,
+                    }
+                )
+                continue
             field_schema = get_field_definition(key, value)
             is_sensitive = bool(field_schema.get("is_sensitive", False))
 

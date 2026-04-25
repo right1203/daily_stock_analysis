@@ -35,12 +35,12 @@ class BacktestServiceTestCase(unittest.TestCase):
             session.add(
                 AnalysisHistory(
                     query_id="q1",
-                    code="600519",
-                    name="贵州茅台",
+                    code="005930",
+                    name="삼성전자",
                     report_type="simple",
                     sentiment_score=80,
-                    operation_advice="买入",
-                    trend_prediction="看多",
+                    operation_advice="매수",
+                    trend_prediction="강세",
                     analysis_summary="test",
                     stop_loss=95.0,
                     take_profit=110.0,
@@ -52,7 +52,7 @@ class BacktestServiceTestCase(unittest.TestCase):
             # Analysis day close
             session.add(
                 StockDaily(
-                    code="600519",
+                    code="005930",
                     date=date(2024, 1, 1),
                     open=100.0,
                     high=101.0,
@@ -64,9 +64,9 @@ class BacktestServiceTestCase(unittest.TestCase):
             # Forward bars (3 days) that hit take-profit on day1
             session.add_all(
                 [
-                    StockDaily(code="600519", date=date(2024, 1, 2), high=111.0, low=100.0, close=105.0),
-                    StockDaily(code="600519", date=date(2024, 1, 3), high=108.0, low=103.0, close=106.0),
-                    StockDaily(code="600519", date=date(2024, 1, 4), high=109.0, low=104.0, close=107.0),
+                    StockDaily(code="005930", date=date(2024, 1, 2), high=111.0, low=100.0, close=105.0),
+                    StockDaily(code="005930", date=date(2024, 1, 3), high=108.0, low=103.0, close=106.0),
+                    StockDaily(code="005930", date=date(2024, 1, 4), high=109.0, low=104.0, close=107.0),
                 ]
             )
             session.commit()
@@ -82,24 +82,24 @@ class BacktestServiceTestCase(unittest.TestCase):
     def test_force_semantics(self) -> None:
         service = BacktestService(self.db)
 
-        stats1 = service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        stats1 = service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
         self.assertEqual(stats1["saved"], 1)
         self.assertEqual(self._count_results(), 1)
 
         # Non-force should be idempotent
-        stats2 = service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        stats2 = service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
         self.assertEqual(stats2["saved"], 0)
         self.assertEqual(self._count_results(), 1)
 
         # Force should replace existing result without unique constraint errors
-        stats3 = service.run_backtest(code="600519", force=True, eval_window_days=3, min_age_days=0, limit=10)
+        stats3 = service.run_backtest(code="005930", force=True, eval_window_days=3, min_age_days=0, limit=10)
         self.assertEqual(stats3["saved"], 1)
         self.assertEqual(self._count_results(), 1)
 
     def _run_and_get_result(self) -> BacktestResult:
         """Helper: run backtest and return the single BacktestResult row."""
         service = BacktestService(self.db)
-        service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
         with self.db.get_session() as session:
             return session.query(BacktestResult).one()
 
@@ -108,9 +108,9 @@ class BacktestServiceTestCase(unittest.TestCase):
         result = self._run_and_get_result()
 
         self.assertEqual(result.eval_status, "completed")
-        self.assertEqual(result.code, "600519")
+        self.assertEqual(result.code, "005930")
         self.assertEqual(result.analysis_date, date(2024, 1, 1))
-        self.assertEqual(result.operation_advice, "买入")
+        self.assertEqual(result.operation_advice, "매수")
         self.assertEqual(result.position_recommendation, "long")
         self.assertEqual(result.direction_expected, "up")
 
@@ -139,7 +139,7 @@ class BacktestServiceTestCase(unittest.TestCase):
     def test_summaries_created_after_run(self) -> None:
         """Verify both overall and per-stock BacktestSummary rows are created."""
         service = BacktestService(self.db)
-        service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
 
         with self.db.get_session() as session:
             # Overall summary uses sentinel code
@@ -157,7 +157,7 @@ class BacktestServiceTestCase(unittest.TestCase):
             # Stock-level summary
             stock = session.query(BacktestSummary).filter(
                 BacktestSummary.scope == "stock",
-                BacktestSummary.code == "600519",
+                BacktestSummary.code == "005930",
             ).first()
             self.assertIsNotNone(stock)
             self.assertEqual(stock.total_evaluations, 1)
@@ -167,7 +167,7 @@ class BacktestServiceTestCase(unittest.TestCase):
     def test_get_summary_overall_returns_sentinel_as_none(self) -> None:
         """Verify get_summary translates __overall__ sentinel back to None."""
         service = BacktestService(self.db)
-        service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
 
         summary = service.get_summary(scope="overall", code=None)
         self.assertIsNotNone(summary)
@@ -178,16 +178,16 @@ class BacktestServiceTestCase(unittest.TestCase):
     def test_get_recent_evaluations(self) -> None:
         """Verify get_recent_evaluations returns correct paginated results."""
         service = BacktestService(self.db)
-        service.run_backtest(code="600519", force=False, eval_window_days=3, min_age_days=0, limit=10)
+        service.run_backtest(code="005930", force=False, eval_window_days=3, min_age_days=0, limit=10)
 
-        data = service.get_recent_evaluations(code="600519", limit=10, page=1)
+        data = service.get_recent_evaluations(code="005930", limit=10, page=1)
         self.assertEqual(data["total"], 1)
         self.assertEqual(data["page"], 1)
         self.assertEqual(data["limit"], 10)
         self.assertEqual(len(data["items"]), 1)
 
         item = data["items"][0]
-        self.assertEqual(item["code"], "600519")
+        self.assertEqual(item["code"], "005930")
         self.assertEqual(item["outcome"], "win")
         self.assertEqual(item["direction_expected"], "up")
         self.assertTrue(item["direction_correct"])
@@ -197,16 +197,16 @@ class BacktestServiceTestCase(unittest.TestCase):
         old_created_at = datetime(2024, 1, 1, 0, 0, 0)
 
         with self.db.get_session() as session:
-            # Second stock with sell advice -- price drops (win for cash/down)
+            # Second stock with sell advice: price drops, which is a win for cash/down.
             session.add(
                 AnalysisHistory(
                     query_id="q2",
-                    code="000001",
-                    name="平安银行",
+                    code="035720",
+                    name="카카오",
                     report_type="simple",
                     sentiment_score=30,
-                    operation_advice="卖出",
-                    trend_prediction="看空",
+                    operation_advice="매도",
+                    trend_prediction="약세",
                     analysis_summary="test2",
                     stop_loss=None,
                     take_profit=None,
@@ -215,12 +215,12 @@ class BacktestServiceTestCase(unittest.TestCase):
                 )
             )
             session.add(
-                StockDaily(code="000001", date=date(2024, 1, 1), open=10.0, high=10.2, low=9.8, close=10.0)
+                StockDaily(code="035720", date=date(2024, 1, 1), open=10.0, high=10.2, low=9.8, close=10.0)
             )
             session.add_all([
-                StockDaily(code="000001", date=date(2024, 1, 2), high=10.0, low=9.5, close=9.6),
-                StockDaily(code="000001", date=date(2024, 1, 3), high=9.7, low=9.3, close=9.4),
-                StockDaily(code="000001", date=date(2024, 1, 4), high=9.5, low=9.0, close=9.1),
+                StockDaily(code="035720", date=date(2024, 1, 2), high=10.0, low=9.5, close=9.6),
+                StockDaily(code="035720", date=date(2024, 1, 3), high=9.7, low=9.3, close=9.4),
+                StockDaily(code="035720", date=date(2024, 1, 4), high=9.5, low=9.0, close=9.1),
             ])
             session.commit()
 
@@ -232,10 +232,10 @@ class BacktestServiceTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             # Each stock has its own summary
             s1 = session.query(BacktestSummary).filter(
-                BacktestSummary.scope == "stock", BacktestSummary.code == "600519"
+                BacktestSummary.scope == "stock", BacktestSummary.code == "005930"
             ).first()
             s2 = session.query(BacktestSummary).filter(
-                BacktestSummary.scope == "stock", BacktestSummary.code == "000001"
+                BacktestSummary.scope == "stock", BacktestSummary.code == "035720"
             ).first()
             self.assertIsNotNone(s1)
             self.assertIsNotNone(s2)
@@ -255,4 +255,3 @@ class BacktestServiceTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

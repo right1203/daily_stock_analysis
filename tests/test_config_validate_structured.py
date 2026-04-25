@@ -11,6 +11,7 @@ Covers:
 from unittest.mock import patch
 
 from src.config import Config, ConfigIssue
+from src.core.config_registry import get_registered_field_keys
 
 
 # ---------------------------------------------------------------------------
@@ -25,7 +26,6 @@ def _make_config(**kwargs) -> Config:
     """
     defaults = dict(
         stock_list=["005930"],
-        tushare_token=None,
         # Populate llm_model_list as the three-tier signal
         llm_model_list=[{"model_name": "gemini/gemini-2.0-flash", "litellm_params": {"api_key": "sk-test"}}],
         litellm_model="gemini/gemini-2.0-flash",
@@ -33,20 +33,16 @@ def _make_config(**kwargs) -> Config:
         anthropic_api_keys=[],
         openai_api_keys=[],
         deepseek_api_keys=[],
-        bocha_api_keys=[],
+        naver_api_keys=[],
         tavily_api_keys=[],
         brave_api_keys=[],
         serpapi_keys=[],
-        wechat_webhook_url=None,
-        feishu_webhook_url=None,
         telegram_bot_token="TOKEN",
         telegram_chat_id="CHAT",
         email_sender=None,
         email_password=None,
         pushover_user_key=None,
         pushover_api_token=None,
-        pushplus_token=None,
-        serverchan3_sendkey=None,
         custom_webhook_urls=[],
         discord_bot_token=None,
         discord_main_channel_id=None,
@@ -69,6 +65,38 @@ def _severities(issues):
 
 def _fields(issues):
     return [i.field for i in issues]
+
+
+def test_config_registry_excludes_china_service_fields():
+    """Removed China service fields must not be exposed through the active registry."""
+    removed_keys = {
+        "BOCHA_API_KEYS",  # kr-us-static-allow: removed-service
+        "TUSHARE_TOKEN",  # kr-us-static-allow: removed-service
+        "WECHAT_WEBHOOK_URL",  # kr-us-static-allow: removed-service
+        "FEISHU_WEBHOOK_URL",  # kr-us-static-allow: removed-service
+        "DINGTALK_APP_KEY",  # kr-us-static-allow: removed-service
+        "PUSHPLUS_TOKEN",  # kr-us-static-allow: removed-service
+        "SERVERCHAN3_SENDKEY",  # kr-us-static-allow: removed-service
+        "AKSHARE_SLEEP_MIN",  # kr-us-static-allow: removed-service
+        "AKSHARE_SLEEP_MAX",  # kr-us-static-allow: removed-service
+        "PYTDX_HOST",  # kr-us-static-allow: removed-service
+        "PYTDX_PORT",  # kr-us-static-allow: removed-service
+        "PYTDX_SERVERS",  # kr-us-static-allow: removed-service
+        "WECOM_CORPID",  # kr-us-static-allow: removed-service
+        "WECOM_TOKEN",  # kr-us-static-allow: removed-service
+        "WECOM_AES_KEY",  # kr-us-static-allow: removed-service
+    }
+
+    exposed_keys = set(get_registered_field_keys())
+
+    assert exposed_keys.isdisjoint(removed_keys), sorted(exposed_keys & removed_keys)
+
+
+def test_config_registry_includes_retained_astrbot_fields():
+    """Retained AstrBot notification settings must be exposed through the active registry."""
+    exposed_keys = set(get_registered_field_keys())
+
+    assert {"ASTRBOT_URL", "ASTRBOT_TOKEN"}.issubset(exposed_keys)
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +126,7 @@ class TestValidateStructuredHappyPath:
     def test_no_issues_when_fully_configured(self):
         cfg = _make_config()
         issues = cfg.validate_structured()
-        # No errors or warnings; only possible info about tushare / search
+        # No errors or warnings; only possible info about optional search providers.
         errors = [i for i in issues if i.severity == "error"]
         warnings = [i for i in issues if i.severity == "warning"]
         assert errors == []
@@ -117,7 +145,7 @@ class TestValidateStructuredStockList:
         assert any("STOCK_LIST" in i.field for i in errors)
 
     def test_configured_stock_list_no_stock_error(self):
-        cfg = _make_config(stock_list=["600519", "000001"])
+        cfg = _make_config(stock_list=["005930", "035720"])
         issues = cfg.validate_structured()
         assert not any(i.field == "STOCK_LIST" for i in issues if i.severity == "error")
 
@@ -137,7 +165,7 @@ class TestValidateStructuredLLM:
         """LLM_CHANNELS populated via llm_model_list must NOT trigger an error.
 
         This is the primary regression guard: a user who only configures
-        LLM_CHANNELS (no legacy *_API_KEY) should not see 'AI 功能不可用'.
+        LLM_CHANNELS (no legacy *_API_KEY) should not see the unavailable-AI error.
         """
         channel_model_list = [
             {"model_name": "openai/gpt-4o-mini", "litellm_params": {"api_key": "sk-chan", "api_base": "https://aihubmix.com/v1"}},
@@ -216,24 +244,20 @@ class TestValidateStructuredNotification:
         issues = cfg.validate_structured()
         assert not any(i.severity == "warning" and "알림 채널" in i.message for i in issues)
 
-    def test_legacy_china_notification_config_is_warning(self):
+    def test_custom_webhook_configured_no_warning(self):
         cfg = _make_config(
             telegram_bot_token=None,
             telegram_chat_id=None,
-            wechat_webhook_url="https://example.com/wechat",
-            feishu_webhook_url="https://example.com/feishu",
-            pushplus_token="TOKEN",
-            serverchan3_sendkey="SCTKEY",
+            custom_webhook_urls=["https://example.com/webhook"],
         )
         issues = cfg.validate_structured()
-        assert any(i.severity == "warning" and "알림 채널" in i.message for i in issues)
+        assert not any(i.severity == "warning" and "알림 채널" in i.message for i in issues)
 
     def test_no_search_engine_is_info(self):
         cfg = _make_config()
         issues = cfg.validate_structured()
         info = [i for i in issues if i.severity == "info"]
         assert any("검색 엔진" in i.message for i in info)
-        assert not any("Bocha" in i.message for i in info)
 
 
 # ---------------------------------------------------------------------------

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-全局异常处理中间件
+Global exception handling middleware
 ===================================
 
-职责：
-1. 捕获未处理的异常
-2. 统一错误响应格式
-3. 记录错误日志
+Responsibilities:
+1. Catch unhandled exceptions.
+2. Return consistent error response payloads.
+3. Record error logs.
 """
 
 import logging
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     """
-    全局异常处理中间件
-    
-    捕获所有未处理的异常，返回统一格式的错误响应
+    Global exception handling middleware.
+
+    Catches unhandled exceptions and returns a consistent error payload.
     """
     
     async def dispatch(
@@ -34,34 +34,34 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         call_next: Callable
     ) -> Response:
         """
-        处理请求，捕获异常
-        
+        Process a request and catch exceptions.
+
         Args:
-            request: 请求对象
-            call_next: 下一个处理器
-            
+            request: Request object.
+            call_next: Next handler.
+
         Returns:
-            Response: 响应对象
+            Response object.
         """
         try:
             response = await call_next(request)
             return response
             
         except Exception as e:
-            # 记录错误日志
+            # Record error log.
             logger.error(
-                f"未处理的异常: {e}\n"
-                f"请求路径: {request.url.path}\n"
-                f"请求方法: {request.method}\n"
-                f"堆栈: {traceback.format_exc()}"
+                f"Unhandled exception: {e}\n"
+                f"Request path: {request.url.path}\n"
+                f"Request method: {request.method}\n"
+                f"Traceback: {traceback.format_exc()}"
             )
-            
-            # 返回统一格式的错误响应
+
+            # Return a consistent error response.
             return JSONResponse(
                 status_code=500,
                 content={
                     "error": "internal_error",
-                    "message": "服务器内部错误，请稍后重试",
+                    "message": "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도하세요.",
                     "detail": str(e) if logger.isEnabledFor(logging.DEBUG) else None
                 }
             )
@@ -69,26 +69,24 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
 
 def add_error_handlers(app) -> None:
     """
-    添加全局异常处理器
-    
-    为 FastAPI 应用添加各类异常的处理器
-    
+    Add global exception handlers.
+
     Args:
-        app: FastAPI 应用实例
+        app: FastAPI application instance.
     """
     from fastapi import HTTPException
     from fastapi.exceptions import RequestValidationError
-    
+
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
-        """处理 HTTP 异常"""
-        # 如果 detail 已经是 ErrorResponse 格式的 dict，直接使用
+        """Handle HTTP exceptions."""
+        # Use ErrorResponse-compatible detail payloads as-is.
         if isinstance(exc.detail, dict) and "error" in exc.detail and "message" in exc.detail:
             return JSONResponse(
                 status_code=exc.status_code,
                 content=exc.detail
             )
-        # 否则将 detail 包装成 ErrorResponse 格式
+        # Wrap plain detail values in the standard response shape.
         return JSONResponse(
             status_code=exc.status_code,
             content={
@@ -97,32 +95,32 @@ def add_error_handlers(app) -> None:
                 "detail": None
             }
         )
-    
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
-        """处理请求验证异常"""
+        """Handle request validation exceptions."""
         return JSONResponse(
             status_code=422,
             content={
                 "error": "validation_error",
-                "message": "请求参数验证失败",
+                "message": "요청 파라미터 검증에 실패했습니다.",
                 "detail": exc.errors()
             }
         )
-    
+
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        """处理通用异常"""
+        """Handle generic exceptions."""
         logger.error(
-            f"未处理的异常: {exc}\n"
-            f"请求路径: {request.url.path}\n"
-            f"堆栈: {traceback.format_exc()}"
+            f"Unhandled exception: {exc}\n"
+            f"Request path: {request.url.path}\n"
+            f"Traceback: {traceback.format_exc()}"
         )
         return JSONResponse(
             status_code=500,
             content={
                 "error": "internal_error",
-                "message": "服务器内部错误",
+                "message": "서버 내부 오류가 발생했습니다.",
                 "detail": None
             }
         )

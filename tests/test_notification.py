@@ -1,19 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-===================================
-A股自选股智能分析系统 - 通知服务单元测试
-===================================
-
-职责：
-1. 验证通知服务的配置检测逻辑
-2. 验证通知服务的渠道检测逻辑
-3. 验证通知服务的消息发送逻辑
-
-TODO: 
-1. 添加发送渠道以外的测试，如：
-    - 生成日报
-2. 添加 send_to_context 的测试
-"""
+"""Tests for notification service channel detection and sending."""
 import os
 import sys
 import unittest
@@ -34,6 +20,24 @@ from src.notification import NotificationService, NotificationChannel
 import requests
 
 
+def test_notification_channels_exclude_china_services():
+    """Notification channels should only expose supported KR-US delivery services."""
+    removed_values = {
+        "wechat",  # kr-us-static-allow: removed-service
+        "feishu",  # kr-us-static-allow: removed-service
+        "pushplus",  # kr-us-static-allow: removed-service
+        "serverchan3",  # kr-us-static-allow: removed-service
+        "dingtalk",  # kr-us-static-allow: removed-service
+        "ding_talk",
+        "serverchan",  # kr-us-static-allow: removed-service
+        "server_chan",
+    }
+
+    channel_values = {channel.value for channel in NotificationChannel}
+
+    assert channel_values.isdisjoint(removed_values)
+
+
 def _make_config(**overrides) -> Config:
     """Create a Config instance overriding only notification-related fields."""
     return Config(stock_list=[], **overrides)
@@ -48,33 +52,7 @@ def _make_response(status_code: int, json: Optional[dict] = None) -> requests.Re
 
 
 class TestNotificationServiceSendToMethods(unittest.TestCase):
-    """测试通知发送服务
-
-    测试设计：
-
-    测试按照渠道的字母顺序排列，在合适位置添加新的测试方法。
-    如果采用长消息分批发送，必须单独测试分批发送的逻辑，
-        e.g. test_send_to_discord_via_notification_service_with_bot_requires_chunking
-
-    1. 添加模拟配置：
-    使用 mock.patch 装饰器来模拟 get_config 函数，
-    使用 _make_config 函数添加配置，并返回 Config 实例。
-
-    2. 检查配置是否正确：
-    使用 assertIn 检查 NotificationChannel.xxxx 是否在
-    `NotificationService.get_available_channels()` 返回值中。
-
-    3. 模拟请求响应：
-    使用 mock.patch 装饰器来模拟 requests.post 函数，
-    使用 _make_response 函数模拟请求响应，并返回 Response 实例。
-    若使用其他函数模拟请求响应，则使用 mock.patch 装饰器来模拟该函数。
-
-    4. 使用 assertTrue 检查 send 的返回值。
-
-    5. 使用 assert_called_once 检查请求函数是否被调用一次。
-    测试分批发送时，使用 assertAlmostEqual(mock_post.call_count, ...) 检查请求函数被调用次数
-
-    """
+    """Tests for notification send methods."""
 
     @mock.patch("src.notification.get_config")
     def test_no_channels_service_unavailable_and_send_returns_false(self, mock_get_config):
@@ -201,7 +179,7 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
             email_sender="user@qq.com",
             email_password="PASS",
             email_receivers=["default@example.com"],
-            stock_email_groups=[(["000001", "600519"], ["group@example.com"])],
+            stock_email_groups=[(["035720", "005930"], ["group@example.com"])],
         )
         mock_get_config.return_value = cfg
 
@@ -210,30 +188,13 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
         server = mock_smtp_ssl.return_value
 
-        ok = service.send("content", email_stock_codes=["000001"])
+        ok = service.send("content", email_stock_codes=["035720"])
 
         self.assertTrue(ok)
         mock_smtp_ssl.assert_called_once()
         server.send_message.assert_called_once()
         msg = server.send_message.call_args[0][0]
         self.assertIn("group@example.com", msg["To"])
-
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
-    def test_legacy_feishu_config_does_not_enable_notification_service(
-        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
-    ):
-        cfg = _make_config(feishu_webhook_url="https://feishu.example", feishu_max_bytes=2000)
-        mock_get_config.return_value = cfg
-
-        service = NotificationService()
-        self.assertNotIn(NotificationChannel.FEISHU, service.get_available_channels())
-        self.assertFalse(service.is_available())
-
-        ok = service.send("hello feishu")
-
-        self.assertFalse(ok)
-        mock_post.assert_not_called()
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
@@ -257,40 +218,6 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
     @mock.patch("src.notification.get_config")
     @mock.patch("requests.post")
-    def test_legacy_pushplus_config_does_not_enable_notification_service(
-        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
-    ):
-        cfg = _make_config(pushplus_token="TOKEN")
-        mock_get_config.return_value = cfg
-
-        service = NotificationService()
-        self.assertNotIn(NotificationChannel.PUSHPLUS, service.get_available_channels())
-        self.assertFalse(service.is_available())
-
-        ok = service.send("pushplus content")
-
-        self.assertFalse(ok)
-        mock_post.assert_not_called()
-
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
-    def test_legacy_serverchan3_config_does_not_enable_notification_service(
-        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
-    ):
-        cfg = _make_config(serverchan3_sendkey="SCTKEY")
-        mock_get_config.return_value = cfg
-
-        service = NotificationService()
-        self.assertNotIn(NotificationChannel.SERVERCHAN3, service.get_available_channels())
-        self.assertFalse(service.is_available())
-
-        ok = service.send("serverchan content")
-
-        self.assertFalse(ok)
-        mock_post.assert_not_called()
-
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
     def test_send_to_telegram_via_notification_service(
         self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
     ):
@@ -305,23 +232,6 @@ class TestNotificationServiceSendToMethods(unittest.TestCase):
 
         self.assertTrue(ok)
         mock_post.assert_called_once()
-
-    @mock.patch("src.notification.get_config")
-    @mock.patch("requests.post")
-    def test_legacy_wechat_config_does_not_enable_notification_service(
-        self, mock_post: mock.MagicMock, mock_get_config: mock.MagicMock
-    ):
-        cfg = _make_config(wechat_webhook_url="https://wechat.example", wechat_max_bytes=2000)
-        mock_get_config.return_value = cfg
-
-        service = NotificationService()
-        self.assertNotIn(NotificationChannel.WECHAT, service.get_available_channels())
-        self.assertFalse(service.is_available())
-
-        ok = service.send("hello wechat")
-
-        self.assertFalse(ok)
-        mock_post.assert_not_called()
 
 
 if __name__ == "__main__":

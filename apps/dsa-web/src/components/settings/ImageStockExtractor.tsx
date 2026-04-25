@@ -42,16 +42,16 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
       const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
       if (!ALLOWED_EXT.includes(ext)) {
         setError(createParsedApiError({
-          title: '文件格式不支持',
-          message: '仅支持 JPG、PNG、WebP、GIF 格式。',
+          title: '지원하지 않는 파일 형식',
+          message: 'JPG, PNG, WebP, GIF 형식만 지원합니다.',
           category: 'unknown',
         }));
         return;
       }
       if (file.size > MAX_SIZE) {
         setError(createParsedApiError({
-          title: '图片尺寸超出限制',
-          message: '图片大小不能超过 5MB。',
+          title: '이미지 크기 제한 초과',
+          message: '이미지 크기는 5MB를 초과할 수 없습니다.',
           category: 'unknown',
         }));
         return;
@@ -109,8 +109,8 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
     if (codes.length === 0) return;
     if (!configVersion) {
       setError(createParsedApiError({
-        title: '配置尚未加载',
-        message: '请先加载配置后再合并。',
+        title: '설정이 아직 로드되지 않음',
+        message: '설정을 먼저 불러온 뒤 병합하세요.',
         category: 'unknown',
       }));
       return;
@@ -134,8 +134,8 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
       if (e instanceof SystemConfigConflictError) {
         onMerged();
         setError(createParsedApiError({
-          title: '配置已发生变化',
-          message: '配置已更新，请再次点击“合并到自选股”。',
+          title: '설정이 변경됨',
+          message: '설정이 업데이트되었습니다. “관심 종목에 병합”을 다시 클릭하세요.',
           rawMessage: e.parsedError.rawMessage,
           status: e.parsedError.status,
           category: e.parsedError.category,
@@ -150,16 +150,18 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
 
   return (
     <div className="rounded-xl border border-white/8 bg-elevated/40 p-4">
-      <p className="mb-2 text-sm font-medium text-white">从图片添加</p>
+      <p className="mb-2 text-sm font-medium text-white">이미지에서 추가</p>
       <p className="mb-3 text-xs text-muted">
-        上传自选股截图，自动识别股票代码。需配置 Gemini、Anthropic 或 OpenAI API Key 方可使用。建议人工核对后再合并。
+        관심 종목 스크린샷을 업로드하면 종목 코드를 자동 인식합니다.
+        Gemini, Anthropic 또는 OpenAI API Key가 필요하며, 병합 전 직접 확인하는 것을 권장합니다.
       </p>
 
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`mb-3 flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition ${
+        className={`mb-3 flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg
+          border-2 border-dashed transition ${
           isDragging ? 'border-accent bg-cyan/5' : 'border-white/16 hover:border-white/24'
         } ${disabled || isExtracting ? 'cursor-not-allowed opacity-60' : ''}`}
         onClick={() => !disabled && !isExtracting && document.getElementById('img-upload')?.click()}
@@ -173,10 +175,11 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
           disabled={disabled || isExtracting}
         />
         {isExtracting ? (
-          <span className="text-sm text-secondary">识别中...</span>
+          <span className="text-sm text-secondary">인식 중...</span>
         ) : (
           <span className="text-sm text-secondary">
-            拖拽或点击上传图片（JPG/PNG/WebP，≤5MB）。大图识别约需 30–60 秒
+            이미지를 끌어오거나 클릭해 업로드하세요(JPG/PNG/WebP, 5MB 이하).
+            큰 이미지는 약 30-60초가 걸립니다.
           </span>
         )}
       </div>
@@ -188,14 +191,15 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
       {codes.length > 0 ? (
         <div className="space-y-2">
           <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-400">
-            ⚠️ 建议人工逐条核对后再合并，识别结果可能有误
+            ⚠️ 인식 결과가 틀릴 수 있으니 병합 전 항목별로 직접 확인하세요
           </p>
-          <p className="text-xs text-secondary">识别结果（可删除不需要的项）：</p>
+          <p className="text-xs text-secondary">인식 결과(필요 없는 항목은 삭제 가능):</p>
           <div className="flex flex-wrap gap-2">
             {codes.map((code) => (
               <span
                 key={code}
-                className="inline-flex items-center gap-1 rounded-lg border border-white/16 bg-card/60 px-2 py-1 text-sm"
+                className="inline-flex items-center gap-1 rounded-lg border border-white/16
+                  bg-card/60 px-2 py-1 text-sm"
               >
                 {code}
                 <button
@@ -215,7 +219,7 @@ export const ImageStockExtractor: React.FC<ImageStockExtractorProps> = ({
             onClick={() => void mergeToWatchlist()}
             disabled={disabled || isMerging}
           >
-            {isMerging ? '保存中...' : '合并到自选股'}
+            {isMerging ? '저장 중...' : '관심 종목에 병합'}
           </button>
         </div>
       ) : null}

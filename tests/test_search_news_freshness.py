@@ -3,6 +3,7 @@
 Unit tests for search_stock_news and search_comprehensive_intel news_max_age_days logic (Issue #296).
 """
 
+import inspect
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
@@ -15,6 +16,58 @@ if "newspaper" not in sys.modules:
     sys.modules["newspaper"] = mock_np
 
 from src.search_service import SearchResponse, SearchResult, SearchService
+
+
+def test_search_service_does_not_register_bocha() -> None:  # kr-us-static-allow: removed-service
+    """SearchService should only register retained search providers."""
+    service = SearchService(
+        tavily_keys=["tavily_key"],
+        brave_keys=["brave_key"],
+        serpapi_keys=["serpapi_key"],
+    )
+
+    provider_names = [provider.name for provider in service._providers]
+    assert "LegacySearchProvider" not in provider_names
+    assert "bocha" not in [name.lower() for name in provider_names]  # kr-us-static-allow: removed-service
+    assert "bocha_keys" not in inspect.signature(SearchService).parameters  # kr-us-static-allow: removed-service
+
+
+def test_us_market_news_uses_global_market_symbol() -> None:
+    """US market recap news should not use the generic KR-routed market code."""
+    fake_search_service = MagicMock()
+    fake_search_service.search_stock_news.return_value = SearchResponse(
+        query="test",
+        results=[],
+        provider="Mock",
+        success=True,
+    )
+
+    with patch("src.market_analyzer.get_config"), patch("src.market_analyzer.DataFetcherManager"):
+        from src.market_analyzer import MarketAnalyzer
+
+        analyzer = MarketAnalyzer(search_service=fake_search_service, region="us")
+
+    analyzer.search_market_news()
+
+    call_kwargs = fake_search_service.search_stock_news.call_args_list[0].kwargs
+    assert call_kwargs["stock_code"] == "SPX"
+
+
+def test_search_service_routes_market_symbols_to_region_providers() -> None:
+    """Provider routing should keep US/global symbols off Naver and prefer Naver for KR symbols."""
+    service = SearchService(
+        naver_keys=["naver_client:naver_secret"],
+        tavily_keys=["tavily_key"],
+        brave_keys=["brave_key"],
+        serpapi_keys=["serpapi_key"],
+    )
+
+    us_provider_names = [provider.name for provider in service._providers_for_stock("SPX")]
+    assert us_provider_names == ["Tavily", "Brave", "SerpAPI"]
+    assert "Naver" not in us_provider_names
+
+    kr_provider_names = [provider.name for provider in service._providers_for_stock("KOSPI")]
+    assert kr_provider_names == ["Naver", "Tavily", "Brave", "SerpAPI"]
 
 
 def _fake_search_response() -> SearchResponse:
@@ -41,7 +94,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
     def _create_service_with_mock_provider(self, news_max_age_days: int = 3):
         """Create SearchService with a mock provider that records search() calls."""
         service = SearchService(
-            bocha_keys=["dummy_key"],
+            tavily_keys=["dummy_key"],
             news_max_age_days=news_max_age_days,
         )
         mock_search = MagicMock(return_value=_fake_search_response())
@@ -57,7 +110,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         service, mock_search = self._create_service_with_mock_provider(
             news_max_age_days=1
         )
-        service.search_stock_news("600519", "贵州茅台")
+        service.search_stock_news("005930", "삼성전자")
         mock_search.assert_called_once()
         call_kwargs = mock_search.call_args[1]
         self.assertEqual(call_kwargs["days"], 1)
@@ -71,7 +124,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         service, mock_search = self._create_service_with_mock_provider(
             news_max_age_days=3
         )
-        service.search_stock_news("600519", "贵州茅台")
+        service.search_stock_news("005930", "삼성전자")
         mock_search.assert_called_once()
         call_kwargs = mock_search.call_args[1]
         self.assertEqual(call_kwargs["days"], 1)
@@ -85,7 +138,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         service, mock_search = self._create_service_with_mock_provider(
             news_max_age_days=5
         )
-        service.search_stock_news("600519", "贵州茅台")
+        service.search_stock_news("005930", "삼성전자")
         mock_search.assert_called_once()
         call_kwargs = mock_search.call_args[1]
         self.assertEqual(call_kwargs["days"], 3)
@@ -97,7 +150,7 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         service, mock_search = self._create_service_with_mock_provider(
             news_max_age_days=5
         )
-        service.search_stock_news("600519", "贵州茅台")
+        service.search_stock_news("005930", "삼성전자")
         mock_search.assert_called_once()
         call_kwargs = mock_search.call_args[1]
         self.assertEqual(call_kwargs["days"], 2)
@@ -109,8 +162,8 @@ class SearchNewsFreshnessTestCase(unittest.TestCase):
         )
         with patch("src.search_service.time.sleep"):  # avoid delay in tests
             service.search_comprehensive_intel(
-                stock_code="600519",
-                stock_name="贵州茅台",
+                stock_code="005930",
+                stock_name="삼성전자",
                 max_searches=2,
             )
         self.assertGreaterEqual(mock_search.call_count, 1)

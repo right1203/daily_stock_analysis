@@ -26,6 +26,10 @@ def _get_fetcher_manager():
 
 def _handle_get_market_indices(region: str = "kr") -> dict:
     """Get major market indices."""
+    region = (region or "kr").strip().lower()
+    if region not in {"kr", "us"}:
+        return {"error": f"Unsupported market region '{region}'. Supported regions: kr, us"}
+
     manager = _get_fetcher_manager()
     indices = manager.get_main_indices(region=region)
 

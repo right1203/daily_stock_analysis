@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-大盘复盘分析模块
+Market recap analyzer
 ===================================
 
-职责：
-1. 获取大盘指数数据（上证、深证、创业板）
-2. 搜索市场新闻形成复盘情报
-3. 使用大模型生成每日大盘复盘报告
+Responsibilities:
+1. Fetch major market index data.
+2. Search market news for recap context.
+3. Generate a daily market recap report with an LLM.
 """
 
 import logging
@@ -29,19 +29,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MarketIndex:
-    """大盘指数数据"""
-    code: str                    # 指数代码
-    name: str                    # 指数名称
-    current: float = 0.0         # 当前点位
-    change: float = 0.0          # 涨跌点数
-    change_pct: float = 0.0      # 涨跌幅(%)
-    open: float = 0.0            # 开盘点位
-    high: float = 0.0            # 最高点位
-    low: float = 0.0             # 最低点位
-    prev_close: float = 0.0      # 昨收点位
-    volume: float = 0.0          # 成交量（手）
-    amount: float = 0.0          # 成交额（元）
-    amplitude: float = 0.0       # 振幅(%)
+    """Major market index quote."""
+
+    code: str
+    name: str
+    current: float = 0.0
+    change: float = 0.0
+    change_pct: float = 0.0
+    open: float = 0.0
+    high: float = 0.0
+    low: float = 0.0
+    prev_close: float = 0.0
+    volume: float = 0.0
+    amount: float = 0.0
+    amplitude: float = 0.0
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -61,20 +62,19 @@ class MarketIndex:
 
 @dataclass
 class MarketOverview:
-    """市场概览数据"""
-    date: str                           # 日期
-    indices: List[MarketIndex] = field(default_factory=list)  # 主要指数
-    up_count: int = 0                   # 上涨家数
-    down_count: int = 0                 # 下跌家数
-    flat_count: int = 0                 # 平盘家数
-    limit_up_count: int = 0             # 涨停家数
-    limit_down_count: int = 0           # 跌停家数
-    total_amount: float = 0.0           # 两市成交额（亿元）
-    # north_flow: float = 0.0           # 北向资金净流入（亿元）- 已废弃，接口不可用
+    """Market overview data."""
+
+    date: str
+    indices: List[MarketIndex] = field(default_factory=list)
+    up_count: int = 0
+    down_count: int = 0
+    flat_count: int = 0
+    limit_up_count: int = 0
+    limit_down_count: int = 0
+    total_amount: float = 0.0
     
-    # 板块涨幅榜
-    top_sectors: List[Dict] = field(default_factory=list)     # 涨幅前5板块
-    bottom_sectors: List[Dict] = field(default_factory=list)  # 跌幅前5板块
+    top_sectors: List[Dict] = field(default_factory=list)
+    bottom_sectors: List[Dict] = field(default_factory=list)
 
 
 class MarketAnalyzer:
@@ -112,40 +112,32 @@ class MarketAnalyzer:
         self.strategy = get_market_strategy_blueprint(self.region)
 
     def get_market_overview(self) -> MarketOverview:
-        """
-        获取市场概览数据
-        
-        Returns:
-            MarketOverview: 市场概览数据对象
-        """
+        """Fetch market overview data."""
         today = datetime.now().strftime('%Y-%m-%d')
         overview = MarketOverview(date=today)
         
-        # 1. 获取主要指数行情（按 region 切换 A 股/美股）
+        # 1. Fetch major index quotes for the selected KR/US region.
         overview.indices = self._get_main_indices()
 
-        # 2. 获取涨跌统计（A 股有，美股无等效数据）
+        # 2. Fetch breadth statistics where the region supports them.
         if self.profile.has_market_stats:
             self._get_market_statistics(overview)
 
-        # 3. 获取板块涨跌榜（A 股有，美股暂无）
+        # 3. Fetch sector rankings where the region supports them.
         if self.profile.has_sector_rankings:
             self._get_sector_rankings(overview)
-        
-        # 4. 获取北向资金（可选）
-        # self._get_north_flow(overview)
         
         return overview
 
     
     def _get_main_indices(self) -> List[MarketIndex]:
-        """获取主要指数实时行情"""
+        """Fetch real-time major index quotes."""
         indices = []
 
         try:
-            logger.info("[大盘] 获取主要指数实时行情...")
+            logger.info("[Market] Fetching real-time major index quotes...")
 
-            # 使用 DataFetcherManager 获取指数行情（按 region 切换）
+            # Use DataFetcherManager to fetch index quotes for the active region.
             data_list = self.data_manager.get_main_indices(region=self.region)
 
             if data_list:
@@ -167,19 +159,19 @@ class MarketAnalyzer:
                     indices.append(index)
 
             if not indices:
-                logger.warning("[大盘] 所有行情数据源失败，将依赖新闻搜索进行分析")
+                logger.warning("[Market] All quote data sources failed; analysis will rely on news search")
             else:
-                logger.info(f"[大盘] 获取到 {len(indices)} 个指数行情")
+                logger.info(f"[Market] Fetched {len(indices)} index quote(s)")
 
         except Exception as e:
-            logger.error(f"[大盘] 获取指数行情失败: {e}")
+            logger.error(f"[Market] Failed to fetch index quotes: {e}")
 
         return indices
 
     def _get_market_statistics(self, overview: MarketOverview):
-        """获取市场涨跌统计"""
+        """Fetch market breadth statistics."""
         try:
-            logger.info("[大盘] 获取市场涨跌统计...")
+            logger.info("[Market] Fetching market breadth statistics...")
 
             stats = self.data_manager.get_market_stats()
 
@@ -191,17 +183,19 @@ class MarketAnalyzer:
                 overview.limit_down_count = stats.get('limit_down_count', 0)
                 overview.total_amount = stats.get('total_amount', 0.0)
 
-                logger.info(f"[大盘] 涨:{overview.up_count} 跌:{overview.down_count} 平:{overview.flat_count} "
-                          f"涨停:{overview.limit_up_count} 跌停:{overview.limit_down_count} "
-                          f"成交额:{overview.total_amount:.0f}亿")
+                logger.info(
+                    f"[Market] Up:{overview.up_count} Down:{overview.down_count} Flat:{overview.flat_count} "
+                    f"Limit up:{overview.limit_up_count} Limit down:{overview.limit_down_count} "
+                    f"Turnover:{overview.total_amount:.0f}"
+                )
 
         except Exception as e:
-            logger.error(f"[大盘] 获取涨跌统计失败: {e}")
+            logger.error(f"[Market] Failed to fetch market breadth statistics: {e}")
 
     def _get_sector_rankings(self, overview: MarketOverview):
-        """获取板块涨跌榜"""
+        """Fetch sector performance rankings."""
         try:
-            logger.info("[大盘] 获取板块涨跌榜...")
+            logger.info("[Market] Fetching sector rankings...")
 
             top_sectors, bottom_sectors = self.data_manager.get_sector_rankings(5)
 
@@ -209,102 +203,82 @@ class MarketAnalyzer:
                 overview.top_sectors = top_sectors
                 overview.bottom_sectors = bottom_sectors
 
-                logger.info(f"[大盘] 领涨板块: {[s['name'] for s in overview.top_sectors]}")
-                logger.info(f"[大盘] 领跌板块: {[s['name'] for s in overview.bottom_sectors]}")
+                logger.info(f"[Market] Leading sectors: {[s['name'] for s in overview.top_sectors]}")
+                logger.info(f"[Market] Lagging sectors: {[s['name'] for s in overview.bottom_sectors]}")
 
         except Exception as e:
-            logger.error(f"[大盘] 获取板块涨跌榜失败: {e}")
-    
-    # def _get_north_flow(self, overview: MarketOverview):
-    #     """获取北向资金流入"""
-    #     try:
-    #         logger.info("[大盘] 获取北向资金...")
-    #         
-    #         # 获取北向资金数据
-    #         df = ak.stock_hsgt_north_net_flow_in_em(symbol="北上")
-    #         
-    #         if df is not None and not df.empty:
-    #             # 取最新一条数据
-    #             latest = df.iloc[-1]
-    #             if '当日净流入' in df.columns:
-    #                 overview.north_flow = float(latest['当日净流入']) / 1e8  # 转为亿元
-    #             elif '净流入' in df.columns:
-    #                 overview.north_flow = float(latest['净流入']) / 1e8
-    #                 
-    #             logger.info(f"[大盘] 北向资金净流入: {overview.north_flow:.2f}亿")
-    #             
-    #     except Exception as e:
-    #         logger.warning(f"[大盘] 获取北向资金失败: {e}")
-    
+            logger.error(f"[Market] Failed to fetch sector rankings: {e}")
+
     def search_market_news(self) -> List[Dict]:
         """
-        搜索市场新闻
+        Search market news.
         
         Returns:
-            新闻列表
+            News item list.
         """
         if not self.search_service:
-            logger.warning("[大盘] 搜索服务未配置，跳过新闻搜索")
+            logger.warning("[Market] Search service is not configured; skipping news search")
             return []
         
         all_news = []
         today = datetime.now()
-        date_str = today.strftime('%Y年%m月%d日')
+        date_str = today.strftime('%Y-%m-%d')
 
-        # 按 region 使用不同的新闻搜索词
+        # Use region-specific market news queries.
         search_queries = self.profile.news_queries
         
         try:
-            logger.info("[大盘] 开始搜索市场新闻...")
+            logger.info("[Market] Starting market news search...")
             
-            # Keep market context explicit so KR and US searches do not leak legacy assumptions.
+            # Keep market context explicit so KR and US searches use the correct provider route.
+            market_code = "KOSPI" if self.region == "kr" else "SPX"
             market_name = "Korean market" if self.region == "kr" else "US market"
             for query in search_queries:
                 response = self.search_service.search_stock_news(
-                    stock_code="market",
+                    stock_code=market_code,
                     stock_name=market_name,
                     max_results=3,
                     focus_keywords=query.split()
                 )
                 if response and response.results:
                     all_news.extend(response.results)
-                    logger.info(f"[大盘] 搜索 '{query}' 获取 {len(response.results)} 条结果")
-            
-            logger.info(f"[大盘] 共获取 {len(all_news)} 条市场新闻")
-            
+                    logger.info(f"[Market] Search '{query}' returned {len(response.results)} result(s)")
+
+            logger.info(f"[Market] Fetched {len(all_news)} market news item(s)")
+
         except Exception as e:
-            logger.error(f"[大盘] 搜索市场新闻失败: {e}")
+            logger.error(f"[Market] Failed to search market news: {e}")
         
         return all_news
     
     def generate_market_review(self, overview: MarketOverview, news: List) -> str:
         """
-        使用大模型生成大盘复盘报告
+        Generate the market recap report with an LLM.
         
         Args:
-            overview: 市场概览数据
-            news: 市场新闻列表 (SearchResult 对象列表)
+            overview: Market overview data.
+            news: Market news items.
             
         Returns:
-            大盘复盘报告文本
+            Market recap report text.
         """
         if not self.analyzer or not self.analyzer.is_available():
-            logger.warning("[大盘] AI分析器未配置或不可用，使用模板生成报告")
+            logger.warning("[Market] AI analyzer is unavailable; generating a template report")
             return self._generate_template_review(overview, news)
         
-        # 构建 Prompt
+        # Build prompt.
         prompt = self._build_review_prompt(overview, news)
         
-        logger.info("[大盘] 调用大模型生成复盘报告...")
+        logger.info("[Market] Calling LLM to generate market recap...")
         # Use the public generate_text() entry point — never access private analyzer attributes.
         review = self.analyzer.generate_text(prompt, max_tokens=2048, temperature=0.7)
 
         if review:
-            logger.info("[大盘] 复盘报告生成成功，长度: %d 字符", len(review))
-            # Inject structured data tables into LLM prose sections
+            logger.info("[Market] Market recap generated successfully, length=%d chars", len(review))
+            # Inject structured data tables into LLM prose sections.
             return self._inject_data_into_review(review, overview)
         else:
-            logger.warning("[大盘] 大模型返回为空，使用模板报告")
+            logger.warning("[Market] LLM returned an empty response; using template report")
             return self._generate_template_review(overview, news)
     
     def _inject_data_into_review(self, review: str, overview: MarketOverview) -> str:
@@ -316,17 +290,25 @@ class MarketAnalyzer:
         indices_block = self._build_indices_block(overview)
         sector_block = self._build_sector_block(overview)
 
-        # Inject market stats after "### 一、市场总结" section (before next ###)
+        # Inject market stats after the market summary section.
         if stats_block:
-            review = self._insert_after_section(review, r'###\s*一、市场总结', stats_block)
+            review = self._insert_after_section(review, r'###\s*1\.\s*(시장 요약|Market Summary)', stats_block)
 
-        # Inject indices table after "### 二、指数点评" section
+        # Inject the index table after the index commentary section.
         if indices_block:
-            review = self._insert_after_section(review, r'###\s*二、指数点评', indices_block)
+            review = self._insert_after_section(
+                review,
+                r'###\s*2\.\s*(지수 코멘트|Index Commentary)',
+                indices_block,
+            )
 
-        # Inject sector rankings after "### 四、热点解读" section
+        # Inject sector rankings after the sector/theme section.
         if sector_block:
-            review = self._insert_after_section(review, r'###\s*四、热点解读', sector_block)
+            review = self._insert_after_section(
+                review,
+                r'###\s*4\.\s*(섹터/테마 해석|Sector/Theme Highlights)',
+                sector_block,
+            )
 
         return review
 
@@ -355,25 +337,25 @@ class MarketAnalyzer:
         if not has_stats:
             return ""
         lines = [
-            f"> 📈 上涨 **{overview.up_count}** 家 / 下跌 **{overview.down_count}** 家 / "
-            f"平盘 **{overview.flat_count}** 家 | "
-            f"涨停 **{overview.limit_up_count}** / 跌停 **{overview.limit_down_count}** | "
-            f"成交额 **{overview.total_amount:.0f}** 亿"
+            f"> 📈 상승 **{overview.up_count}**개 / 하락 **{overview.down_count}**개 / "
+            f"보합 **{overview.flat_count}**개 | "
+            f"상한가 **{overview.limit_up_count}** / 하한가 **{overview.limit_down_count}** | "
+            f"거래대금 **{overview.total_amount:.0f}**억"
         ]
         return "\n".join(lines)
 
     def _build_indices_block(self, overview: MarketOverview) -> str:
-        """构建指数行情表格（不含振幅）"""
+        """Build an index quote table without amplitude."""
         if not overview.indices:
             return ""
         lines = [
-            "| 指数 | 最新 | 涨跌幅 | 成交额(亿) |",
+            "| 지수 | 현재가 | 등락률 | 거래대금(억) |",
             "|------|------|--------|-----------|"]
         for idx in overview.indices:
             arrow = "🔴" if idx.change_pct < 0 else "🟢" if idx.change_pct > 0 else "⚪"
             amount_raw = idx.amount or 0.0
             if amount_raw == 0.0:
-                # Yahoo Finance 不提供成交额，显示 N/A 避免误解
+                # Yahoo Finance does not provide turnover amount; show N/A to avoid confusion.
                 amount_str = "N/A"
             elif amount_raw > 1e6:
                 amount_str = f"{amount_raw / 1e8:.0f}"
@@ -391,30 +373,29 @@ class MarketAnalyzer:
             top = " | ".join(
                 [f"**{s['name']}**({s['change_pct']:+.2f}%)" for s in overview.top_sectors[:5]]
             )
-            lines.append(f"> 🔥 领涨: {top}")
+            lines.append(f"> 🔥 강세: {top}")
         if overview.bottom_sectors:
             bot = " | ".join(
                 [f"**{s['name']}**({s['change_pct']:+.2f}%)" for s in overview.bottom_sectors[:5]]
             )
-            lines.append(f"> 💧 领跌: {bot}")
+            lines.append(f"> 💧 약세: {bot}")
         return "\n".join(lines)
 
     def _build_review_prompt(self, overview: MarketOverview, news: List) -> str:
-        """构建复盘报告 Prompt"""
-        # 指数行情信息（简洁格式，不用emoji）
+        """Build the market recap prompt."""
+        # Major index information in a compact format.
         indices_text = ""
         for idx in overview.indices:
             direction = "↑" if idx.change_pct > 0 else "↓" if idx.change_pct < 0 else "-"
             indices_text += f"- {idx.name}: {idx.current:.2f} ({direction}{abs(idx.change_pct):.2f}%)\n"
         
-        # 板块信息
+        # Sector information.
         top_sectors_text = ", ".join([f"{s['name']}({s['change_pct']:+.2f}%)" for s in overview.top_sectors[:3]])
         bottom_sectors_text = ", ".join([f"{s['name']}({s['change_pct']:+.2f}%)" for s in overview.bottom_sectors[:3]])
         
-        # 新闻信息 - 支持 SearchResult 对象或字典
+        # News information; supports SearchResult objects and dicts.
         news_text = ""
         for i, n in enumerate(news[:6], 1):
-            # 兼容 SearchResult 对象和字典
             if hasattr(n, 'title'):
                 title = n.title[:50] if n.title else ''
                 snippet = n.snippet[:100] if n.snippet else ''
@@ -423,140 +404,159 @@ class MarketAnalyzer:
                 snippet = n.get('snippet', '')[:100]
             news_text += f"{i}. {title}\n   {snippet}\n"
         
-        # 按 region 组装市场概况与板块区块（美股无涨跌家数、板块数据）
+        # Build region-specific overview and sector blocks.
         stats_block = ""
         sector_block = ""
         if self.region == "us":
             if self.profile.has_market_stats:
-                stats_block = f"""## Market Overview
-- Up: {overview.up_count} | Down: {overview.down_count} | Flat: {overview.flat_count}
-- Limit up: {overview.limit_up_count} | Limit down: {overview.limit_down_count}
-- Total volume (CNY bn): {overview.total_amount:.0f}"""
+                stats_block = f"""## 시장 개요
+- 상승: {overview.up_count}개 | 하락: {overview.down_count}개 | 보합: {overview.flat_count}개
+- 상한가: {overview.limit_up_count}개 | 하한가: {overview.limit_down_count}개
+- 총 거래량: {overview.total_amount:.0f}"""
             else:
-                stats_block = "## Market Overview\n(US market has no equivalent advance/decline stats.)"
+                stats_block = "## 시장 개요\n(미국 시장은 등락 종목 수 통계를 제공하지 않습니다.)"
 
             if self.profile.has_sector_rankings:
-                sector_block = f"""## Sector Performance
-Leading: {top_sectors_text if top_sectors_text else "N/A"}
-Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
+                sector_block = f"""## 업종 동향
+강세: {top_sectors_text if top_sectors_text else "데이터 없음"}
+약세: {bottom_sectors_text if bottom_sectors_text else "데이터 없음"}"""
             else:
-                sector_block = "## Sector Performance\n(US sector data not available.)"
+                sector_block = "## 업종 동향\n(미국 업종 등락 데이터를 제공하지 않습니다.)"
         else:
             if self.profile.has_market_stats:
-                stats_block = f"""## 市场概况
-- 上涨: {overview.up_count} 家 | 下跌: {overview.down_count} 家 | 平盘: {overview.flat_count} 家
-- 涨停: {overview.limit_up_count} 家 | 跌停: {overview.limit_down_count} 家
-- 两市成交额: {overview.total_amount:.0f} 亿元"""
+                stats_block = f"""## 시장 개요
+- 상승: {overview.up_count}개 | 하락: {overview.down_count}개 | 보합: {overview.flat_count}개
+- 상한가: {overview.limit_up_count}개 | 하한가: {overview.limit_down_count}개
+- 거래대금: {overview.total_amount:.0f}억원"""
             else:
-                stats_block = "## 市场概况\n（美股暂无涨跌家数等统计）"
+                stats_block = (
+                    "## 시장 개요\n"
+                    "(해당 시장은 등락 종목 수 통계를 제공하지 않습니다.)"
+                )
 
             if self.profile.has_sector_rankings:
-                sector_block = f"""## 板块表现
-领涨: {top_sectors_text if top_sectors_text else "暂无数据"}
-领跌: {bottom_sectors_text if bottom_sectors_text else "暂无数据"}"""
+                sector_block = f"""## 업종 동향
+강세: {top_sectors_text if top_sectors_text else "데이터 없음"}
+약세: {bottom_sectors_text if bottom_sectors_text else "데이터 없음"}"""
             else:
-                sector_block = "## 板块表现\n（美股暂无板块涨跌数据）"
+                sector_block = (
+                    "## 업종 동향\n"
+                    "(해당 시장은 업종 등락 데이터를 제공하지 않습니다.)"
+                )
 
         data_no_indices_hint = (
-            "注意：由于行情数据获取失败，请主要根据【市场新闻】进行定性分析和总结，不要编造具体的指数点位。"
+            "주의: 시세 데이터 조회에 실패했습니다. "
+            "[시장 뉴스]를 중심으로 정성적으로 분석하고 "
+            "지수 수치를 임의로 만들지 마세요."
             if not indices_text
             else ""
         )
-        indices_placeholder = indices_text if indices_text else ("No index data (API error)" if self.region == "us" else "暂无指数数据（接口异常）")
-        news_placeholder = news_text if news_text else ("No relevant news" if self.region == "us" else "暂无相关新闻")
+        indices_placeholder = indices_text if indices_text else (
+            "지수 데이터 없음(API 오류)" if self.region == "us" else "지수 데이터 없음(API 오류)"
+        )
+        news_placeholder = news_text if news_text else (
+            "관련 뉴스 없음" if self.region == "us" else "관련 뉴스 없음"
+        )
 
-        # 美股场景使用英文提示语，便于生成更符合美股语境的报告
+        # Use Korean prompts for US market recaps.
         if self.region == "us":
-            data_no_indices_hint_en = (
-                "Note: Market data fetch failed. Rely mainly on [Market News] for qualitative analysis. Do not invent index levels."
+            data_no_indices_hint_us = (
+                "주의: 시세 데이터 조회에 실패했습니다. "
+                "[시장 뉴스]를 중심으로 정성적으로 분석하고 "
+                "지수 수치를 임의로 만들지 마세요."
                 if not indices_text
                 else ""
             )
-            return f"""You are a professional US/A/H market analyst. Please produce a concise US market recap report based on the data below.
+            us_prompt_intro = (
+                "당신은 전문 미국 시장 애널리스트입니다.\n"
+                "아래 데이터를 바탕으로 간결한 미국 시장 데일리 리캡을 작성하세요."
+            )
+            return f"""{us_prompt_intro}
 
-[Requirements]
-- Output pure Markdown only
-- No JSON
-- No code blocks
-- Use emoji sparingly in headings (at most one per heading)
+[중요] 출력 요구사항:
+- 반드시 순수 Markdown 텍스트로만 출력하세요.
+- JSON 형식은 금지합니다.
+- 코드 블록은 금지합니다.
+- emoji는 제목에서만 적게 사용하세요(제목당 최대 1개).
 
 ---
 
-# Today's Market Data
+# 오늘의 시장 데이터
 
-## Date
+## 날짜
 {overview.date}
 
-## Major Indices
+## 주요 지수
 {indices_placeholder}
 
 {stats_block}
 
 {sector_block}
 
-## Market News
+## 시장 뉴스
 {news_placeholder}
 
-{data_no_indices_hint_en}
+{data_no_indices_hint_us}
 
 {self.strategy.to_prompt_block()}
 
 ---
 
-# Output Template (follow this structure)
+# 출력 형식 템플릿(아래 구조를 엄격히 따르세요)
 
-## {overview.date} US Market Recap
+## {overview.date} 미국 시장 리캡
 
-### 1. Market Summary
-(2-3 sentences on overall market performance, index moves, volume)
+### 1. 시장 요약
+(2-3문장으로 시장 전반, 주요 지수 등락, 거래 흐름을 요약)
 
-### 2. Index Commentary
-(Analyse S&P 500, Nasdaq, Dow and other major index moves.)
+### 2. 지수 코멘트
+(S&P 500, Nasdaq, Dow 등 주요 지수 움직임을 분석)
 
-### 3. Fund Flows
-(Interpret volume and flow implications)
+### 3. 수급 흐름
+(거래량과 자금 흐름의 의미를 해석)
 
-### 4. Sector/Theme Highlights
-(Analyze drivers behind leading/lagging sectors)
+### 4. 섹터/테마 해석
+(강세 및 약세 섹터의 배경과 동인을 분석)
 
-### 5. Outlook
-(Short-term view based on price action and news)
+### 5. 향후 전망
+(가격 흐름과 뉴스를 바탕으로 단기 시장을 전망)
 
-### 6. Risk Alerts
-(Key risks to watch)
+### 6. 리스크 점검
+(주의해야 할 핵심 리스크 요인)
 
-### 7. Strategy Plan
-(Provide risk-on/neutral/risk-off stance, position sizing guideline, and one invalidation trigger.)
+### 7. 전략 계획
+(리스크온/중립/리스크오프 중 하나의 결론, 포지션 규모 가이드, 무효화 조건 1개를 제시하세요.)
 
 ---
 
-Output the report content directly, no extra commentary.
+리캡 본문만 바로 출력하고 추가 설명은 쓰지 마세요.
 """
 
-        # A 股场景使用中文提示语
-        return f"""你是一位专业的A/H/美股市场分析师，请根据以下数据生成一份简洁的大盘复盘报告。
+        # Use a Korean prompt for KR market recaps.
+        return f"""당신은 전문 한국 시장 애널리스트입니다.
+아래 데이터를 바탕으로 간결한 한국 시장 데일리 리캡을 작성하세요.
 
-【重要】输出要求：
-- 必须输出纯 Markdown 文本格式
-- 禁止输出 JSON 格式
-- 禁止输出代码块
-- emoji 仅在标题处少量使用（每个标题最多1个）
+[중요] 출력 요구사항:
+- 반드시 순수 Markdown 텍스트로만 출력하세요.
+- JSON 형식은 금지합니다.
+- 코드 블록은 금지합니다.
+- emoji는 제목에서만 적게 사용하세요(제목당 최대 1개).
 
 ---
 
-# 今日市场数据
+# 오늘의 시장 데이터
 
-## 日期
+## 날짜
 {overview.date}
 
-## 主要指数
+## 주요 지수
 {indices_placeholder}
 
 {stats_block}
 
 {sector_block}
 
-## 市场新闻
+## 시장 뉴스
 {news_placeholder}
 
 {data_no_indices_hint}
@@ -565,42 +565,41 @@ Output the report content directly, no extra commentary.
 
 ---
 
-# 输出格式模板（请严格按此格式输出）
+# 출력 형식 템플릿(아래 구조를 엄격히 따르세요)
 
-## {overview.date} 大盘复盘
+## {overview.date} 한국 시장 리캡
 
-### 一、市场总结
-（2-3句话概括今日市场整体表现，包括指数涨跌、成交量变化）
+### 1. 시장 요약
+(2-3문장으로 오늘 시장 전반, 주요 지수 등락, 거래 흐름을 요약)
 
-### 二、指数点评
-（{self.profile.prompt_index_hint}）
+### 2. 지수 코멘트
+({self.profile.prompt_index_hint})
 
-### 三、资金动向
-（解读成交额流向的含义）
+### 3. 수급 흐름
+(거래대금과 수급 흐름의 의미를 해석)
 
-### 四、热点解读
-（分析领涨领跌板块背后的逻辑和驱动因素）
+### 4. 섹터/테마 해석
+(강세 및 약세 업종의 배경과 동인을 분석)
 
-### 五、后市展望
-（结合当前走势和新闻，给出明日市场预判）
+### 5. 향후 전망
+(현재 흐름과 뉴스를 바탕으로 다음 거래일 시장을 전망)
 
-### 六、风险提示
-（需要关注的风险点）
+### 6. 리스크 점검
+(주의해야 할 리스크 요인)
 
-### 七、策略计划
-（给出进攻/均衡/防守结论，对应仓位建议，并给出一个触发失效条件；最后补充“建议仅供参考，不构成投资建议”。）
+### 7. 전략 계획
+(공격/중립/방어 중 하나의 결론, 대응 포지션 가이드, 무효화 조건 1개를 제시하세요.
+마지막에 "본 내용은 참고용이며 투자 조언이 아닙니다."를 덧붙이세요.)
 
 ---
 
-请直接输出复盘报告内容，不要输出其他说明文字。
+리캡 본문만 바로 출력하고 추가 설명은 쓰지 마세요.
 """
     
     def _generate_template_review(self, overview: MarketOverview, news: List) -> str:
-        """使用模板生成复盘报告（无大模型时的备选方案）"""
+        """Generate a template report when no LLM is available."""
         mood_code = self.profile.mood_index_code
-        # 根据 mood_index_code 查找对应指数
-        # cn: mood_code="000001"，idx.code 可能为 "sh000001"（以 mood_code 结尾）
-        # us: mood_code="SPX"，idx.code 直接为 "SPX"
+        # Match direct index codes and normalized provider symbols that end with the mood code.
         mood_index = next(
             (
                 idx
@@ -611,91 +610,91 @@ Output the report content directly, no extra commentary.
         )
         if mood_index:
             if mood_index.change_pct > 1:
-                market_mood = "强势上涨"
+                market_mood = "강한 상승"
             elif mood_index.change_pct > 0:
-                market_mood = "小幅上涨"
+                market_mood = "소폭 상승"
             elif mood_index.change_pct > -1:
-                market_mood = "小幅下跌"
+                market_mood = "소폭 하락"
             else:
-                market_mood = "明显下跌"
+                market_mood = "뚜렷한 하락"
         else:
-            market_mood = "震荡整理"
+            market_mood = "등락 혼조"
         
-        # 指数行情（简洁格式）
+        # Index quote summary.
         indices_text = ""
         for idx in overview.indices[:4]:
             direction = "↑" if idx.change_pct > 0 else "↓" if idx.change_pct < 0 else "-"
             indices_text += f"- **{idx.name}**: {idx.current:.2f} ({direction}{abs(idx.change_pct):.2f}%)\n"
         
-        # 板块信息
-        top_text = "、".join([s['name'] for s in overview.top_sectors[:3]])
-        bottom_text = "、".join([s['name'] for s in overview.bottom_sectors[:3]])
+        # Sector summary.
+        top_text = ", ".join([s['name'] for s in overview.top_sectors[:3]])
+        bottom_text = ", ".join([s['name'] for s in overview.bottom_sectors[:3]])
         
-        # 按 region 决定是否包含涨跌统计和板块（美股无）
+        # Include breadth and sector sections only for regions that provide them.
         stats_section = ""
         if self.profile.has_market_stats:
             stats_section = f"""
-### 三、涨跌统计
-| 指标 | 数值 |
+### 3. 등락 통계
+| 지표 | 값 |
 |------|------|
-| 上涨家数 | {overview.up_count} |
-| 下跌家数 | {overview.down_count} |
-| 涨停 | {overview.limit_up_count} |
-| 跌停 | {overview.limit_down_count} |
-| 两市成交额 | {overview.total_amount:.0f}亿 |
+| 상승 종목 수 | {overview.up_count} |
+| 하락 종목 수 | {overview.down_count} |
+| 상한가 | {overview.limit_up_count} |
+| 하한가 | {overview.limit_down_count} |
+| 거래대금 | {overview.total_amount:.0f}억 |
 """
         sector_section = ""
         if self.profile.has_sector_rankings and (top_text or bottom_text):
             sector_section = f"""
-### 四、板块表现
-- **领涨**: {top_text}
-- **领跌**: {bottom_text}
+### 4. 업종 동향
+- **강세**: {top_text}
+- **약세**: {bottom_text}
 """
         market_label = "한국 시장" if self.region == "kr" else "US market"
         strategy_summary = self.strategy.to_markdown_block()
-        report = f"""## {overview.date} 大盘复盘
+        report = f"""## {overview.date} 시장 리캡
 
-### 一、市场总结
-今日{market_label}市场整体呈现**{market_mood}**态势。
+### 1. 시장 요약
+오늘 {market_label}은 전반적으로 **{market_mood}** 흐름을 보였습니다.
 
-### 二、主要指数
+### 2. 주요 지수
 {indices_text}
 {stats_section}
 {sector_section}
-### 五、风险提示
-市场有风险，投资需谨慎。以上数据仅供参考，不构成投资建议。
+### 5. 리스크 점검
+시장은 변동성이 있습니다. 위 데이터는 참고용이며 투자 조언이 아닙니다.
 
 {strategy_summary}
 
 ---
-*复盘时间: {datetime.now().strftime('%H:%M')}*
+*리캡 시간: {datetime.now().strftime('%H:%M')}*
 """
         return report
     
     def run_daily_review(self) -> str:
         """
-        执行每日大盘复盘流程
+        Run the daily market recap workflow.
         
         Returns:
-            复盘报告文本
+            Market recap report text.
         """
-        logger.info("========== 开始大盘复盘分析 ==========")
+        logger.info("========== Starting market recap analysis ==========")
         
-        # 1. 获取市场概览
+        # 1. Fetch market overview.
         overview = self.get_market_overview()
         
-        # 2. 搜索市场新闻
+        # 2. Search market news.
         news = self.search_market_news()
         
-        # 3. 生成复盘报告
+        # 3. Generate recap report.
         report = self.generate_market_review(overview, news)
         
-        logger.info("========== 大盘复盘分析完成 ==========")
+        logger.info("========== Market recap analysis completed ==========")
         
         return report
 
 
-# 测试入口
+# Manual test entry point.
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, '.')
@@ -707,17 +706,17 @@ if __name__ == "__main__":
     
     analyzer = MarketAnalyzer()
     
-    # 测试获取市场概览
+    # Fetch market overview.
     overview = analyzer.get_market_overview()
-    print(f"\n=== 市场概览 ===")
-    print(f"日期: {overview.date}")
-    print(f"指数数量: {len(overview.indices)}")
+    print(f"\n=== 시장 개요 ===")
+    print(f"날짜: {overview.date}")
+    print(f"지수 수: {len(overview.indices)}")
     for idx in overview.indices:
         print(f"  {idx.name}: {idx.current:.2f} ({idx.change_pct:+.2f}%)")
-    print(f"上涨: {overview.up_count} | 下跌: {overview.down_count}")
-    print(f"成交额: {overview.total_amount:.0f}亿")
+    print(f"상승: {overview.up_count} | 하락: {overview.down_count}")
+    print(f"거래대금: {overview.total_amount:.0f}억")
     
-    # 测试生成模板报告
+    # Generate a template report.
     report = analyzer._generate_template_review(overview, [])
-    print(f"\n=== 复盘报告 ===")
+    print(f"\n=== 리캡 보고서 ===")
     print(report)

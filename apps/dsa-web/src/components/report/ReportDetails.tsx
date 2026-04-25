@@ -5,11 +5,11 @@ import { Card } from '../common';
 
 interface ReportDetailsProps {
   details?: ReportDetailsType;
-  recordId?: number;  // 分析历史记录主键 ID
+  recordId?: number;  // Analysis history record primary key ID
 }
 
 /**
- * 透明度与追溯区组件 - 终端风格
+ * Transparency and traceability section component - terminal style
  */
 export const ReportDetails: React.FC<ReportDetailsProps> = ({
   details,
@@ -55,7 +55,7 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
     <Card variant="bordered" padding="md" className="text-left">
       <div className="mb-3 flex items-baseline gap-2">
         <span className="label-uppercase">TRANSPARENCY</span>
-        <h3 className="text-base font-semibold text-white mt-0.5">数据追溯</h3>
+        <h3 className="text-base font-semibold text-white mt-0.5">데이터 추적</h3>
       </div>
 
       {/* Record ID */}
@@ -68,9 +68,9 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
         </div>
       )}
 
-      {/* 折叠区域 */}
+      {/* Collapsible area */}
       <div className="space-y-2">
-        {/* 原始分析结果 */}
+        {/* 원본 분석 결과 */}
         {details?.rawResult && (
           <div>
             <button
@@ -78,7 +78,7 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
               onClick={() => setShowRaw(!showRaw)}
               className="w-full flex items-center justify-between p-2.5 rounded-lg bg-elevated hover:bg-hover transition-colors"
             >
-              <span className="text-xs text-white">原始分析结果</span>
+              <span className="text-xs text-white">원본 분석 결과</span>
               <svg
                 className={`w-3.5 h-3.5 text-muted transition-transform ${showRaw ? 'rotate-180' : ''}`}
                 fill="none"
@@ -96,7 +96,7 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
           </div>
         )}
 
-        {/* 分析快照 */}
+        {/* 분석 스냅샷 */}
         {details?.contextSnapshot && (
           <div>
             <button
@@ -104,7 +104,7 @@ export const ReportDetails: React.FC<ReportDetailsProps> = ({
               onClick={() => setShowSnapshot(!showSnapshot)}
               className="w-full flex items-center justify-between p-2.5 rounded-lg bg-elevated hover:bg-hover transition-colors"
             >
-              <span className="text-xs text-white">分析快照</span>
+              <span className="text-xs text-white">분석 스냅샷</span>
               <svg
                 className={`w-3.5 h-3.5 text-muted transition-transform ${showSnapshot ? 'rotate-180' : ''}`}
                 fill="none"

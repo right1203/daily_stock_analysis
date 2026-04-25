@@ -269,14 +269,14 @@ class SkillManager:
             if not skills_in_cat:
                 continue
             cat_label = categories.get(cat_key, cat_key)
-            parts.append(f"#### {cat_label}策略\n")
+            parts.append(f"#### {cat_label} 전략\n")
             for skill in skills_in_cat:
                 rules_ref = ""
                 if skill.core_rules:
-                    rules_ref = f"（关联核心规则：第{'、'.join(str(r) for r in skill.core_rules)}条）"
+                    rules_ref = f" (연관 핵심 규칙: {', '.join(str(r) for r in skill.core_rules)})"
                 parts.append(
-                    f"### 策略 {idx}: {skill.display_name} {rules_ref}\n\n"
-                    f"**适用场景**: {skill.description}\n\n"
+                    f"### 전략 {idx}: {skill.display_name} {rules_ref}\n\n"
+                    f"**적용 시나리오**: {skill.description}\n\n"
                     f"{skill.instructions}\n"
                 )
                 idx += 1

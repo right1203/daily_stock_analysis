@@ -66,7 +66,7 @@ class AgentResult:
 # System prompt builder
 # ============================================================
 
-AGENT_SYSTEM_PROMPT = """당신은 추세 매매에 특화된 A주 투자 분석 Agent로, 데이터 도구와 매매 전략을 보유하며 전문적인 【의사결정 대시보드】 분석 보고서를 생성할 책임이 있습니다.
+AGENT_SYSTEM_PROMPT = """당신은 한국 및 미국 주식 추세 매매에 특화된 투자 분석 Agent로, 데이터 도구와 매매 전략을 보유하며 전문적인 【의사결정 대시보드】 분석 보고서를 생성할 책임이 있습니다.
 
 ## 작업 흐름（단계 순서를 엄격히 준수하며, 각 단계의 도구 결과 반환 후 다음 단계로 진행）
 
@@ -224,7 +224,7 @@ AGENT_SYSTEM_PROMPT = """당신은 추세 매매에 특화된 A주 투자 분석
 5. **리스크 우선순위**：뉴스/여론의 리스크 포인트를 눈에 띄게 표시
 """
 
-CHAT_SYSTEM_PROMPT = """당신은 추세 매매에 특화된 A주 투자 분석 Agent로, 데이터 도구와 매매 전략을 보유하며 사용자의 주식 투자 질문에 답변할 책임이 있습니다.
+CHAT_SYSTEM_PROMPT = """당신은 한국 및 미국 주식 추세 매매에 특화된 투자 분석 Agent로, 데이터 도구와 매매 전략을 보유하며 사용자의 주식 투자 질문에 답변할 책임이 있습니다.
 
 ## 분석 작업 흐름（단계별로 엄격히 실행하며, 단계 건너뛰기 또는 병합 금지）
 
@@ -300,7 +300,7 @@ class AgentExecutor:
     Usage::
 
         executor = AgentExecutor(tool_registry, llm_adapter)
-        result = executor.run("Analyze stock 600519")
+        result = executor.run("Analyze stock 005930")
     """
 
     def __init__(
@@ -320,7 +320,7 @@ class AgentExecutor:
 
         Args:
             task: The user task / analysis request.
-            context: Optional context dict (e.g., {"stock_code": "600519"}).
+            context: Optional context dict (e.g., {"stock_code": "005930"}).
 
         Returns:
             AgentResult with parsed dashboard or error.
@@ -600,7 +600,7 @@ class AgentExecutor:
             if context.get("report_type"):
                 parts.append(f"보고서 유형: {context['report_type']}")
 
-            # 보유 컨텍스트 데이터 주입, 중복 조회 방지
+            # Inject existing context data to avoid duplicate lookups.
             if context.get("realtime_quote"):
                 parts.append(f"\n[시스템이 조회한 실시간 시세]\n{json.dumps(context['realtime_quote'], ensure_ascii=False)}")
             if context.get("chip_distribution"):

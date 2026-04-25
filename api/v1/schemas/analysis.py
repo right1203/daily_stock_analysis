@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-分析相关模型
+Analysis API schemas
 ===================================
 
-职责：
-1. 定义分析请求和响应模型
-2. 定义任务状态模型
-3. 定义异步任务队列相关模型
+Responsibilities:
+1. Define analysis request and response models.
+2. Define task status models.
+3. Define asynchronous task queue models.
 """
 
 from typing import Optional, List, Any
@@ -17,7 +17,8 @@ from pydantic import BaseModel, Field
 
 
 class TaskStatusEnum(str, Enum):
-    """任务状态枚举"""
+    """Task status values."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -25,36 +26,36 @@ class TaskStatusEnum(str, Enum):
 
 
 class AnalyzeRequest(BaseModel):
-    """分析请求模型"""
+    """Analysis request model."""
     
     stock_code: Optional[str] = Field(
         None, 
-        description="单只股票代码", 
-        example="600519"
+        description="단일 종목 코드",
+        example="005930"
     )
     stock_codes: Optional[List[str]] = Field(
         None, 
-        description="多只股票代码（与 stock_code 二选一）",
-        example=["600519", "000858"]
+        description="여러 종목 코드(stock_code와 둘 중 하나 사용)",
+        example=["005930", "AAPL"]
     )
     report_type: str = Field(
         "detailed", 
-        description="报告类型",
+        description="리포트 유형",
         pattern="^(simple|detailed)$"
     )
     force_refresh: bool = Field(
         True,
-        description="是否强制刷新（忽略缓存）"
+        description="캐시를 무시하고 강제로 새로고침할지 여부"
     )
     async_mode: bool = Field(
         False,
-        description="是否使用异步模式"
+        description="비동기 모드 사용 여부"
     )
     
     class Config:
         json_schema_extra = {
             "example": {
-                "stock_code": "600519",
+                "stock_code": "005930",
                 "report_type": "detailed",
                 "force_refresh": False,
                 "async_mode": False
@@ -63,24 +64,24 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalysisResultResponse(BaseModel):
-    """分析结果响应模型"""
+    """Analysis result response model."""
     
-    query_id: str = Field(..., description="分析记录唯一标识")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
-    report: Optional[Any] = Field(None, description="分析报告")
-    created_at: str = Field(..., description="创建时间")
+    query_id: str = Field(..., description="분석 기록 고유 ID")
+    stock_code: str = Field(..., description="종목 코드")
+    stock_name: Optional[str] = Field(None, description="종목명")
+    report: Optional[Any] = Field(None, description="분석 리포트")
+    created_at: str = Field(..., description="생성 시간")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "query_id": "abc123def456",
-                "stock_code": "600519",
-                "stock_name": "贵州茅台",
+                "stock_code": "005930",
+                "stock_name": "삼성전자",
                 "report": {
                     "summary": {
                         "sentiment_score": 75,
-                        "operation_advice": "持有"
+                        "operation_advice": "보유"
                     }
                 },
                 "created_at": "2024-01-01T12:00:00"
@@ -89,15 +90,15 @@ class AnalysisResultResponse(BaseModel):
 
 
 class TaskAccepted(BaseModel):
-    """异步任务接受响应"""
+    """Asynchronous task acceptance response."""
     
-    task_id: str = Field(..., description="任务 ID，用于查询状态")
+    task_id: str = Field(..., description="상태 조회에 사용하는 작업 ID")
     status: str = Field(
         ..., 
-        description="任务状态",
+        description="작업 상태",
         pattern="^(pending|processing)$"
     )
-    message: Optional[str] = Field(None, description="提示信息")
+    message: Optional[str] = Field(None, description="안내 메시지")
     
     class Config:
         json_schema_extra = {
@@ -110,27 +111,27 @@ class TaskAccepted(BaseModel):
 
 
 class TaskStatus(BaseModel):
-    """任务状态模型"""
+    """Task status model."""
     
-    task_id: str = Field(..., description="任务 ID")
+    task_id: str = Field(..., description="작업 ID")
     status: str = Field(
         ..., 
-        description="任务状态",
+        description="작업 상태",
         pattern="^(pending|processing|completed|failed)$"
     )
     progress: Optional[int] = Field(
         None, 
-        description="进度百分比 (0-100)",
+        description="진행률 (0-100)",
         ge=0,
         le=100
     )
     result: Optional[AnalysisResultResponse] = Field(
         None, 
-        description="分析结果（仅在 completed 时存在）"
+        description="분석 결과(completed 상태에서만 존재)"
     )
     error: Optional[str] = Field(
         None, 
-        description="错误信息（仅在 failed 时存在）"
+        description="오류 메시지(failed 상태에서만 존재)"
     )
     
     class Config:
@@ -146,33 +147,29 @@ class TaskStatus(BaseModel):
 
 
 class TaskInfo(BaseModel):
-    """
-    任务详情模型
+    """Task detail model used by task lists and SSE events."""
     
-    用于任务列表和 SSE 事件推送
-    """
-    
-    task_id: str = Field(..., description="任务 ID")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
-    status: TaskStatusEnum = Field(..., description="任务状态")
-    progress: int = Field(0, description="进度百分比 (0-100)", ge=0, le=100)
-    message: Optional[str] = Field(None, description="状态消息")
-    report_type: str = Field("detailed", description="报告类型")
-    created_at: str = Field(..., description="创建时间")
-    started_at: Optional[str] = Field(None, description="开始执行时间")
-    completed_at: Optional[str] = Field(None, description="完成时间")
-    error: Optional[str] = Field(None, description="错误信息（仅在 failed 时存在）")
+    task_id: str = Field(..., description="작업 ID")
+    stock_code: str = Field(..., description="종목 코드")
+    stock_name: Optional[str] = Field(None, description="종목명")
+    status: TaskStatusEnum = Field(..., description="작업 상태")
+    progress: int = Field(0, description="진행률 (0-100)", ge=0, le=100)
+    message: Optional[str] = Field(None, description="상태 메시지")
+    report_type: str = Field("detailed", description="리포트 유형")
+    created_at: str = Field(..., description="생성 시간")
+    started_at: Optional[str] = Field(None, description="시작 시간")
+    completed_at: Optional[str] = Field(None, description="완료 시간")
+    error: Optional[str] = Field(None, description="오류 메시지(failed 상태에서만 존재)")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "task_id": "abc123def456",
-                "stock_code": "600519",
-                "stock_name": "贵州茅台",
+                "stock_code": "005930",
+                "stock_name": "삼성전자",
                 "status": "processing",
                 "progress": 50,
-                "message": "正在分析中...",
+                "message": "분석 중...",
                 "report_type": "detailed",
                 "created_at": "2026-02-05T10:30:00",
                 "started_at": "2026-02-05T10:30:01",
@@ -183,12 +180,12 @@ class TaskInfo(BaseModel):
 
 
 class TaskListResponse(BaseModel):
-    """任务列表响应模型"""
+    """Task list response model."""
     
-    total: int = Field(..., description="任务总数")
-    pending: int = Field(..., description="等待中的任务数")
-    processing: int = Field(..., description="处理中的任务数")
-    tasks: List[TaskInfo] = Field(..., description="任务列表")
+    total: int = Field(..., description="전체 작업 수")
+    pending: int = Field(..., description="대기 중인 작업 수")
+    processing: int = Field(..., description="처리 중인 작업 수")
+    tasks: List[TaskInfo] = Field(..., description="작업 목록")
     
     class Config:
         json_schema_extra = {
@@ -202,19 +199,19 @@ class TaskListResponse(BaseModel):
 
 
 class DuplicateTaskErrorResponse(BaseModel):
-    """重复任务错误响应模型"""
+    """Duplicate task error response model."""
     
-    error: str = Field("duplicate_task", description="错误类型")
-    message: str = Field(..., description="错误信息")
-    stock_code: str = Field(..., description="股票代码")
-    existing_task_id: str = Field(..., description="已存在的任务 ID")
+    error: str = Field("duplicate_task", description="오류 유형")
+    message: str = Field(..., description="오류 메시지")
+    stock_code: str = Field(..., description="종목 코드")
+    existing_task_id: str = Field(..., description="이미 존재하는 작업 ID")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "error": "duplicate_task",
-                "message": "股票 600519 正在分析中",
-                "stock_code": "600519",
+                "message": "종목 005930 분석 작업이 이미 진행 중입니다",
+                "stock_code": "005930",
                 "existing_task_id": "abc123def456"
             }
         }

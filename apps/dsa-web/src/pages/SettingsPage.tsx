@@ -70,15 +70,15 @@ const SettingsPage: React.FC = () => {
       <header className="mb-4 rounded-2xl border border-white/8 bg-card/80 p-4 backdrop-blur-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white">系统设置</h1>
+            <h1 className="text-xl font-semibold text-white">시스템 설정</h1>
             <p className="text-sm text-secondary">
-              默认使用 .env 中的配置
+              .env 설정을 기본으로 사용합니다
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="btn-secondary" onClick={() => void load()} disabled={isLoading || isSaving}>
-              重置
+              초기화
             </button>
             <button
               type="button"
@@ -86,7 +86,7 @@ const SettingsPage: React.FC = () => {
               onClick={() => void save()}
               disabled={!hasDirty || isSaving || isLoading}
             >
-              {isSaving ? '保存中...' : `保存配置${dirtyCount ? ` (${dirtyCount})` : ''}`}
+              {isSaving ? '저장 중...' : `설정 저장${dirtyCount ? ` (${dirtyCount})` : ''}`}
             </button>
           </div>
         </div>
@@ -95,7 +95,7 @@ const SettingsPage: React.FC = () => {
           <ApiErrorAlert
             className="mt-3"
             error={saveError}
-            actionLabel={retryAction === 'save' ? '重试保存' : undefined}
+            actionLabel={retryAction === 'save' ? '저장 다시 시도' : undefined}
             onAction={retryAction === 'save' ? () => void retry() : undefined}
           />
         ) : null}
@@ -104,7 +104,7 @@ const SettingsPage: React.FC = () => {
       {loadError ? (
         <ApiErrorAlert
           error={loadError}
-          actionLabel={retryAction === 'load' ? '重试加载' : '重新加载'}
+          actionLabel={retryAction === 'load' ? '불러오기 다시 시도' : '다시 불러오기'}
           onAction={() => void retry()}
           className="mb-4"
         />
@@ -115,7 +115,7 @@ const SettingsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
           <aside className="rounded-2xl border border-white/8 bg-card/60 p-3 backdrop-blur-sm">
-            <p className="mb-2 text-xs uppercase tracking-wide text-muted">配置分类</p>
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted">설정 분류</p>
             <div className="space-y-2">
               {categories.map((category) => {
                 const isActive = category.category === activeCategory;
@@ -186,7 +186,7 @@ const SettingsPage: React.FC = () => {
               ))
             ) : (
               <div className="rounded-xl border border-white/8 bg-elevated/40 p-5 text-sm text-secondary">
-                当前分类下暂无配置项。
+                현재 분류에 설정 항목이 없습니다.
               </div>
             )}
           </section>
@@ -196,7 +196,7 @@ const SettingsPage: React.FC = () => {
       {toast ? (
         <div className="fixed bottom-5 right-5 z-50 w-[320px] max-w-[calc(100vw-24px)]">
           {toast.type === 'success'
-            ? <SettingsAlert title="操作成功" message={toast.message} variant="success" />
+            ? <SettingsAlert title="작업 성공" message={toast.message} variant="success" />
             : <ApiErrorAlert error={toast.error} />}
         </div>
       ) : null}

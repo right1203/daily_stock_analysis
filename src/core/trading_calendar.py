@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-거래 캘린더 모듈 (Issue #373)
+Trading calendar module (Issue #373)
 ===================================
 
-역할:
-1. 시장별 (한국/미국) 당일 거래일 여부 판단
-2. 시장 시간대 기준 '오늘' 날짜 취득 (서버 UTC 오류 방지)
-3. per-stock 필터링 지원: 당일 개장된 시장의 종목만 분석
+Responsibilities:
+1. Check whether KR/US markets are open today.
+2. Resolve "today" in each market timezone to avoid server UTC drift.
+3. Support per-stock filtering so only stocks from open markets are analyzed.
 
-의존성: exchange-calendars (선택 사항, 사용 불가 시 fail-open)
+Dependency: exchange-calendars (optional; fail-open when unavailable).
 """
 
 import logging

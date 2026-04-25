@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-대시보드 복기 시장 영역 설정
+Market recap profile configuration.
 
-각 시장 영역의 지수, 뉴스 검색어, 프롬프트 힌트 등 메타데이터를 정의합니다.
-MarketAnalyzer에서 region에 따라 한국/미국 복기 동작을 전환합니다.
+Defines per-region metadata such as indices, news queries, and prompt hints.
+MarketAnalyzer uses these profiles to switch between KR and US behavior.
 """
 
 from dataclasses import dataclass
@@ -12,18 +12,18 @@ from typing import List
 
 @dataclass
 class MarketProfile:
-    """대시보드 복기 시장 영역 설정"""
+    """Market recap profile settings."""
 
     region: str  # "kr" | "us"
-    # 전체 추세 판단에 사용할 지수 코드
+    # Index code used to classify the broad market trend.
     mood_index_code: str
-    # 뉴스 검색 키워드
+    # News search queries.
     news_queries: List[str]
-    # 지수 분석 프롬프트 힌트
+    # Prompt hint for index analysis.
     prompt_index_hint: str
-    # 시장 개요에 상승/하락 종목 수, 상한가/하한가 포함 여부
+    # Whether market breadth statistics are available.
     has_market_stats: bool
-    # 시장 개요에 업종별 등락 포함 여부
+    # Whether sector rankings are available.
     has_sector_rankings: bool
 
 
@@ -55,7 +55,7 @@ US_PROFILE = MarketProfile(
 
 
 def get_profile(region: str) -> MarketProfile:
-    """region에 따라 해당 MarketProfile을 반환합니다"""
+    """Return the market profile for a region."""
     if region == "us":
         return US_PROFILE
     return KR_PROFILE

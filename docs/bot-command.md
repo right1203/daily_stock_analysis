@@ -1,265 +1,124 @@
+# Bot command guide
 
+이 문서는 현재 유지되는 KR/US 주식 분석 봇 명령과 연동 범위를 설명합니다.
 
-## 一、整体设计
+## Supported platforms
+
+현재 문서 기준의 지원 범위는 다음과 같습니다.
+
+| Platform | Purpose | Configuration |
+| --- | --- | --- |
+| Telegram | 분석 결과 전송, 토픽 전송 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_MESSAGE_THREAD_ID` |
+| Discord | Webhook 또는 Bot API 기반 결과 전송 | `DISCORD_WEBHOOK_URL` 또는 `DISCORD_BOT_TOKEN` + `DISCORD_MAIN_CHANNEL_ID` |
+| AstrBot | 외부 챗봇 게이트웨이로 결과 전송 | `ASTRBOT_URL`, `ASTRBOT_TOKEN` |
+
+Webhook 명령 처리 코드는 공통 `bot/` 모듈을 사용합니다. 플랫폼 어댑터는 메시지를 `BotMessage`로 정규화하고, 명령 디스패처가 공통 명령을 실행한 뒤 `BotResponse`를 각 플랫폼 응답 형식으로 변환합니다.
+
+## Command flow
 
 ```mermaid
-flowchart TB
-    subgraph Platforms [外部平台]
-        FS[飞书]
-        DT[钉钉]
-        WC[企业微信（开发中）]
-        TG[Telegram（开发中）]
-        More[更多平台...]
-    end
-
-    subgraph BotModule [bot/ 模块]
-        WH[Webhook Server]
-        Adapters[平台适配器]
-        Dispatcher[命令分发器]
-        Commands[命令处理器]
-    end
-
-    subgraph Core [现有核心模块]
-        AS[AnalysisService]
-        MA[MarketAnalyzer]
-        NS[NotificationService]
-    end
-
-    FS -->|POST /bot/feishu| WH
-    DT -->|POST /bot/dingtalk| WH
-    WC -->|POST /bot/wecom| WH
-    TG -->|POST /bot/telegram| WH
-
-    WH --> Adapters
-    Adapters -->|统一消息格式| Dispatcher
-    Dispatcher --> Commands
-    Commands --> AS
-    Commands --> MA
-    Commands --> NS
+flowchart LR
+    User[User message] --> Platform[Telegram or Discord]
+    Platform --> Adapter[Platform adapter]
+    Adapter --> Dispatcher[Command dispatcher]
+    Dispatcher --> Command[Command handler]
+    Command --> Services[Analysis services]
+    Services --> Response[Bot response]
 ```
 
+## Command model
 
-
-## 二、目录结构
-
-在项目根目录新建 `bot/` 目录：
-
-```
-bot/
-├── __init__.py             # 模块入口，导出主要类
-├── models.py               # 统一的消息/响应模型
-├── dispatcher.py           # 命令分发器（核心）
-├── commands/               # 命令处理器
-│   ├── __init__.py
-│   ├── base.py             # 命令抽象基类
-│   ├── analyze.py          # /analyze 股票分析
-│   ├── market.py           # /market 大盘复盘
-│   ├── help.py             # /help 帮助信息
-│   └── status.py           # /status 系统状态
-└── platforms/              # 平台适配器
-    ├── __init__.py
-    ├── base.py             # 平台抽象基类
-    ├── feishu.py           # 飞书机器人
-    ├── dingtalk.py         # 钉钉机器人
-    ├── dingtalk_stream.py  # 钉钉机器人Stream
-    ├── wecom.py            # 企业微信机器人 （开发中）
-    └── telegram.py         # Telegram 机器人 （开发中）
-```
-
-## 三、核心抽象设计
-
-### 3.1 统一消息模型 (`bot/models.py`)
+주요 모델은 `bot/models.py`에 정의되어 있습니다.
 
 ```python
 @dataclass
 class BotMessage:
-    """统一的机器人消息模型"""
-    platform: str           # 平台标识: feishu/dingtalk/wecom/telegram
-    user_id: str            # 发送者 ID
-    user_name: str          # 发送者名称
-    chat_id: str            # 会话 ID（群聊或私聊）
-    chat_type: str          # 会话类型: group/private
-    content: str            # 消息文本内容
-    raw_data: Dict          # 原始请求数据（平台特定）
-    timestamp: datetime     # 消息时间
-    mentioned: bool = False # 是否@了机器人
+    platform: str
+    message_id: str
+    user_id: str
+    user_name: str
+    content: str
+    channel_id: Optional[str] = None
+    group_id: Optional[str] = None
+    raw_data: Dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class BotResponse:
-    """统一的机器人响应模型"""
-    text: str               # 回复文本
-    markdown: bool = False  # 是否为 Markdown
-    at_user: bool = True    # 是否@发送者
+    text: str
+    markdown: bool = False
+    at_user: bool = True
 ```
 
-### 3.2 平台适配器基类 (`bot/platforms/base.py`)
+명령은 기본 접두사 `/`를 사용합니다. 접두사는 `BOT_COMMAND_PREFIX`로 바꿀 수 있습니다.
 
-```python
-class BotPlatform(ABC):
-    """平台适配器抽象基类"""
-    
-    @property
-    @abstractmethod
-    def platform_name(self) -> str:
-        """平台标识名称"""
-        pass
-    
-    @abstractmethod
-    def verify_request(self, headers: Dict, body: bytes) -> bool:
-        """验证请求签名（安全校验）"""
-        pass
-    
-    @abstractmethod
-    def parse_message(self, data: Dict) -> Optional[BotMessage]:
-        """解析平台消息为统一格式"""
-        pass
-    
-    @abstractmethod
-    def format_response(self, response: BotResponse) -> Dict:
-        """将统一响应转换为平台格式"""
-        pass
+## Available commands
+
+| Command | Alias | Description | Examples |
+| --- | --- | --- | --- |
+| `/analyze <stock_code> [full]` | `/a`, `/분석` | KR 또는 US 종목 분석 작업을 제출합니다. | `/analyze 005930`, `/analyze AAPL full` |
+| `/ask <stock_code> [strategy]` | `/q`, `/질문` | 종목에 대해 지정 전략 또는 기본 전략으로 질의합니다. | `/ask 005930`, `/ask AAPL momentum` |
+| `/batch [count]` | `/b`, `/일괄` | 관심 종목 목록을 일괄 분석합니다. | `/batch`, `/batch 5` |
+| `/chat <question>` | 없음 | 일반 질의를 봇 세션으로 전달합니다. | `/chat 오늘 시장 요약해줘` |
+| `/market` | `/m`, `/시장` | KR/US 시장 리뷰를 요청합니다. | `/market` |
+| `/status` | `/s`, `/상태` | 시스템, 데이터, 알림 설정 상태를 확인합니다. | `/status` |
+| `/help [command]` | `/h`, `/도움말` | 전체 명령 또는 특정 명령 도움말을 표시합니다. | `/help`, `/help analyze` |
+
+## Stock code examples
+
+지원 예시는 KR 6자리 코드와 US 티커입니다.
+
+```text
+/analyze 005930
+/analyze 000660 full
+/analyze AAPL
+/analyze MSFT full
 ```
 
-### 3.3 命令基类 (`bot/commands/base.py`)
+유효하지 않은 코드 형식은 명령 실행 전에 거부됩니다.
 
-```python
-class BotCommand(ABC):
-    """命令处理器抽象基类"""
-    
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """命令名称 (如 'analyze')"""
-        pass
-    
-    @property
-    @abstractmethod
-    def aliases(self) -> List[str]:
-        """命令别名 (如 ['a', '分析'])"""
-        pass
-    
-    @property
-    @abstractmethod
-    def description(self) -> str:
-        """命令描述"""
-        pass
-    
-    @property
-    @abstractmethod
-    def usage(self) -> str:
-        """使用설명"""
-        pass
-    
-    @abstractmethod
-    async def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
-        """执行命令"""
-        pass
+## Configuration
+
+기본 봇 설정은 `.env`에서 관리합니다.
+
+```env
+BOT_ENABLED=true
+BOT_COMMAND_PREFIX=/
+BOT_RATE_LIMIT_REQUESTS=10
+BOT_RATE_LIMIT_WINDOW=60
+BOT_ADMIN_USERS=
 ```
 
-### 3.4 命令分发器 (`bot/dispatcher.py`)
+Telegram 결과 전송:
 
-```python
-class CommandDispatcher:
-    """命令分发器 - 单例模式"""
-    
-    def __init__(self):
-        self._commands: Dict[str, BotCommand] = {}
-        self._aliases: Dict[str, str] = {}
-    
-    def register(self, command: BotCommand) -> None:
-        """注册命令"""
-        self._commands[command.name] = command
-        for alias in command.aliases:
-            self._aliases[alias] = command.name
-    
-    def dispatch(self, message: BotMessage) -> BotResponse:
-        """分发消息到对应命令"""
-        # 1. 解析命令和参数
-        # 2. 查找命令处理器
-        # 3. 执行并返回响应
+```env
+TELEGRAM_BOT_TOKEN=123456789:token
+TELEGRAM_CHAT_ID=123456789
+TELEGRAM_MESSAGE_THREAD_ID=
+TELEGRAM_WEBHOOK_SECRET=
 ```
 
-## 四、已支持的命令
+Discord 결과 전송:
 
-| 命令 | 别名 | 설명 | 示例 |
-
-|------|------|------|------|
-
-| /analyze | /a, 分析 | 分析指定股票 | `/analyze 600519` |
-
-| /market | /m, 大盘 | 大盘复盘 | `/market` |
-
-| /batch | /b, 批量 | 批量分析自选股 | `/batch` |
-
-| /help | /h, 帮助 | 显示帮助信息 | `/help` |
-
-| /status | /s, 状态 | 系统状态 | `/status` |
-
-## 五、Webhook 路由
-
-在 [api/v1/router.py](../api/v1/router.py) 中注册路由：
-
-```python
-# Webhook 路由
-/bot/feishu      # POST - 飞书事件回调
-/bot/dingtalk    # POST - 钉钉事件回调
-/bot/wecom       # POST - 企业微信事件回调 （开发中）
-/bot/telegram    # POST - Telegram 업데이트回调 （开发中）
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+DISCORD_BOT_TOKEN=
+DISCORD_MAIN_CHANNEL_ID=
+DISCORD_MAX_WORDS=2000
+DISCORD_BOT_STATUS=Stock analysis | /help
 ```
 
-## 配置
+AstrBot 결과 전송:
 
-在 [config.py](../config.py) 中추가机器人配置：
-
-```python
-# === 机器人配置 ===
-bot_enabled: bool = False              # 是否启用机器人
-bot_command_prefix: str = "/"          # 命令前缀
-
-# 飞书机器人（事件订阅）
-feishu_app_id: str                     # 已有
-feishu_app_secret: str                 # 已有
-feishu_verification_token: str         # 추가：事件校验 Token
-feishu_encrypt_key: str                # 추가：加密密钥
-
-# 钉钉机器人（应用）
-dingtalk_app_key: str                  # 추가
-dingtalk_app_secret: str               # 추가
-
-# 企业微信机器人（开发中）
-wecom_token: str                       # 추가：回调 Token
-wecom_encoding_aes_key: str            # 추가：EncodingAESKey
-
-# Telegram 机器人（开发中）
-telegram_bot_token: str                # 已有
-telegram_webhook_secret: str           # 추가：Webhook 密钥
+```env
+ASTRBOT_URL=https://example.com/api/message
+ASTRBOT_TOKEN=
 ```
 
-## 扩展설명
-### 怎样추가一个通知平台
+## Operational notes
 
-1. 在 `bot/platforms/` 创建新文件
-2. 继承 `BotPlatform` 基类
-3. 实现 `verify_request`, `parse_message`, `format_response`
-4. 在路由中注册 Webhook 端点
-
-### 怎样추가추가命令
-
-1. 在 `bot/commands/` 创建新文件
-2. 继承 `BotCommand` 基类
-3. 实现 `execute` 方法
-4. 在分发器中注册命令
-
-## 安全相关配置
-
-- 支持命令频率限制（防刷）
-- 敏感操作（如批量分析）可设置权限白名单
-
-在 [config.py](../config.py) 中추가机器人安全配置：
-
-```python
-    bot_rate_limit_requests: int = 10     # 频率限制：窗口内最大请求数
-    bot_rate_limit_window: int = 60       # 频率限制：窗口时间（秒）
-    bot_admin_users: List[str] = field(default_factory=list)  # 管理员用户 ID 列表，限制敏感操作
-```
-
+- `BOT_ENABLED=false`이면 Webhook 요청은 처리되지 않습니다.
+- `BOT_RATE_LIMIT_REQUESTS`와 `BOT_RATE_LIMIT_WINDOW`는 사용자별 명령 요청 제한에 사용됩니다.
+- 분석 명령은 비동기 작업으로 제출되며 완료 후 설정된 알림 채널로 결과가 전송됩니다.
+- Discord는 Webhook URL이 있으면 Webhook 전송을 우선 사용하고, 없으면 Bot Token과 Channel ID 조합을 사용합니다.
+- Telegram Topic 전송이 필요하면 `TELEGRAM_MESSAGE_THREAD_ID`를 함께 설정합니다.

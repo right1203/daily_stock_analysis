@@ -57,16 +57,16 @@ def _make_mock_adapter():
 
 
 SAMPLE_DASHBOARD = {
-    "stock_name": "贵州茅台",
+    "stock_name": "삼성전자",
     "sentiment_score": 75,
-    "trend_prediction": "看多",
-    "operation_advice": "持有",
+    "trend_prediction": "상승",
+    "operation_advice": "보유",
     "decision_type": "hold",
-    "confidence_level": "中",
+    "confidence_level": "보통",
     "dashboard": {
         "core_conclusion": {
-            "one_sentence": "茅台近期震荡走强",
-            "signal_type": "🟡持有观望",
+            "one_sentence": "삼성전자 단기 변동 후 강세",
+            "signal_type": "🟡보유 관망",
         },
     },
     "analysis_summary": "Overall bullish trend",
@@ -99,7 +99,7 @@ class TestAgentExecutor(unittest.TestCase):
         )
 
         executor = AgentExecutor(registry, adapter, max_steps=5)
-        result = executor.run("Analyze 600519")
+        result = executor.run("Analyze 005930")
 
         self.assertTrue(result.success)
         self.assertIsNotNone(result.dashboard)
@@ -132,7 +132,7 @@ class TestAgentExecutor(unittest.TestCase):
         adapter.call_with_tools.side_effect = [step1_response, step2_response]
 
         executor = AgentExecutor(registry, adapter, max_steps=5)
-        result = executor.run("Analyze 600519")
+        result = executor.run("Analyze 005930")
 
         self.assertTrue(result.success)
         self.assertEqual(result.total_steps, 2)
@@ -164,7 +164,7 @@ class TestAgentExecutor(unittest.TestCase):
         adapter.call_with_tools.side_effect = [step1, step2]
 
         executor = AgentExecutor(registry, adapter, max_steps=5)
-        result = executor.run("Analyze 600519")
+        result = executor.run("Analyze 005930")
 
         self.assertTrue(result.success)
         self.assertEqual(len(result.tool_calls_log), 2)
@@ -288,7 +288,7 @@ class TestAgentExecutor(unittest.TestCase):
         adapter.call_with_tools.side_effect = [step1, step2, step3]
 
         executor = AgentExecutor(registry, adapter, max_steps=5)
-        result = executor.run("Analyze 600519")
+        result = executor.run("Analyze 005930")
 
         self.assertTrue(result.success)
         self.assertEqual(result.model, "gemini/gemini-2.0-flash, openai/gpt-4o-mini")
@@ -306,7 +306,7 @@ class TestAgentExecutor(unittest.TestCase):
         )
 
         executor = AgentExecutor(registry, adapter, max_steps=2)
-        result = executor.run("Analyze 600519")
+        result = executor.run("Analyze 005930")
 
         self.assertFalse(result.success)
         self.assertEqual(result.model, "")

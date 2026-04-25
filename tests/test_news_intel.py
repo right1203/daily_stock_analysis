@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 新闻情报存储单元测试
+Unit tests for KR/US stock news intelligence storage
 ===================================
 
-职责：
-1. 验证新闻情报的保存与去重逻辑
-2. 验证无 URL 情况下的兜底去重键
+Scope:
+1. Verify saving and deduplication for news intelligence
+2. Verify fallback deduplication keys when URL is missing
 """
 
 import os
@@ -21,38 +21,38 @@ from src.search_service import SearchResponse, SearchResult
 
 
 class NewsIntelStorageTestCase(unittest.TestCase):
-    """新闻情报存储测试"""
+    """News intelligence storage tests"""
 
     def setUp(self) -> None:
-        """为每个用例初始化独立数据库"""
+        """Initialize an isolated database for each case"""
         self._temp_dir = tempfile.TemporaryDirectory()
         self._db_path = os.path.join(self._temp_dir.name, "test_news_intel.db")
         os.environ["DATABASE_PATH"] = self._db_path
 
-        # 重置配置与数据库单例，确保使用临时库
+        # Reset config and database singletons to use the temporary database
         Config._instance = None
         DatabaseManager.reset_instance()
         self.db = DatabaseManager.get_instance()
 
     def tearDown(self) -> None:
-        """清理资源"""
+        """Clean up resources"""
         DatabaseManager.reset_instance()
         self._temp_dir.cleanup()
 
     def _build_response(self, results) -> SearchResponse:
-        """构造 SearchResponse 快捷函数"""
+        """Build a SearchResponse helper"""
         return SearchResponse(
-            query="贵州茅台 最新消息",
+            query="삼성전자 최신 뉴스",
             results=results,
-            provider="Bocha",
+            provider="Naver",
             success=True,
         )
 
     def test_save_news_intel_with_url_dedup(self) -> None:
-        """相同 URL 去重，仅保留一条记录"""
+        """Same URL should be deduplicated into one record"""
         result = SearchResult(
-            title="茅台发布新产品",
-            snippet="公司发布新品...",
+            title="삼성전자 신제품 출시",
+            snippet="회사가 신제품을 공개했습니다...",
             url="https://news.example.com/a",
             source="example.com",
             published_date="2025-01-02"
@@ -62,25 +62,25 @@ class NewsIntelStorageTestCase(unittest.TestCase):
         query_context = {
             "query_id": "task_001",
             "query_source": "bot",
-            "requester_platform": "feishu",
+            "requester_platform": "telegram",
             "requester_user_id": "u_123",
-            "requester_user_name": "测试用户",
+            "requester_user_name": "테스트 사용자",
             "requester_chat_id": "c_456",
             "requester_message_id": "m_789",
-            "requester_query": "/analyze 600519",
+            "requester_query": "/analyze 005930",
         }
 
         saved_first = self.db.save_news_intel(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             dimension="latest_news",
             query=response.query,
             response=response,
             query_context=query_context
         )
         saved_second = self.db.save_news_intel(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             dimension="latest_news",
             query=response.query,
             response=response,
@@ -95,15 +95,15 @@ class NewsIntelStorageTestCase(unittest.TestCase):
             row = session.query(NewsIntel).first()
         self.assertEqual(total, 1)
         if row is None:
-            self.fail("未找到保存的新闻记录")
+            self.fail("Saved news record was not found")
         self.assertEqual(row.query_id, "task_001")
-        self.assertEqual(row.requester_user_name, "测试用户")
+        self.assertEqual(row.requester_user_name, "테스트 사용자")
 
     def test_save_news_intel_without_url_fallback_key(self) -> None:
-        """无 URL 时使用兜底键去重"""
+        """Missing URL should use fallback key deduplication"""
         result = SearchResult(
-            title="茅台业绩预告",
-            snippet="业绩大幅增长...",
+            title="삼성전자 실적 전망",
+            snippet="실적이 크게 개선되었습니다...",
             url="",
             source="example.com",
             published_date="2025-01-03"
@@ -111,15 +111,15 @@ class NewsIntelStorageTestCase(unittest.TestCase):
         response = self._build_response([result])
 
         saved_first = self.db.save_news_intel(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             dimension="earnings",
             query=response.query,
             response=response
         )
         saved_second = self.db.save_news_intel(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             dimension="earnings",
             query=response.query,
             response=response
@@ -131,15 +131,15 @@ class NewsIntelStorageTestCase(unittest.TestCase):
         with self.db.get_session() as session:
             row = session.query(NewsIntel).first()
             if row is None:
-                self.fail("未找到保存的新闻记录")
+                self.fail("Saved news record was not found")
             self.assertTrue(row.url.startswith("no-url:"))
 
     def test_get_recent_news(self) -> None:
-        """可按时间范围查询最新新闻"""
+        """Recent news can be queried by time range"""
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         result = SearchResult(
-            title="茅台股价震荡",
-            snippet="盘中波动较大...",
+            title="삼성전자 주가 변동",
+            snippet="장중 변동성이 컸습니다...",
             url="https://news.example.com/b",
             source="example.com",
             published_date=now
@@ -147,16 +147,16 @@ class NewsIntelStorageTestCase(unittest.TestCase):
         response = self._build_response([result])
 
         self.db.save_news_intel(
-            code="600519",
-            name="贵州茅台",
+            code="005930",
+            name="삼성전자",
             dimension="market_analysis",
             query=response.query,
             response=response
         )
 
-        recent_news = self.db.get_recent_news(code="600519", days=7, limit=10)
+        recent_news = self.db.get_recent_news(code="005930", days=7, limit=10)
         self.assertEqual(len(recent_news), 1)
-        self.assertEqual(recent_news[0].title, "茅台股价震荡")
+        self.assertEqual(recent_news[0].title, "삼성전자 주가 변동")
 
 
 if __name__ == "__main__":

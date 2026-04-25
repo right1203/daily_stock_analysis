@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-平台适配器基类
+Bot platform base adapter
 ===================================
 
-定义平台适配器的抽象基类，各平台必须继承此类。
+Defines the abstract base class that each retained bot platform adapter must implement.
 """
 
 from abc import ABC, abstractmethod
@@ -15,29 +15,29 @@ from bot.models import BotMessage, BotResponse, WebhookResponse
 
 class BotPlatform(ABC):
     """
-    平台适配器抽象基类
-    
-    负责：
-    1. 验证 Webhook 请求签名
-    2. 解析平台消息为统一格式
-    3. 将响应转换为平台格式
-    
-    使用示例：
+    Abstract base class for bot platform adapters.
+
+    Responsibilities:
+    1. Verify webhook request signatures.
+    2. Parse platform-specific messages into the common model.
+    3. Convert common responses into platform-specific webhook responses.
+
+    Example:
         class MyPlatform(BotPlatform):
             @property
             def platform_name(self) -> str:
-                return "myplatform"
-            
+                return "telegram"
+
             def verify_request(self, headers, body) -> bool:
-                # 验证签名逻辑
+                # Verify signature.
                 return True
-            
+
             def parse_message(self, data) -> Optional[BotMessage]:
-                # 解析消息逻辑
+                # Parse the incoming message.
                 return BotMessage(...)
-            
+
             def format_response(self, response, message) -> WebhookResponse:
-                # 格式化响应逻辑
+                # Format the response.
                 return WebhookResponse.success({"text": response.text})
     """
     
@@ -45,41 +45,41 @@ class BotPlatform(ABC):
     @abstractmethod
     def platform_name(self) -> str:
         """
-        平台标识名称
-        
-        用于路由匹配和日志标识，如 "feishu", "dingtalk"
+        Platform identifier.
+
+        Used for routing and logging, for example "telegram" or "web".
         """
         pass
     
     @abstractmethod
     def verify_request(self, headers: Dict[str, str], body: bytes) -> bool:
         """
-        验证请求签名
-        
-        各平台有不同的签名验证机制，需要单独实现。
-        
+        Verify the request signature.
+
+        Each platform has its own signature verification mechanism.
+
         Args:
-            headers: HTTP 请求头
-            body: 请求体原始字节
-            
+            headers: HTTP request headers.
+            body: Raw request body bytes.
+
         Returns:
-            签名是否有效
+            Whether the signature is valid.
         """
         pass
     
     @abstractmethod
     def parse_message(self, data: Dict[str, Any]) -> Optional[BotMessage]:
         """
-        解析平台消息为统一格式
-        
-        将平台特定的消息格式转换为 BotMessage。
-        如果不是需要处理的消息类型（如事件回调），返回 None。
-        
+        Parse a platform message into the common format.
+
+        Converts platform-specific message payloads into BotMessage. Return None for
+        payloads that do not need command handling, such as verification callbacks.
+
         Args:
-            data: 解析后的 JSON 数据
-            
+            data: Parsed JSON payload.
+
         Returns:
-            BotMessage 对象，或 None（不需要处理）
+            BotMessage, or None when no handling is needed.
         """
         pass
     
@@ -90,29 +90,29 @@ class BotPlatform(ABC):
         message: BotMessage
     ) -> WebhookResponse:
         """
-        将统一响应转换为平台格式
-        
+        Convert a common response into the platform response format.
+
         Args:
-            response: 统一响应对象
-            message: 原始消息对象（用于获取回复目标等信息）
-            
+            response: Common response object.
+            message: Original message object used to locate the reply target.
+
         Returns:
-            WebhookResponse 对象
+            WebhookResponse object.
         """
         pass
     
     def handle_challenge(self, data: Dict[str, Any]) -> Optional[WebhookResponse]:
         """
-        处理平台验证请求
-        
-        部分平台在配置 Webhook 时会发送验证请求，需要返回特定响应。
-        子类可重写此方法。
-        
+        Handle platform verification requests.
+
+        Some platforms send a challenge request during webhook setup. Subclasses may
+        override this method to return a specific response.
+
         Args:
-            data: 请求数据
-            
+            data: Request payload.
+
         Returns:
-            验证响应，或 None（不是验证请求）
+            Verification response, or None if this is not a challenge request.
         """
         return None
     
@@ -123,31 +123,32 @@ class BotPlatform(ABC):
         data: Dict[str, Any]
     ) -> Tuple[Optional[BotMessage], Optional[WebhookResponse]]:
         """
-        处理 Webhook 请求
-        
-        这是主入口方法，协调验证、解析等流程。
-        
+        Handle a webhook request.
+
+        This is the main entry point that coordinates challenge handling,
+        signature verification, and message parsing.
+
         Args:
-            headers: HTTP 请求头
-            body: 请求体原始字节
-            data: 解析后的 JSON 数据
-            
+            headers: HTTP request headers.
+            body: Raw request body bytes.
+            data: Parsed JSON payload.
+
         Returns:
-            (BotMessage, WebhookResponse) 元组
-            - 如果是验证请求：(None, challenge_response)
-            - 如果是普通消息：(message, None) - 响应将在命令处理后生成
-            - 如果验证失败或无需处理：(None, error_response 或 None)
+            (BotMessage, WebhookResponse) tuple.
+            - Challenge request: (None, challenge_response)
+            - Normal message: (message, None)
+            - Verification failure or ignored payload: (None, error_response or None)
         """
-        # 1. 检查是否是验证请求
+        # 1. Check whether this is a verification challenge.
         challenge_response = self.handle_challenge(data)
         if challenge_response:
             return None, challenge_response
-        
-        # 2. 验证请求签名
+
+        # 2. Verify request signature.
         if not self.verify_request(headers, body):
             return None, WebhookResponse.error("Invalid signature", 403)
-        
-        # 3. 解析消息
+
+        # 3. Parse message.
         message = self.parse_message(data)
-        
+
         return message, None

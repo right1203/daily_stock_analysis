@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Telegram 发送提醒服务
-
-职责：
-1. 通过 Telegram Bot API 发送 文本消息
-2. 通过 Telegram Bot API 发送 图片消息
+Telegram notification sender service.
+Responsibilities:
+1. Send text messages through the Telegram Bot API.
+2. Send image messages through the Telegram Bot API.
 """
 import logging
 from typing import Optional
@@ -22,10 +21,10 @@ class TelegramSender:
     
     def __init__(self, config: Config):
         """
-        初始化 Telegram 配置
+        Initialize Telegram configuration.
 
         Args:
-            config: 配置对象
+            config: Config object.
         """
         self._telegram_config = {
             'bot_token': getattr(config, 'telegram_bot_token', None),
@@ -34,29 +33,29 @@ class TelegramSender:
         }
     
     def _is_telegram_configured(self) -> bool:
-        """检查 Telegram 配置是否完整"""
+        """Return whether Telegram configuration is complete."""
         return bool(self._telegram_config['bot_token'] and self._telegram_config['chat_id'])
    
     def send_to_telegram(self, content: str) -> bool:
         """
-        推送消息到 Telegram 机器人
+        Send a message to a Telegram bot.
         
-        Telegram Bot API 格式：
+        Telegram Bot API format:
         POST https://api.telegram.org/bot<token>/sendMessage
         {
             "chat_id": "xxx",
-            "text": "消息内容",
+            "text": "message content",
             "parse_mode": "Markdown"
         }
         
         Args:
-            content: 消息内容（Markdown 格式）
+            content: Message content in Markdown format.
             
         Returns:
-            是否发送成功
+            Whether sending succeeded.
         """
         if not self._is_telegram_configured():
-            logger.warning("Telegram 配置不完整，跳过推送")
+            logger.warning("Telegram 설정이 불완전하여 푸시를 건너뜁니다")
             return False
         
         bot_token = self._telegram_config['bot_token']
@@ -64,21 +63,21 @@ class TelegramSender:
         message_thread_id = self._telegram_config.get('message_thread_id')
         
         try:
-            # Telegram API 端点
+            # Telegram API endpoint.
             api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             
-            # Telegram 消息最大长度 4096 字符
+            # Telegram messages are limited to 4096 characters.
             max_length = 4096
             
             if len(content) <= max_length:
-                # 单条消息发送
+                # Send a single message.
                 return self._send_telegram_message(api_url, chat_id, content, message_thread_id)
             else:
-                # 分段发送长消息
+                # Send long messages in chunks.
                 return self._send_telegram_chunked(api_url, chat_id, content, max_length, message_thread_id)
                 
         except Exception as e:
-            logger.error(f"发送 Telegram 消息失败: {e}")
+            logger.error(f"Telegram 메시지 전송 실패: {e}")
             import traceback
             logger.debug(traceback.format_exc())
             return False
@@ -116,15 +115,15 @@ class TelegramSender:
             if response.status_code == 200:
                 result = response.json()
                 if result.get('ok'):
-                    logger.info("Telegram 消息发送成功")
+                    logger.info("Telegram 메시지 전송 성공")
                     return True
                 else:
-                    error_desc = result.get('description', '未知错误')
-                    logger.error(f"Telegram 返回错误: {error_desc}")
+                    error_desc = result.get('description', '알 수 없는 오류')
+                    logger.error(f"Telegram 오류 응답: {error_desc}")
                     
                     # If Markdown parsing failed, fall back to plain text
                     if 'parse' in error_desc.lower() or 'markdown' in error_desc.lower():
-                        logger.info("尝试使用纯文本格式重新发送...")
+                        logger.info("일반 텍스트 형식으로 다시 전송합니다...")
                         plain_payload = dict(payload)
                         plain_payload.pop('parse_mode', None)
                         plain_payload['text'] = text  # Use original text
@@ -132,7 +131,7 @@ class TelegramSender:
                         try:
                             response = requests.post(api_url, json=plain_payload, timeout=10)
                             if response.status_code == 200 and response.json().get('ok'):
-                                logger.info("Telegram 消息发送成功（纯文本）")
+                                logger.info("Telegram 메시지 전송 성공(일반 텍스트)")
                                 return True
                         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
                             logger.error(f"Telegram plain-text fallback failed: {e}")
@@ -156,15 +155,15 @@ class TelegramSender:
                                    f"(attempt {attempt}/{max_retries}), retrying in {delay}s...")
                     time.sleep(delay)
                     continue
-                logger.error(f"Telegram 请求失败: HTTP {response.status_code}")
-                logger.error(f"响应内容: {response.text}")
+                logger.error(f"Telegram 요청 실패: HTTP {response.status_code}")
+                logger.error(f"응답 내용: {response.text}")
                 return False
 
         return False
     
     def _send_telegram_chunked(self, api_url: str, chat_id: str, content: str, max_length: int, message_thread_id: Optional[str] = None) -> bool:
-        """分段发送长 Telegram 消息"""
-        # 按段落分割
+        """Send a long Telegram message in chunks."""
+        # Split by paragraph sections.
         sections = content.split("\n---\n")
         
         current_chunk = []
@@ -176,25 +175,25 @@ class TelegramSender:
             section_length = len(section) + 5  # +5 for "\n---\n"
             
             if current_length + section_length > max_length:
-                # 发送当前块
+                # Send the current chunk.
                 if current_chunk:
                     chunk_content = "\n---\n".join(current_chunk)
-                    logger.info(f"发送 Telegram 消息块 {chunk_index}...")
+                    logger.info(f"Telegram 메시지 조각 {chunk_index} 전송 중...")
                     if not self._send_telegram_message(api_url, chat_id, chunk_content, message_thread_id):
                         all_success = False
                     chunk_index += 1
                 
-                # 重置
+                # Reset chunk state.
                 current_chunk = [section]
                 current_length = section_length
             else:
                 current_chunk.append(section)
                 current_length += section_length
         
-        # 发送最后一块
+        # Send the final chunk.
         if current_chunk:
             chunk_content = "\n---\n".join(current_chunk)
-            logger.info(f"发送 Telegram 消息块 {chunk_index}...")
+            logger.info(f"Telegram 메시지 조각 {chunk_index} 전송 중...")
             if not self._send_telegram_message(api_url, chat_id, chunk_content, message_thread_id):
                 all_success = False
                 
@@ -215,29 +214,29 @@ class TelegramSender:
             files = {"photo": ("report.png", image_bytes, "image/png")}
             response = requests.post(api_url, data=data, files=files, timeout=30)
             if response.status_code == 200 and response.json().get('ok'):
-                logger.info("Telegram 图片发送成功")
+                logger.info("Telegram 이미지 전송 성공")
                 return True
-            logger.error("Telegram 图片发送失败: %s", response.text[:200])
+            logger.error("Telegram 이미지 전송 실패: %s", response.text[:200])
             return False
         except Exception as e:
-            logger.error("Telegram 图片发送异常: %s", e)
+            logger.error("Telegram 이미지 전송 예외: %s", e)
             return False
 
     def _convert_to_telegram_markdown(self, text: str) -> str:
         """
-        将标准 Markdown 转换为 Telegram 支持的格式
+        Convert standard Markdown to the subset supported by Telegram.
         
-        Telegram Markdown 限制：
-        - 不支持 # 标题
-        - 使用 *bold* 而非 **bold**
-        - 使用 _italic_ 
+        Telegram Markdown limitations:
+        - Heading markers are not supported.
+        - Use *bold* instead of **bold**.
+        - Use _italic_.
         """
         result = text
         
-        # 移除 # 标题标记（Telegram 不支持）
+        # Remove heading markers because Telegram does not support them.
         result = re.sub(r'^#{1,6}\s+', '', result, flags=re.MULTILINE)
         
-        # 转换 **bold** 为 *bold*
+        # Convert **bold** to *bold*.
         result = re.sub(r'\*\*(.+?)\*\*', r'*\1*', result)
         
         # Escape special characters for Telegram Markdown, but preserve link syntax [text](url)
@@ -259,4 +258,3 @@ class TelegramSender:
             result = result.replace(f"{_link_placeholder}{i}", link)
 
         return result
-    

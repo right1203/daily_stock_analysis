@@ -113,7 +113,7 @@ async def auth_login(request: Request, body: LoginRequest):
     if not password:
         return JSONResponse(
             status_code=400,
-            content={"error": "password_required", "message": "请输入密码"},
+            content={"error": "password_required", "message": "비밀번호를 입력하세요."},
         )
 
     ip = get_client_ip(request)
@@ -149,7 +149,7 @@ async def auth_login(request: Request, body: LoginRequest):
             record_login_failure(ip)
             return JSONResponse(
                 status_code=401,
-                content={"error": "invalid_password", "message": "密码错误"},
+                content={"error": "invalid_password", "message": "비밀번호가 올바르지 않습니다."},
             )
 
     clear_rate_limit(ip)
@@ -194,12 +194,15 @@ async def auth_change_password(body: ChangePasswordRequest):
     if not current:
         return JSONResponse(
             status_code=400,
-            content={"error": "current_required", "message": "请输入当前密码"},
+            content={"error": "current_required", "message": "현재 비밀번호를 입력하세요."},
         )
     if new_pwd != new_confirm:
         return JSONResponse(
             status_code=400,
-            content={"error": "password_mismatch", "message": "两次输入的新密码不一致"},
+            content={
+                "error": "password_mismatch",
+                "message": "새 비밀번호와 확인 값이 일치하지 않습니다.",
+            },
         )
 
     err = change_password(current, new_pwd)

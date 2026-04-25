@@ -9,13 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- KR/US 기준선 전환에 맞춰 README, 환경 변수 예시, LLM 설정 문서를 한국어 중심으로 정리하고 현재 지원 데이터 제공자, 검색 서비스, 알림 채널만 안내합니다.
+- KR/US 기준선이 되돌아가지 않도록 중국 시장/제거 서비스/중국어 텍스트 잔재를 탐지하는 정적 회귀 테스트를 추가했습니다.
+
 ### Fixed
 - KR+US migration test remediation: removed China-only notification channels from active validation/detection, aligned localized test expectations to Korean output, and restored `pykrx` import compatibility by pinning `setuptools<81`.
-
-### Changed
-- 🔎 **Fetcher failure observability** — historical data logs now record fetcher start/success/failure with elapsed time, explicit failover transitions, and clearer final outcomes; Efinance/Eastmoney failures now include upstream endpoint and normalized categories such as `remote_disconnect` and `timeout`; Akshare 新浪/腾讯实时行情日志 now also include upstream endpoint and classified failures for HTTP status, disconnects, and malformed payloads
-### Added
-- 📖 **LLM 配置指南** — 추가 [docs/LLM_CONFIG_GUIDE.md](LLM_CONFIG_GUIDE.md)，系统讲解三层配置、빠른 시작、Vision/Agent/Web UI/校验排错；同步업데이트 README、full-guide、.env.example、FAQ、英文版指南
 
 ## [3.4.10] - 2026-03-07
 

@@ -18,10 +18,15 @@ class SystemConfigServiceTestCase(unittest.TestCase):
         self.env_path.write_text(
             "\n".join(
                 [
-                    "STOCK_LIST=600519,000001",
+                    "STOCK_LIST=005930,035720",
                     "GEMINI_API_KEY=secret-key-value",
                     "SCHEDULE_TIME=18:00",
                     "LOG_LEVEL=INFO",
+                    "TUSHARE_TOKEN=legacy-token",  # kr-us-static-allow: removed-service
+                    "WECHAT_WEBHOOK_URL=https://example.com/wechat",  # kr-us-static-allow: removed-service
+                    "WECOM_CORPID=legacy-corpid",  # kr-us-static-allow: removed-service
+                    "WECOM_TOKEN=legacy-token",  # kr-us-static-allow: removed-service
+                    "WECOM_AES_KEY=legacy-aes-key",  # kr-us-static-allow: removed-service
                 ]
             )
             + "\n",
@@ -47,13 +52,57 @@ class SystemConfigServiceTestCase(unittest.TestCase):
         self.assertFalse(items["GEMINI_API_KEY"]["is_masked"])
         self.assertTrue(items["GEMINI_API_KEY"]["raw_value_exists"])
 
+    def test_get_config_excludes_removed_china_service_fields(self) -> None:
+        payload = self.service.get_config(include_schema=True)
+        item_keys = {item["key"] for item in payload["items"]}
+
+        self.assertNotIn("TUSHARE_TOKEN", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECHAT_WEBHOOK_URL", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_CORPID", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_TOKEN", item_keys)  # kr-us-static-allow: removed-service
+        self.assertNotIn("WECOM_AES_KEY", item_keys)  # kr-us-static-allow: removed-service
+
+    def test_get_config_exposes_retained_astrbot_fields_by_default(self) -> None:
+        payload = self.service.get_config(include_schema=True)
+        items = {item["key"]: item for item in payload["items"]}
+
+        self.assertIn("ASTRBOT_URL", items)
+        self.assertIn("ASTRBOT_TOKEN", items)
+        self.assertEqual(items["ASTRBOT_URL"]["schema"]["category"], "notification")
+        self.assertEqual(items["ASTRBOT_TOKEN"]["schema"]["ui_control"], "password")
+
+    def test_validate_rejects_removed_prefixed_fields(self) -> None:
+        validation = self.service.validate(
+            items=[{"key": "WECOM_TOKEN", "value": "legacy-token"}]  # kr-us-static-allow: removed-service
+        )
+
+        self.assertFalse(validation["valid"])
+        self.assertTrue(
+            any(
+                issue["key"] == "WECOM_TOKEN"  # kr-us-static-allow: removed-service
+                and issue["code"] == "removed_field"
+                for issue in validation["issues"]
+            )
+        )
+
+    def test_validate_rejects_removed_exact_field_but_allows_similar_unknown_prefix(self) -> None:
+        removed = self.service.validate(
+            items=[{"key": "SERVERCHAN3_SENDKEY", "value": "legacy-sendkey"}]  # kr-us-static-allow: removed-service
+        )
+        benign = self.service.validate(items=[{"key": "SERVERCHANNEL_INTERNAL_NOTE", "value": "keep"}])
+
+        self.assertFalse(removed["valid"])
+        self.assertTrue(any(issue["code"] == "removed_field" for issue in removed["issues"]))
+        self.assertTrue(benign["valid"])
+        self.assertEqual([], benign["issues"])
+
     def test_update_preserves_masked_secret(self) -> None:
         old_version = self.manager.get_config_version()
         response = self.service.update(
             config_version=old_version,
             items=[
                 {"key": "GEMINI_API_KEY", "value": "******"},
-                {"key": "STOCK_LIST", "value": "600519,300750"},
+                {"key": "STOCK_LIST", "value": "005930,MSFT"},
             ],
             mask_token="******",
             reload_now=False,
@@ -65,7 +114,7 @@ class SystemConfigServiceTestCase(unittest.TestCase):
         self.assertIn("STOCK_LIST", response["updated_keys"])
 
         current_map = self.manager.read_config_map()
-        self.assertEqual(current_map["STOCK_LIST"], "600519,300750")
+        self.assertEqual(current_map["STOCK_LIST"], "005930,MSFT")
         self.assertEqual(current_map["GEMINI_API_KEY"], "secret-key-value")
 
     def test_validate_reports_invalid_time(self) -> None:
@@ -77,7 +126,7 @@ class SystemConfigServiceTestCase(unittest.TestCase):
         with self.assertRaises(ConfigConflictError):
             self.service.update(
                 config_version="stale-version",
-                items=[{"key": "STOCK_LIST", "value": "600519"}],
+                items=[{"key": "STOCK_LIST", "value": "005930"}],
                 reload_now=False,
             )
 
