@@ -9,7 +9,7 @@
 - 코드 품질: 실행 가능성, 회귀 검증 가능성, 추적 가능성(로그/오류 메시지 명확성)을 최우선으로 합니다.
 - 스타일 제약:
   - 줄 너비 120
-  - `black` + `isort` + `flake8`
+  - `black` + `isort` + `ruff`
   - 핵심 변경에는 최소한 문법 검증이 필요합니다 (`py_compile`) 또는 대응 테스트 검증.
   - 새로 추가하거나 수정한 코드 주석은 반드시 영어로 작성해야 합니다.
 - Git 제약:
@@ -147,5 +147,5 @@ git push origin v3.x.x
 ```bash
 ./test.sh syntax
 python -m py_compile main.py src/*.py data_provider/*.py
-flake8 main.py src/ --max-line-length=120
+ruff check main.py src/
 ```

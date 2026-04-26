@@ -44,7 +44,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "flake8",
+    "ruff",
     "pytest",
     "google-genai",
 ]
@@ -73,6 +73,26 @@ exclude = '''
 profile = "black"
 line_length = 120
 skip = [".git", "__pycache__", ".env", "venv", ".venv"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [
+    ".git",
+    "__pycache__",
+    ".env",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+# E501: line too long (some lines intentionally exceed the limit)
+# E203: whitespace before slice (conflicts with black)
+# E402: module import not at top (sometimes env setup must run first)
+ignore = ["E501", "E203", "E402"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "test_*.py"]

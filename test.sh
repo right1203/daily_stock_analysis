@@ -249,16 +249,19 @@ test_syntax() {
     success "문법 검사 통과"
 }
 
-# Test 12: Flake8 static check
-test_flake8() {
-    header "테스트 시나리오: Flake8 정적 검사"
-    info "Flake8로 심각한 오류 검사 중..."
+# Test 12: Ruff static check
+test_ruff() {
+    header "테스트 시나리오: Ruff 정적 검사"
+    info "Ruff로 심각한 오류 검사 중..."
 
-    if command -v flake8 &> /dev/null; then
-        flake8 main.py src/config.py src/notification.py --select=F821,E999 --max-line-length=120
-        success "Flake8 검사 통과"
+    if command -v ruff &> /dev/null; then
+        ruff check main.py src/config.py src/notification.py --select F821 --line-length 120
+        success "Ruff 검사 통과"
+    elif [ -x ".venv/bin/ruff" ]; then
+        .venv/bin/ruff check main.py src/config.py src/notification.py --select F821 --line-length 120
+        success "Ruff 검사 통과"
     else
-        warn "Flake8이 설치되어 있지 않아 검사를 건너뜁니다"
+        warn "Ruff가 설치되어 있지 않아 검사를 건너뜁니다"
     fi
 }
 
@@ -269,7 +272,7 @@ test_all() {
     test_syntax
     test_code_recognition
     test_yfinance_convert
-    test_flake8
+    test_ruff
 
     echo ""
     info "다음 테스트는 네트워크와 API 설정이 필요하여 실패할 수 있습니다:"
@@ -334,9 +337,9 @@ main() {
             shift
             test_syntax "$@"
             ;;
-        flake8|lint)
+        ruff|lint)
             shift
-            test_flake8 "$@"
+            test_ruff "$@"
             ;;
         all)
             shift
@@ -357,7 +360,7 @@ main() {
             echo "  code        - 코드 인식 테스트"
             echo "  yfinance    - YFinance 변환 테스트"
             echo "  syntax      - 문법 검사"
-            echo "  flake8      - 정적 검사"
+            echo "  ruff        - 정적 검사"
             echo "  all         - 모든 테스트 실행"
             echo ""
             echo "예시:"

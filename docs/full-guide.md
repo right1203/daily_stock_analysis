@@ -166,7 +166,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/analysis/analyze \
 ```bash
 ./test.sh syntax
 python -m py_compile main.py
-flake8 main.py src/ --max-line-length=120
+ruff check main.py src/
 ```
 
 ## 문서 동기화

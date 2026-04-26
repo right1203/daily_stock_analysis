@@ -37,7 +37,7 @@ rg -n "TODO|FIXME" .
 ```bash
 ./test.sh syntax
 python -m py_compile main.py
-flake8 main.py src/ --max-line-length=120
+ruff check main.py src/
 ```
 
 문서만 수정한 경우에는 관련 금지어 검색과 `git diff --check`를 수행합니다.

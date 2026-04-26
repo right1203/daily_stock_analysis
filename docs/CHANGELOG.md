@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - KR/US 기준선 전환에 맞춰 README, 환경 변수 예시, LLM 설정 문서를 한국어 중심으로 정리하고 현재 지원 데이터 제공자, 검색 서비스, 알림 채널만 안내합니다.
 - KR/US 기준선이 되돌아가지 않도록 중국 시장/제거 서비스/중국어 텍스트 잔재를 탐지하는 정적 회귀 테스트를 추가했습니다.
+- Python 정적 검사 도구를 `ruff`로 전환했습니다.
 
 ### Fixed
 - KR+US migration test remediation: removed China-only notification channels from active validation/detection, aligned localized test expectations to Korean output, and restored `pykrx` import compatibility by pinning `setuptools<81`.
